@@ -1,0 +1,175 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-gradient: linear-gradient(135deg, #4cc9f0 0%, #90f7ec 100%);
+  --surface-soft: #f8fbff;
+}
+
+body {
+  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--primary-gradient);
+  min-height: 100vh;
+}
+
+.main-content {
+  background-color: var(--surface-soft);
+  min-height: calc(100vh - 70px);
+  border-radius: 24px 24px 0 0;
+  padding: 2.5rem;
+  box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.12);
+}
+
+/* Ajustes para modais e selects */
+::ng-deep .p-dialog {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+::ng-deep .p-dialog-content {
+  overflow: visible !important;
+}
+
+/* Garantir que os selects não fiquem escondidos */
+::ng-deep .p-select-overlay,
+::ng-deep .p-select-panel {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+::ng-deep .p-select-list {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+::ng-deep .p-select-list-item {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+::ng-deep .p-select-list-item:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+::ng-deep .p-datepicker {
+  z-index: 10000 !important;
+}
+
+::ng-deep .p-overlaypanel {
+  z-index: 10000 !important;
+}
+
+/* Ajustar altura máxima dos modais para evitar cortes */
+::ng-deep .p-dialog .p-dialog-content {
+  max-height: calc(90vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Garantir que o overlay do select funcione corretamente */
+::ng-deep .p-select-overlay {
+  position: fixed !important;
+}
+
+/* Permitir scroll no dropdown do select */
+::ng-deep .p-select-panel {
+  overflow: visible !important;
+}
+
+::ng-deep .p-select-list-wrapper {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-height: 300px !important;
+}
+
+/* Estilos elegantes para textareas */
+::ng-deep .p-inputtextarea,
+::ng-deep textarea.p-inputtextarea {
+  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  padding: 14px 18px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  resize: vertical !important;
+  min-height: 120px !important;
+  width: 100% !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+::ng-deep .p-inputtextarea:hover,
+::ng-deep textarea.p-inputtextarea:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+::ng-deep .p-inputtextarea:focus,
+::ng-deep textarea.p-inputtextarea:focus {
+  outline: none !important;
+  border-color: #4cc9f0 !important;
+  box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  background-color: #ffffff !important;
+}
+
+::ng-deep .p-inputtextarea::placeholder,
+::ng-deep textarea.p-inputtextarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.7 !important;
+  font-style: normal !important;
+}
+
+::ng-deep .p-inputtextarea:disabled,
+::ng-deep textarea.p-inputtextarea:disabled {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Estilo específico para textarea de evolução */
+.evolution-textarea,
+::ng-deep .evolution-textarea.p-inputtextarea {
+  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  padding: 16px 20px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(to bottom, #ffffff, #fafbfc) !important;
+  color: #1e293b !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  resize: vertical !important;
+  min-height: 140px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.evolution-textarea:hover,
+::ng-deep .evolution-textarea.p-inputtextarea:hover {
+  border-color: #4cc9f0 !important;
+  box-shadow: 0 4px 8px rgba(76, 201, 240, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  background: linear-gradient(to bottom, #ffffff, #f8fbff) !important;
+}
+
+.evolution-textarea:focus,
+::ng-deep .evolution-textarea.p-inputtextarea:focus {
+  outline: none !important;
+  border-color: #4cc9f0 !important;
+  box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.15), 0 6px 16px rgba(76, 201, 240, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  background: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+.evolution-textarea::placeholder,
+::ng-deep .evolution-textarea.p-inputtextarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.8 !important;
+  font-style: italic !important;
+}

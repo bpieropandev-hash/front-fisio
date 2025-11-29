@@ -1,0 +1,505 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputMaskModule } from 'primeng/inputmask';
+import { DatePickerModule } from 'primeng/datepicker';
+import { TextareaModule } from 'primeng/textarea';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { PacienteService } from '../../core/services/paciente.service';
+import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interfaces/paciente.interface';
+
+@Component({
+  selector: 'app-pacientes',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    TableModule,
+    ButtonModule,
+    DialogModule,
+    InputTextModule,
+    InputMaskModule,
+    DatePickerModule,
+    TextareaModule,
+    TagModule,
+    TooltipModule,
+    ToastModule
+  ],
+  providers: [MessageService],
+  template: `
+    <p-toast />
+    
+    <div class="page-header">
+      <h2>Pacientes</h2>
+      <p-button
+        label="Novo Paciente"
+        icon="pi pi-plus"
+        (onClick)="abrirModalNovoPaciente()"
+      />
+    </div>
+
+    <p-table
+      [value]="pacientes()"
+      [paginator]="true"
+      [rows]="10"
+      [loading]="carregando()"
+      [tableStyle]="{ 'min-width': '50rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>CPF</th>
+          <th>Telefone</th>
+          <th>Email</th>
+          <th>Data Nascimento</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-paciente>
+        <tr>
+          <td>{{ paciente.id }}</td>
+          <td>{{ paciente.nome }}</td>
+          <td>{{ formatarCPF(paciente.cpf) }}</td>
+          <td>{{ paciente.telefone || '-' }}</td>
+          <td>{{ paciente.email || '-' }}</td>
+          <td>{{ paciente.dataNascimento ? (paciente.dataNascimento | date: 'dd/MM/yyyy') : '-' }}</td>
+          <td>
+            <p-tag
+              [value]="paciente.ativo !== false ? 'Ativo' : 'Inativo'"
+              [severity]="paciente.ativo !== false ? 'success' : 'danger'"
+            />
+          </td>
+          <td>
+            <p-button
+              icon="pi pi-pencil"
+              (onClick)="abrirModalEdicao(paciente)"
+              styleClass="p-button-text p-button-rounded"
+              pTooltip="Editar"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <!-- Modal Criar/Editar Paciente -->
+    <p-dialog
+      [(visible)]="modalVisivel"
+      [header]="pacienteEmEdicao ? 'Editar Paciente' : 'Novo Paciente'"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '1000px', maxHeight: '90vh' }"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="true"
+      [contentStyle]="{ overflow: 'visible', maxHeight: 'calc(90vh - 120px)' }"
+      (onHide)="fecharModal()"
+    >
+      <form [formGroup]="pacienteForm" (ngSubmit)="salvarPaciente()">
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="nome">Nome *</label>
+            <input
+              id="nome"
+              type="text"
+              pInputText
+              formControlName="nome"
+              placeholder="Nome completo"
+              [class.ng-invalid]="pacienteForm.get('nome')?.invalid && pacienteForm.get('nome')?.touched"
+            />
+            @if (pacienteForm.get('nome')?.invalid && pacienteForm.get('nome')?.touched) {
+              <small class="error-text">Nome é obrigatório</small>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cpf">CPF *</label>
+            <input
+              id="cpf"
+              type="text"
+              pInputText
+              formControlName="cpf"
+              placeholder="000.000.000-00"
+              [class.ng-invalid]="pacienteForm.get('cpf')?.invalid && pacienteForm.get('cpf')?.touched"
+            />
+            @if (pacienteForm.get('cpf')?.invalid && pacienteForm.get('cpf')?.touched) {
+              <small class="error-text">CPF é obrigatório</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="dataNascimento">Data de Nascimento</label>
+            <p-datepicker
+              id="dataNascimento"
+              formControlName="dataNascimento"
+              dateFormat="dd/mm/yy"
+              [showIcon]="true"
+              styleClass="full-width"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="telefone">Telefone</label>
+            <input
+              id="telefone"
+              type="text"
+              pInputText
+              formControlName="telefone"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              pInputText
+              formControlName="email"
+              placeholder="email@exemplo.com"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cep">CEP</label>
+            <input
+              id="cep"
+              type="text"
+              pInputText
+              formControlName="cep"
+              placeholder="00000-000"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="logradouro">Logradouro</label>
+            <input
+              id="logradouro"
+              type="text"
+              pInputText
+              formControlName="logradouro"
+              placeholder="Rua, Avenida, etc."
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="numero">Número</label>
+            <input
+              id="numero"
+              type="text"
+              pInputText
+              formControlName="numero"
+              placeholder="123"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="bairro">Bairro</label>
+            <input
+              id="bairro"
+              type="text"
+              pInputText
+              formControlName="bairro"
+              placeholder="Bairro"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cidade">Cidade</label>
+            <input
+              id="cidade"
+              type="text"
+              pInputText
+              formControlName="cidade"
+              placeholder="Cidade"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="estado">Estado</label>
+            <input
+              id="estado"
+              type="text"
+              pInputText
+              formControlName="estado"
+              placeholder="UF"
+              maxlength="2"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="complemento">Complemento</label>
+            <input
+              id="complemento"
+              type="text"
+              pInputText
+              formControlName="complemento"
+              placeholder="Apto, Bloco, etc."
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="anamnese">Anamnese</label>
+          <textarea
+            id="anamnese"
+            pInputTextarea
+            formControlName="anamnese"
+            rows="6"
+            placeholder="Informações médicas relevantes..."
+            styleClass="full-width"
+          ></textarea>
+        </div>
+
+        <div class="dialog-footer">
+          <p-button
+            label="Cancelar"
+            icon="pi pi-times"
+            (onClick)="fecharModal()"
+            styleClass="p-button-text"
+          />
+          <p-button
+            type="submit"
+            [label]="pacienteEmEdicao ? 'Atualizar' : 'Criar'"
+            icon="pi pi-check"
+            [loading]="salvando()"
+            [disabled]="pacienteForm.invalid"
+          />
+        </div>
+      </form>
+    </p-dialog>
+  `,
+  styles: [`
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .form-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group.full-width {
+      flex: 1 1 100%;
+    }
+
+    .form-group label {
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .error-text {
+      color: var(--red-500);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--surface-border);
+    }
+  `]
+})
+export class PacientesComponent implements OnInit {
+  pacientes = signal<PacienteResponseDTO[]>([]);
+  carregando = signal(false);
+  salvando = signal(false);
+  modalVisivel = false;
+  pacienteEmEdicao: PacienteResponseDTO | null = null;
+  pacienteForm: FormGroup;
+
+  constructor(
+    private pacienteService: PacienteService,
+    private fb: FormBuilder,
+    private messageService: MessageService
+  ) {
+    this.pacienteForm = this.fb.group({
+      nome: ['', Validators.required],
+      cpf: ['', Validators.required],
+      dataNascimento: [null],
+      telefone: [''],
+      email: [''],
+      logradouro: [''],
+      numero: [''],
+      bairro: [''],
+      cidade: [''],
+      estado: [''],
+      cep: [''],
+      complemento: [''],
+      anamnese: ['']
+    });
+  }
+
+  ngOnInit(): void {
+    this.carregarPacientes();
+  }
+
+  carregarPacientes(): void {
+    this.carregando.set(true);
+    this.pacienteService.listar().subscribe({
+      next: (pacientes) => {
+        this.pacientes.set(pacientes);
+        this.carregando.set(false);
+      },
+      error: (error) => {
+        console.error('Erro ao carregar pacientes:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao carregar pacientes'
+        });
+        this.carregando.set(false);
+      }
+    });
+  }
+
+  abrirModalNovoPaciente(): void {
+    this.pacienteEmEdicao = null;
+    this.pacienteForm.reset();
+    this.modalVisivel = true;
+  }
+
+  abrirModalEdicao(paciente: PacienteResponseDTO): void {
+    this.pacienteEmEdicao = paciente;
+    this.pacienteForm.patchValue({
+      nome: paciente.nome,
+      cpf: paciente.cpf,
+      dataNascimento: paciente.dataNascimento ? new Date(paciente.dataNascimento) : null,
+      telefone: paciente.telefone || '',
+      email: paciente.email || '',
+      logradouro: paciente.logradouro || '',
+      numero: paciente.numero || '',
+      bairro: paciente.bairro || '',
+      cidade: paciente.cidade || '',
+      estado: paciente.estado || '',
+      cep: paciente.cep || '',
+      complemento: paciente.complemento || '',
+      anamnese: paciente.anamnese || ''
+    });
+    this.modalVisivel = true;
+  }
+
+  fecharModal(): void {
+    this.modalVisivel = false;
+    this.pacienteEmEdicao = null;
+    this.pacienteForm.reset();
+  }
+
+  salvarPaciente(): void {
+    if (this.pacienteForm.invalid) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Atenção',
+        detail: 'Preencha todos os campos obrigatórios'
+      });
+      return;
+    }
+
+    this.salvando.set(true);
+
+    const formValue = this.pacienteForm.value;
+    const pacienteData: PacienteCreateRequestDTO = {
+      nome: formValue.nome,
+      cpf: formValue.cpf.replace(/\D/g, ''),
+      dataNascimento: formValue.dataNascimento ? formValue.dataNascimento.toISOString().split('T')[0] : undefined,
+      telefone: formValue.telefone || undefined,
+      email: formValue.email || undefined,
+      logradouro: formValue.logradouro || undefined,
+      numero: formValue.numero || undefined,
+      bairro: formValue.bairro || undefined,
+      cidade: formValue.cidade || undefined,
+      estado: formValue.estado || undefined,
+      cep: formValue.cep || undefined,
+      complemento: formValue.complemento || undefined,
+      anamnese: formValue.anamnese || undefined
+    };
+
+    if (this.pacienteEmEdicao) {
+      this.pacienteService.atualizar(this.pacienteEmEdicao.id, pacienteData).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: 'Paciente atualizado com sucesso'
+          });
+          this.fecharModal();
+          this.carregarPacientes();
+          this.salvando.set(false);
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: error.error?.message || 'Erro ao atualizar paciente'
+          });
+          this.salvando.set(false);
+        }
+      });
+    } else {
+      this.pacienteService.criar(pacienteData).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: 'Paciente criado com sucesso'
+          });
+          this.fecharModal();
+          this.carregarPacientes();
+          this.salvando.set(false);
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: error.error?.message || 'Erro ao criar paciente'
+          });
+          this.salvando.set(false);
+        }
+      });
+    }
+  }
+
+  formatarCPF(cpf: string): string {
+    if (!cpf) return '-';
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11) return cpf;
+    return cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+}
