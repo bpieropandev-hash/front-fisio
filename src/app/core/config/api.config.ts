@@ -1,6 +1,8 @@
+import { environment } from '../../../environments/environment';
+
 export const API_CONFIG = {
-  production: true,
-  baseUrl: 'http://phisio.us-east-1.elasticbeanstalk.com',
+  production: environment.production,
+  baseUrl: environment.apiUrl,
   endpoints: {
     auth: '/api/auth',
     pacientes: '/api/v1/pacientes',
