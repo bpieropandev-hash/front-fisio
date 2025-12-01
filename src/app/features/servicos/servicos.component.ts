@@ -110,10 +110,8 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfac
       [header]="servicoEmEdicao ? 'Editar serviço' : 'Novo serviço'"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
-      [modal]="true"
       [draggable]="false"
-      [resizable]="true"
-      [contentStyle]="{ overflow: 'visible', maxHeight: 'calc(90vh - 120px)' }"
+      [resizable]="false"
       (onHide)="fecharModal()"
     >
       <div class="form-grid">
@@ -251,12 +249,58 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfac
     }
 
     @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+
+      .page-header h2 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+
       .form-grid {
         grid-template-columns: 1fr;
       }
 
       .actions-col {
         justify-content: flex-start;
+      }
+
+      .dialog-footer {
+        flex-direction: column-reverse;
+      }
+
+      .dialog-footer .p-button {
+        width: 100%;
+      }
+
+      ::ng-deep .p-datatable {
+        font-size: 0.875rem;
+      }
+
+      ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+      ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+        padding: 0.5rem !important;
+        font-size: 0.75rem !important;
+      }
+
+      ::ng-deep .p-datatable-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-header h2 {
+        font-size: 1.25rem;
+      }
+
+      .servico-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
       }
     }
   `]

@@ -189,6 +189,56 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       justify-content: flex-end;
       margin-top: 2rem;
       padding-top: 1.5rem;
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .relatorios-header h2 {
+        font-size: 1.5rem;
+      }
+
+      .card-header {
+        padding: 1rem;
+      }
+
+      .card-header h3 {
+        font-size: 1rem;
+      }
+
+      .relatorio-form {
+        padding: 1rem;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+      }
+
+      .form-actions .p-button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .relatorios-header h2 {
+        font-size: 1.25rem;
+      }
+
+      .card-header {
+        padding: 0.75rem;
+      }
+
+      .relatorio-form {
+        padding: 0.75rem;
+      }
       border-top: 1px solid #e2e8f0;
     }
 

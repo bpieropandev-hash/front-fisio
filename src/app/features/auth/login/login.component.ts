@@ -130,6 +130,38 @@ import { AuthService } from '../../../core/services/auth.service';
     ::ng-deep .p-password {
       width: 100%;
     }
+
+    @media (max-width: 768px) {
+      .login-container {
+        padding: 1rem;
+      }
+
+      .login-card {
+        max-width: 100%;
+      }
+
+      .login-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .login-header p {
+        font-size: 0.875rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 0.75rem;
+      }
+
+      .login-header {
+        padding: 1rem 0;
+      }
+
+      .login-header h1 {
+        font-size: 1.25rem;
+      }
+    }
   `]
 })
 export class LoginComponent {

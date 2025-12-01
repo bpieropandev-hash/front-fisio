@@ -294,6 +294,87 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
       padding: 2rem;
       color: #64748b;
     }
+
+    @media (max-width: 768px) {
+      .dashboard-header h2 {
+        font-size: 1.5rem;
+      }
+
+      .summary-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .card-content {
+        gap: 1rem;
+        padding: 0.75rem;
+      }
+
+      .card-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+      }
+
+      .card-value {
+        font-size: 1.5rem;
+      }
+
+      .card-header {
+        padding: 1rem;
+      }
+
+      .card-header h3 {
+        font-size: 1rem;
+      }
+
+      ::ng-deep .p-datatable {
+        font-size: 0.875rem;
+      }
+
+      ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+      ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+        padding: 0.5rem !important;
+        font-size: 0.75rem !important;
+      }
+
+      ::ng-deep .p-datatable-wrapper {
+        overflow-x: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dashboard-header h2 {
+        font-size: 1.25rem;
+      }
+
+      .card-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .card-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto;
+      }
+
+      .card-value {
+        font-size: 1.25rem;
+      }
+
+      .no-alerts-content {
+        padding: 2rem 1rem;
+      }
+
+      .no-alerts-content i {
+        font-size: 3rem;
+      }
+
+      .no-alerts-content h3 {
+        font-size: 1.25rem;
+      }
+    }
   `]
 })
 export class DashboardComponent implements OnInit {

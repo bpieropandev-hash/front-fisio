@@ -175,10 +175,8 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       [header]="atendimentoSelecionado() ? 'Editar Atendimento' : 'Novo Agendamento'"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '900px', maxHeight: '90vh' }"
-      [modal]="true"
       [draggable]="false"
-      [resizable]="true"
-      [contentStyle]="{ overflow: 'visible', maxHeight: 'calc(90vh - 120px)' }"
+      [resizable]="false"
       (onHide)="fecharModal()"
     >
       @if (atendimentoSelecionado()) {
@@ -526,12 +524,84 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
     }
 
     @media (max-width: 768px) {
+      .agenda-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+
+      .agenda-header h2 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+
       .filters-grid {
         grid-template-columns: 1fr;
       }
 
       .status-legend {
-        gap: 1rem;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+      }
+
+      .filters-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .filters-header h3 {
+        font-size: 1rem;
+      }
+
+      ::ng-deep .fc-toolbar {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      ::ng-deep .fc-toolbar-chunk {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+
+      ::ng-deep .fc-button {
+        padding: 0.375rem 0.5rem !important;
+        font-size: 0.875rem !important;
+      }
+
+      ::ng-deep .fc-event-title {
+        font-size: 0.75rem !important;
+        padding: 2px 4px !important;
+      }
+
+      .dialog-footer {
+        flex-direction: column-reverse;
+      }
+
+      .dialog-footer .p-button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .agenda-header h2 {
+        font-size: 1.25rem;
+      }
+
+      .status-legend {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      ::ng-deep .fc-header-toolbar {
+        font-size: 0.75rem;
+      }
+
+      ::ng-deep .fc-daygrid-day-number,
+      ::ng-deep .fc-timegrid-slot-label {
+        font-size: 0.75rem !important;
       }
     }
 

@@ -23,14 +23,100 @@ body {
   box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.12);
 }
 
+/* Responsividade Global */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+    border-radius: 16px 16px 0 0;
+  }
+
+  body {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.75rem;
+    border-radius: 12px 12px 0 0;
+  }
+}
+
 /* Ajustes para modais e selects */
 ::ng-deep .p-dialog {
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-::ng-deep .p-dialog-content {
-  overflow: visible !important;
+::ng-deep .p-dialog .p-dialog-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(90vh - 140px);
+  padding: 1.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+::ng-deep .p-dialog .p-dialog-header {
+  flex: 0 0 auto;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+::ng-deep .p-dialog .p-dialog-footer {
+  flex: 0 0 auto;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--surface-border);
+}
+
+/* Garantir que formulários dentro dos modais não estourem */
+::ng-deep .p-dialog .p-dialog-content form,
+::ng-deep .p-dialog .p-dialog-content .form-group,
+::ng-deep .p-dialog .p-dialog-content .form-row,
+::ng-deep .p-dialog .p-dialog-content .form-grid {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+::ng-deep .p-dialog .p-dialog-content .form-group,
+::ng-deep .p-dialog .p-dialog-content .form-row {
+  margin-bottom: 1rem;
+}
+
+::ng-deep .p-dialog .p-dialog-content input,
+::ng-deep .p-dialog .p-dialog-content textarea,
+::ng-deep .p-dialog .p-dialog-content .p-inputtext,
+::ng-deep .p-dialog .p-dialog-content .p-inputtextarea,
+::ng-deep .p-dialog .p-dialog-content .p-select,
+::ng-deep .p-dialog .p-dialog-content .p-datepicker,
+::ng-deep .p-dialog .p-dialog-content .p-inputnumber {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  ::ng-deep .p-dialog {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 0.5rem auto !important;
+    max-height: 95vh !important;
+  }
+
+  ::ng-deep .p-dialog .p-dialog-content {
+    padding: 1rem !important;
+    max-height: calc(95vh - 120px) !important;
+  }
+
+  ::ng-deep .p-dialog .p-dialog-header {
+    padding: 1rem !important;
+  }
+
+  ::ng-deep .p-dialog .p-dialog-footer {
+    padding: 0.75rem 1rem !important;
+  }
 }
 
 /* Garantir que os selects não fiquem escondidos */
@@ -63,14 +149,6 @@ body {
   z-index: 10000 !important;
 }
 
-/* Ajustar altura máxima dos modais para evitar cortes */
-::ng-deep .p-dialog .p-dialog-content {
-  max-height: calc(90vh - 120px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
-}
-
 /* Garantir que o overlay do select funcione corretamente */
 ::ng-deep .p-select-overlay {
   position: fixed !important;
@@ -87,84 +165,120 @@ body {
   max-height: 300px !important;
 }
 
-/* Estilos elegantes para textareas */
+/* Estilos elegantes e modernos para textareas */
 ::ng-deep .p-inputtextarea,
 ::ng-deep textarea.p-inputtextarea {
   font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-  padding: 14px 18px !important;
-  border: 2px solid #e2e8f0 !important;
-  border-radius: 12px !important;
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+  letter-spacing: 0.01em !important;
+  padding: 16px 20px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%) !important;
   background-color: #ffffff !important;
   color: #1e293b !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   resize: vertical !important;
-  min-height: 120px !important;
+  min-height: 130px !important;
   width: 100% !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  position: relative !important;
 }
 
 ::ng-deep .p-inputtextarea:hover,
 ::ng-deep textarea.p-inputtextarea:hover {
   border-color: #cbd5e1 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%) !important;
+  transform: translateY(-1px) !important;
 }
 
 ::ng-deep .p-inputtextarea:focus,
 ::ng-deep textarea.p-inputtextarea:focus {
   outline: none !important;
   border-color: #4cc9f0 !important;
-  box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-  background-color: #ffffff !important;
+  box-shadow: 
+    0 0 0 3px rgba(76, 201, 240, 0.12),
+    0 4px 12px rgba(76, 201, 240, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  background: #ffffff !important;
+  transform: translateY(-1px) !important;
 }
 
 ::ng-deep .p-inputtextarea::placeholder,
 ::ng-deep textarea.p-inputtextarea::placeholder {
   color: #94a3b8 !important;
-  opacity: 0.7 !important;
+  opacity: 0.75 !important;
   font-style: normal !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.01em !important;
 }
 
 ::ng-deep .p-inputtextarea:disabled,
 ::ng-deep textarea.p-inputtextarea:disabled {
+  background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%) !important;
   background-color: #f1f5f9 !important;
-  color: #64748b !important;
+  color: #94a3b8 !important;
   cursor: not-allowed !important;
   border-color: #e2e8f0 !important;
+  opacity: 0.7 !important;
 }
 
-/* Estilo específico para textarea de evolução */
+/* Estilo específico para textarea de evolução - ainda mais elegante */
 .evolution-textarea,
 ::ng-deep .evolution-textarea.p-inputtextarea {
   font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-  font-size: 14px !important;
-  line-height: 1.7 !important;
-  padding: 16px 20px !important;
-  border: 2px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  background: linear-gradient(to bottom, #ffffff, #fafbfc) !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  letter-spacing: 0.01em !important;
+  padding: 18px 22px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #fafbfc 100%) !important;
   color: #1e293b !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   resize: vertical !important;
-  min-height: 140px !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  min-height: 150px !important;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    inset 0 1px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.02) !important;
+  position: relative !important;
 }
 
 .evolution-textarea:hover,
 ::ng-deep .evolution-textarea.p-inputtextarea:hover {
-  border-color: #4cc9f0 !important;
-  box-shadow: 0 4px 8px rgba(76, 201, 240, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
-  background: linear-gradient(to bottom, #ffffff, #f8fbff) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.03) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f0f4f8 100%) !important;
+  transform: translateY(-1px) !important;
 }
 
 .evolution-textarea:focus,
 ::ng-deep .evolution-textarea.p-inputtextarea:focus {
   outline: none !important;
   border-color: #4cc9f0 !important;
-  box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.15), 0 6px 16px rgba(76, 201, 240, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 
+    0 0 0 4px rgba(76, 201, 240, 0.15),
+    0 6px 20px rgba(76, 201, 240, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.02) !important;
   background: #ffffff !important;
-  transform: translateY(-1px) !important;
+  transform: translateY(-2px) !important;
 }
 
 .evolution-textarea::placeholder,
@@ -172,4 +286,87 @@ body {
   color: #94a3b8 !important;
   opacity: 0.8 !important;
   font-style: italic !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Tabelas Responsivas */
+@media (max-width: 768px) {
+  ::ng-deep .p-datatable {
+    font-size: 0.875rem;
+  }
+
+  ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Scroll horizontal para tabelas em mobile */
+  ::ng-deep .p-datatable-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Menubar Responsivo */
+@media (max-width: 768px) {
+  ::ng-deep .p-menubar {
+    padding: 0.5rem !important;
+  }
+
+  ::ng-deep .p-menubar .p-menubar-button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  ::ng-deep .p-menubar .p-menubar-root-list {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  ::ng-deep .p-menubar .p-menubar-root-list > .p-menubar-item {
+    width: 100%;
+  }
+}
+
+/* Cards Responsivos */
+@media (max-width: 768px) {
+  ::ng-deep .p-card {
+    margin-bottom: 1rem;
+  }
+
+  ::ng-deep .p-card .p-card-body {
+    padding: 1rem !important;
+  }
+
+  ::ng-deep .p-card .p-card-content {
+    padding: 0.5rem 0 !important;
+  }
+}
+
+/* Botões Responsivos */
+@media (max-width: 480px) {
+  ::ng-deep .p-button {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  ::ng-deep .p-button-label {
+    font-size: 0.875rem !important;
+  }
+}
+
+/* Inputs Responsivos */
+@media (max-width: 768px) {
+  ::ng-deep .p-inputtext,
+  ::ng-deep .p-inputnumber-input,
+  ::ng-deep .p-select,
+  ::ng-deep .p-datepicker {
+    font-size: 16px !important; /* Evita zoom no iOS */
+  }
 }

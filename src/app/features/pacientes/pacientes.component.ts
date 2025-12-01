@@ -97,10 +97,8 @@ import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interf
       [header]="pacienteEmEdicao ? 'Editar Paciente' : 'Novo Paciente'"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '1000px', maxHeight: '90vh' }"
-      [modal]="true"
       [draggable]="false"
-      [resizable]="true"
-      [contentStyle]="{ overflow: 'visible', maxHeight: 'calc(90vh - 120px)' }"
+      [resizable]="false"
       (onHide)="fecharModal()"
     >
       <form [formGroup]="pacienteForm" (ngSubmit)="salvarPaciente()">
@@ -334,6 +332,62 @@ import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interf
       margin-top: 20px;
       padding-top: 20px;
       border-top: 1px solid var(--surface-border);
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+
+      .page-header h2 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+
+      .form-row {
+        flex-direction: column;
+      }
+
+      .form-group {
+        width: 100%;
+      }
+
+      .dialog-footer {
+        flex-direction: column-reverse;
+      }
+
+      .dialog-footer .p-button {
+        width: 100%;
+      }
+
+      ::ng-deep .p-datatable {
+        font-size: 0.875rem;
+      }
+
+      ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+      ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+        padding: 0.5rem !important;
+        font-size: 0.75rem !important;
+      }
+
+      ::ng-deep .p-datatable-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-header h2 {
+        font-size: 1.25rem;
+      }
+
+      ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+      ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+        padding: 0.375rem !important;
+        font-size: 0.7rem !important;
+      }
     }
   `]
 })

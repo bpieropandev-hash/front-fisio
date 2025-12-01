@@ -43,9 +43,30 @@ import { Router } from '@angular/router';
     }
 
     @media (max-width: 768px) {
-      .top-shell,
+      .top-shell {
+        padding: 0.75rem 1rem;
+      }
+
       .main-content {
-        padding: 1.5rem;
+        padding: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .top-shell {
+        padding: 0.5rem;
+      }
+
+      .main-content {
+        padding: 0.75rem;
+      }
+
+      ::ng-deep .p-menubar .p-button-label {
+        display: none;
+      }
+
+      ::ng-deep .p-menubar .p-button-icon {
+        margin: 0;
       }
     }
   `]
