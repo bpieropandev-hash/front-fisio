@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,148 +23,273 @@ import { AuthService } from '../../../core/services/auth.service';
   providers: [MessageService],
   template: `
     <div class="login-container">
-      <p-card styleClass="login-card">
-        <ng-template pTemplate="header">
-          <div class="login-header">
-            <h1>Physio Manager</h1>
-            <p>Faça login para continuar</p>
-          </div>
-        </ng-template>
-        
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-          <div class="form-group">
-            <label for="login">Login</label>
-            <input
-              style="width: 100%;"
-              id="login"
-              type="text"
-              pInputText
-              formControlName="login"
-              placeholder="Digite seu login"
-              [class.ng-invalid]="loginForm.get('login')?.invalid && loginForm.get('login')?.touched"
-            />
-            @if (loginForm.get('login')?.invalid && loginForm.get('login')?.touched) {
-              <small class="error-text">Login é obrigatório</small>
-            }
-          </div>
+      <div class="background">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+      </div>
 
-          <div class="form-group">
-            <label for="senha">Senha</label>
-            <p-password
-              id="senha"
-              formControlName="senha"
-              placeholder="Digite sua senha"
-              [feedback]="false"
-              [toggleMask]="true"
-              styleClass="full-width"
-              [inputStyle]="{ width: '100%' }"
-            />
-            @if (loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched) {
-              <small class="error-text">Senha é obrigatória</small>
-            }
-          </div>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <h3>Login</h3>
 
-          <p-button
-            type="submit"
-            label="Entrar"
-            [loading]="loading()"
-            [disabled]="loginForm.invalid"
-            styleClass="full-width"
-          />
-        </form>
-      </p-card>
+        <label for="login">Login</label>
+        <input
+          id="login"
+          type="text"
+          formControlName="login"
+          placeholder="Digite seu login"
+          [class.ng-invalid]="loginForm.get('login')?.invalid && loginForm.get('login')?.touched"
+        />
+        @if (loginForm.get('login')?.invalid && loginForm.get('login')?.touched) {
+          <small class="error-text">Login é obrigatório</small>
+        }
+
+        <label for="senha">Senha</label>
+        <input
+          id="senha"
+          type="password"
+          formControlName="senha"
+          placeholder="Digite sua senha"
+          [class.ng-invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
+        />
+        @if (loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched) {
+          <small class="error-text">Senha é obrigatória</small>
+        }
+
+        <button type="submit" [disabled]="loginForm.invalid || loading()">
+          @if (loading()) {
+            <span>Entrando...</span>
+          } @else {
+            <span>Entrar</span>
+          }
+        </button>
+      </form>
     </div>
   `,
   styles: [`
     .login-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 20px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
     }
 
-    .login-card {
-      width: 100%;
-      max-width: 400px;
+    .background {
+      width: 430px;
+      height: 520px;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      left: 50%;
+      top: 50%;
+      z-index: 0;
     }
 
-    .login-header {
+    .shape {
+      height: 200px;
+      width: 200px;
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .shape-1 {
+      background: linear-gradient(#1845ad, #23a2f6);
+      left: -80px;
+      top: -80px;
+    }
+
+    .shape-2 {
+      background: linear-gradient(to right, #ff512f, #f09819);
+      right: -30px;
+      bottom: -80px;
+    }
+
+    .login-form {
+      height: 520px;
+      width: 400px;
+      max-width: 90%;
+      background-color: rgba(255, 255, 255, 0.7);
+      position: relative;
+      z-index: 1;
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 50px 35px;
+      font-family: 'Inter', 'Poppins', sans-serif;
+    }
+
+    .login-form * {
+      color: #1e293b;
+      letter-spacing: 0.5px;
+      outline: none;
+      border: none;
+    }
+
+    .login-form h3 {
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 42px;
       text-align: center;
-      padding: 20px 0;
+      margin-bottom: 30px;
+      color: #1e293b;
     }
 
-    .login-header h1 {
-      margin: 0 0 10px 0;
-      color: #333;
-    }
-
-    .login-header p {
-      margin: 0;
-      color: #666;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
+    .login-form label {
       display: block;
-      margin-bottom: 8px;
+      margin-top: 30px;
+      font-size: 16px;
       font-weight: 500;
-      color: #333;
+      color: #334155;
     }
 
-    .full-width {
+    .login-form input {
+      display: block;
+      height: 50px;
       width: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      padding: 0 15px;
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 400;
+      color: #1e293b;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .login-form input::placeholder {
+      color: #94a3b8;
+    }
+
+    .login-form input:focus {
+      background-color: rgba(255, 255, 255, 0.95);
+      border-color: #4cc9f0;
+      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.1);
+    }
+
+    .login-form input.ng-invalid.ng-touched {
+      border-color: #ef4444;
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    .login-form button {
+      margin-top: 50px;
+      width: 100%;
+      background-color: #4cc9f0;
+      color: #ffffff;
+      padding: 15px 0;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-form button:hover:not(:disabled) {
+      background-color: #3ab8d9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(76, 201, 240, 0.4);
+    }
+
+    .login-form button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .login-form button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .error-text {
-      color: #e24c4c;
+      color: #ef4444;
       font-size: 12px;
       display: block;
-      margin-top: 4px;
-    }
-
-    ::ng-deep .p-password {
-      width: 100%;
+      margin-top: 5px;
+      font-weight: 500;
     }
 
     @media (max-width: 768px) {
-      .login-container {
-        padding: 1rem;
+      .background {
+        width: 350px;
+        height: 450px;
       }
 
-      .login-card {
-        max-width: 100%;
+      .login-form {
+        width: 90%;
+        max-width: 380px;
+        height: auto;
+        min-height: 480px;
+        padding: 40px 30px;
       }
 
-      .login-header h1 {
-        font-size: 1.5rem;
+      .login-form h3 {
+        font-size: 28px;
       }
 
-      .login-header p {
-        font-size: 0.875rem;
+      .shape {
+        height: 150px;
+        width: 150px;
+      }
+
+      .shape-1 {
+        left: -60px;
+        top: -60px;
+      }
+
+      .shape-2 {
+        right: -20px;
+        bottom: -60px;
       }
     }
 
     @media (max-width: 480px) {
       .login-container {
-        padding: 0.75rem;
+        padding: 1rem;
       }
 
-      .login-header {
-        padding: 1rem 0;
+      .background {
+        width: 300px;
+        height: 400px;
       }
 
-      .login-header h1 {
-        font-size: 1.25rem;
+      .login-form {
+        width: 95%;
+        padding: 35px 25px;
+        min-height: 450px;
+      }
+
+      .login-form h3 {
+        font-size: 24px;
+        margin-bottom: 25px;
+      }
+
+      .login-form label {
+        margin-top: 25px;
+        font-size: 14px;
+      }
+
+      .login-form input {
+        height: 45px;
+        font-size: 13px;
+      }
+
+      .login-form button {
+        margin-top: 40px;
+        padding: 12px 0;
+        font-size: 16px;
+      }
+
+      .shape {
+        height: 120px;
+        width: 120px;
       }
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   loginForm: FormGroup;
   loading = signal(false);
 
@@ -178,6 +303,14 @@ export class LoginComponent {
       login: ['', Validators.required],
       senha: ['', Validators.required]
     });
+    
+    // Adiciona classe ao body para mudar o fundo
+    document.body.classList.add('login-page');
+  }
+
+  ngOnDestroy(): void {
+    // Remove a classe quando sair da página
+    document.body.classList.remove('login-page');
   }
 
   onSubmit(): void {

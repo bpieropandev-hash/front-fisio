@@ -1,11 +1,13 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { DashboardService } from '../../core/services/dashboard.service';
@@ -16,11 +18,13 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     CardModule,
     TableModule,
     ButtonModule,
     TagModule,
     ProgressSpinnerModule,
+    DatePickerModule,
     ToastModule
   ],
   providers: [MessageService],
@@ -28,9 +32,67 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
     <p-toast />
     
     <div class="dashboard-header">
-      <h2>Dashboard</h2>
-      <p class="subtitle">Visão geral e alertas do mês atual</p>
+      <div>
+        <h2>Dashboard</h2>
+        <p class="subtitle">Visão geral e alertas do mês atual</p>
+      </div>
+      <p-button
+        [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
+        [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
+        (onClick)="toggleFiltros()"
+        [outlined]="!filtrosVisiveis()"
+      />
     </div>
+
+    <!-- Painel de Filtros (Oculto por padrão) -->
+    @if (filtrosVisiveis()) {
+      <p-card class="filters-card">
+        <div class="filters-header">
+          <h3>
+            <i class="pi pi-filter"></i>
+            Filtros de Período
+          </h3>
+        </div>
+        
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label>Data Início</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataInicio"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data inicial"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Data Fim</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataFim"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data final"
+            />
+          </div>
+
+          <div class="filter-group filter-actions">
+            <p-button
+              label="Limpar Filtros"
+              icon="pi pi-times"
+              (onClick)="limparFiltros()"
+              styleClass="p-button-text"
+            />
+            <p-button
+              label="Aplicar Filtros"
+              icon="pi pi-check"
+              (onClick)="aplicarFiltros()"
+            />
+          </div>
+        </div>
+      </p-card>
+    }
 
     @if (carregando()) {
       <div class="loading-container">
@@ -141,7 +203,17 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
   `,
   styles: [`
     .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
       margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
+    .dashboard-header ::ng-deep .p-button {
+      height: 2.5rem !important;
+      min-height: 2.5rem !important;
+      padding: 0.625rem 1.25rem !important;
     }
 
     .dashboard-header h2 {
@@ -155,6 +227,71 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
       margin: 0;
       color: #64748b;
       font-size: 1rem;
+    }
+
+    .filters-card {
+      margin-bottom: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .filters-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .filters-header h3 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filters-header i {
+      color: #64748b;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 0.875rem;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .full-width {
+      width: 100%;
     }
 
     .loading-container {
@@ -296,8 +433,25 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
     }
 
     @media (max-width: 768px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
       .dashboard-header h2 {
         font-size: 1.5rem;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-actions {
+        flex-direction: column-reverse;
+      }
+
+      .filter-actions .p-button {
+        width: 100%;
       }
 
       .summary-cards {
@@ -380,6 +534,12 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
 export class DashboardComponent implements OnInit {
   carregando = signal(true);
   resumo = signal<DashboardResumoDTO | null>(null);
+  filtrosVisiveis = signal(false);
+  
+  filtros = {
+    dataInicio: null as Date | null,
+    dataFim: null as Date | null
+  };
 
   constructor(
     private dashboardService: DashboardService,
@@ -389,6 +549,42 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarDados();
+  }
+
+  toggleFiltros(): void {
+    this.filtrosVisiveis.set(!this.filtrosVisiveis());
+  }
+
+  limparFiltros(): void {
+    this.filtros = {
+      dataInicio: null,
+      dataFim: null
+    };
+    this.carregarDados();
+  }
+
+  aplicarFiltros(): void {
+    // Validação básica
+    if (this.filtros.dataInicio && this.filtros.dataFim) {
+      if (this.filtros.dataInicio > this.filtros.dataFim) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Atenção',
+          detail: 'A data de início deve ser anterior à data de fim'
+        });
+        return;
+      }
+    }
+
+    // Por enquanto, apenas recarrega os dados
+    // Quando o backend suportar filtros por período, passar os parâmetros aqui
+    this.carregarDados();
+    
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Filtros aplicados',
+      detail: 'Os filtros foram aplicados (funcionalidade em desenvolvimento)'
+    });
   }
 
   carregarDados(): void {

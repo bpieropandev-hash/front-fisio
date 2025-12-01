@@ -49,103 +49,112 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
     
     <div class="agenda-header">
       <h2>Agenda de Atendimentos</h2>
-      <p-button
-        label="Novo Agendamento"
-        icon="pi pi-plus"
-        (onClick)="abrirModalNovoAgendamento()"
-      />
-    </div>
-
-    <!-- Painel de Filtros -->
-    <p-card class="filters-card">
-      <div class="filters-header">
-        <h3>
-          <i class="pi pi-filter"></i>
-          Filtros
-        </h3>
+      <div class="header-actions">
         <p-button
-          label="Limpar Filtros"
-          icon="pi pi-times"
-          (onClick)="limparFiltros()"
-          styleClass="p-button-text p-button-sm"
+          [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
+          [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
+          (onClick)="toggleFiltros()"
+          [outlined]="!filtrosVisiveis()"
+        />
+        <p-button
+          label="Novo Agendamento"
+          icon="pi pi-plus"
+          (onClick)="abrirModalNovoAgendamento()"
         />
       </div>
-      
-      <div class="filters-grid">
-        <div class="filter-group">
-          <label>Status</label>
-          <p-multiSelect
-            [(ngModel)]="filtros.status"
-            [options]="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Todos os status"
-            styleClass="full-width"
-            [appendTo]="'body'"
-            [showClear]="true"
-          />
-        </div>
+    </div>
 
-        <div class="filter-group">
-          <label>Paciente</label>
-          <p-select
-            [(ngModel)]="filtros.pacienteId"
-            [options]="pacientes()"
-            optionLabel="nome"
-            optionValue="id"
-            placeholder="Todos os pacientes"
-            styleClass="full-width"
-            [appendTo]="'body'"
-            [showClear]="true"
-          />
+    <!-- Painel de Filtros (Oculto por padrão) -->
+    @if (filtrosVisiveis()) {
+      <p-card class="filters-card">
+        <div class="filters-header">
+          <h3>
+            <i class="pi pi-filter"></i>
+            Filtros
+          </h3>
         </div>
+        
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label>Status</label>
+            <p-multiSelect
+              [(ngModel)]="filtros.status"
+              [options]="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Todos os status"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showClear]="true"
+            />
+          </div>
 
-        <div class="filter-group">
-          <label>Serviço</label>
-          <p-select
-            [(ngModel)]="filtros.servicoId"
-            [options]="servicos()"
-            optionLabel="nome"
-            optionValue="id"
-            placeholder="Todos os serviços"
-            styleClass="full-width"
-            [appendTo]="'body'"
-            [showClear]="true"
-          />
-        </div>
+          <div class="filter-group">
+            <label>Paciente</label>
+            <p-select
+              [(ngModel)]="filtros.pacienteId"
+              [options]="pacientes()"
+              optionLabel="nome"
+              optionValue="id"
+              placeholder="Todos os pacientes"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showClear]="true"
+            />
+          </div>
 
-        <div class="filter-group">
-          <label>Data Início</label>
-          <p-datepicker
-            [(ngModel)]="filtros.dataInicio"
-            dateFormat="dd/mm/yy"
-            [showTime]="false"
-            styleClass="full-width"
-            placeholder="Selecione a data"
-          />
-        </div>
+          <div class="filter-group">
+            <label>Serviço</label>
+            <p-select
+              [(ngModel)]="filtros.servicoId"
+              [options]="servicos()"
+              optionLabel="nome"
+              optionValue="id"
+              placeholder="Todos os serviços"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showClear]="true"
+            />
+          </div>
 
-        <div class="filter-group">
-          <label>Data Fim</label>
-          <p-datepicker
-            [(ngModel)]="filtros.dataFim"
-            dateFormat="dd/mm/yy"
-            [showTime]="false"
-            styleClass="full-width"
-            placeholder="Selecione a data"
-          />
-        </div>
+          <div class="filter-group">
+            <label>Data Início</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataInicio"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data"
+            />
+          </div>
 
-        <div class="filter-group filter-actions">
-          <p-button
-            label="Aplicar Filtros"
-            icon="pi pi-check"
-            (onClick)="aplicarFiltros()"
-            styleClass="full-width"
-          />
+          <div class="filter-group">
+            <label>Data Fim</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataFim"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data"
+            />
+          </div>
+
+          <div class="filter-group filter-actions">
+            <p-button
+              label="Limpar Filtros"
+              icon="pi pi-times"
+              (onClick)="limparFiltros()"
+              styleClass="p-button-text"
+            />
+            <p-button
+              label="Aplicar Filtros"
+              icon="pi pi-check"
+              (onClick)="aplicarFiltros()"
+            />
+          </div>
         </div>
-      </div>
-    </p-card>
+      </p-card>
+    }
 
     <!-- Legenda de Status -->
     <div class="status-legend">
@@ -365,6 +374,19 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
+      gap: 1rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .header-actions ::ng-deep .p-button {
+      height: 2.5rem !important;
+      min-height: 2.5rem !important;
+      padding: 0.625rem 1.25rem !important;
     }
 
     .form-group {
@@ -427,16 +449,44 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       border-color: #4caf50 !important;
     }
 
+    /* Estilo discreto e elegante para o indicador de horário atual */
+    ::ng-deep .fc-timegrid-now-indicator-line {
+      border-color: #64748b !important;
+      border-width: 1px !important;
+      border-style: dashed !important;
+      opacity: 0.6 !important;
+      z-index: 5 !important;
+    }
+
+    ::ng-deep .fc-timegrid-now-indicator-arrow {
+      border-color: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* Melhorar visibilidade do indicador */
+    ::ng-deep .fc-timegrid-now-indicator-container {
+      pointer-events: none !important;
+    }
+
     .filters-card {
       margin-bottom: 1.5rem;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .filters-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       margin-bottom: 1.5rem;
     }
 
@@ -474,6 +524,7 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
     .filter-actions {
       display: flex;
+      gap: 0.5rem;
       justify-content: flex-end;
       align-items: flex-end;
     }
@@ -533,6 +584,23 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       .agenda-header h2 {
         font-size: 1.5rem;
         margin: 0;
+      }
+
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .header-actions .p-button {
+        width: 100%;
+      }
+
+      .filter-actions {
+        flex-direction: column-reverse;
+      }
+
+      .filter-actions .p-button {
+        width: 100%;
       }
 
       .filters-grid {
@@ -616,6 +684,7 @@ export class AgendaComponent implements OnInit {
   servicos = signal<ServicoResponseDTO[]>([]);
   eventos = signal<EventInput[]>([]);
   eventosFiltrados = signal<EventInput[]>([]);
+  filtrosVisiveis = signal(false);
   
   filtros = {
     status: [] as string[],
@@ -684,7 +753,10 @@ export class AgendaComponent implements OnInit {
     dateClick: (info) => this.onDateClick(info),
     editable: true,
     eventResize: (info) => this.onEventResize(info),
-    eventDrop: (info) => this.onEventDrop(info)
+    eventDrop: (info) => this.onEventDrop(info),
+    nowIndicator: true,
+    slotMinTime: '06:00:00',
+    slotMaxTime: '22:00:00'
   }));
 
   constructor(
@@ -872,6 +944,10 @@ export class AgendaComponent implements OnInit {
     }
 
     this.eventosFiltrados.set(eventosFiltrados);
+  }
+
+  toggleFiltros(): void {
+    this.filtrosVisiveis.set(!this.filtrosVisiveis());
   }
 
   limparFiltros(): void {

@@ -4,6 +4,7 @@ import { RouterOutlet } from '@angular/router';
 import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from './core/services/auth.service';
+import { ThemeService } from './core/services/theme.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -15,6 +16,13 @@ import { Router } from '@angular/router';
       <div class="top-shell">
         <p-menubar [model]="menuItems">
           <ng-template pTemplate="end">
+            <p-button
+              [icon]="themeService.theme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
+              [label]="themeService.theme() === 'dark' ? 'Claro' : 'Escuro'"
+              (onClick)="themeService.toggleTheme()"
+              styleClass="p-button-text"
+              [title]="themeService.theme() === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'"
+            />
             <p-button
               label="Sair"
               icon="pi pi-sign-out"
@@ -118,6 +126,7 @@ export class AppComponent {
 
   constructor(
     public authService: AuthService,
+    public themeService: ThemeService,
     private router: Router
   ) {}
 
