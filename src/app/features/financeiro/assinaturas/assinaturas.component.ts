@@ -8,14 +8,17 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { AssinaturaService } from '../../../core/services/assinatura.service';
 import { PacienteService } from '../../../core/services/paciente.service';
 import { ServicoService } from '../../../core/services/servico.service';
 import { AssinaturaResponseDTO, AssinaturaCreateRequestDTO } from '../../../core/interfaces/assinatura.interface';
 import { PacienteResponseDTO } from '../../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../../core/interfaces/servico.interface';
+import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-assinaturas',
@@ -30,11 +33,13 @@ import { ServicoResponseDTO } from '../../../core/interfaces/servico.interface';
     InputNumberModule,
     SelectModule,
     TagModule,
-    ToastModule
+    ToastModule,
+    ConfirmDialogModule
   ],
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   template: `
     <p-toast />
+    <p-confirmDialog />
     
     <div class="page-header">
       <h2>Assinaturas</h2>
@@ -61,6 +66,7 @@ import { ServicoResponseDTO } from '../../../core/interfaces/servico.interface';
           <th>Dia Vencimento</th>
           <th>Data Início</th>
           <th>Status</th>
+          <th>Ações</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-assinatura>
@@ -76,6 +82,17 @@ import { ServicoResponseDTO } from '../../../core/interfaces/servico.interface';
               [value]="assinatura.ativo ? 'Ativa' : 'Inativa'"
               [severity]="assinatura.ativo ? 'success' : 'danger'"
             />
+          </td>
+          <td>
+            @if (assinatura.ativo) {
+              <p-button
+                icon="pi pi-times"
+                label="Cancelar"
+                severity="danger"
+                (onClick)="confirmarCancelamento(assinatura)"
+                styleClass="p-button-sm"
+              />
+            }
           </td>
         </tr>
       </ng-template>
@@ -262,7 +279,8 @@ export class AssinaturasComponent implements OnInit {
     private assinaturaService: AssinaturaService,
     private pacienteService: PacienteService,
     private servicoService: ServicoService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -276,12 +294,13 @@ export class AssinaturasComponent implements OnInit {
         this.assinaturas.set(assinaturas);
         this.carregando.set(false);
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
         console.error('Erro ao carregar assinaturas:', error);
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao carregar assinaturas'
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
         });
         this.carregando.set(false);
       }
@@ -341,11 +360,53 @@ export class AssinaturasComponent implements OnInit {
         this.carregarDados();
         this.salvando.set(false);
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        // Mensagem específica para conflito (assinatura já existe)
+        if (error.status === 409 || error.status === 400) {
+          errorMessage.detail = errorMessage.detail || 'Já existe uma assinatura ativa para este paciente e serviço.';
+        }
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: error.error?.message || 'Erro ao criar assinatura'
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+        this.salvando.set(false);
+      }
+    });
+  }
+
+  confirmarCancelamento(assinatura: AssinaturaResponseDTO): void {
+    this.confirmationService.confirm({
+      message: `Tem certeza que deseja cancelar o plano de ${assinatura.pacienteNome}?`,
+      header: 'Confirmar Cancelamento',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sim, cancelar',
+      rejectLabel: 'Não',
+      accept: () => {
+        this.cancelarAssinatura(assinatura.id);
+      }
+    });
+  }
+
+  cancelarAssinatura(id: number): void {
+    this.salvando.set(true);
+    this.assinaturaService.cancelar(id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Assinatura cancelada com sucesso'
+        });
+        this.carregarDados();
+        this.salvando.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
         });
         this.salvando.set(false);
       }

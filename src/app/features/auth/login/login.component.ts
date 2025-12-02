@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { CardModule } from 'primeng/card';
+import { ToastModule } from 'primeng/toast';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -18,10 +19,13 @@ import { AuthService } from '../../../core/services/auth.service';
     ButtonModule,
     InputTextModule,
     PasswordModule,
-    CardModule
+    CardModule,
+    ToastModule
   ],
   providers: [MessageService],
   template: `
+    <p-toast />
+    
     <div class="login-container">
       <div class="background">
         <div class="shape shape-1"></div>
@@ -322,10 +326,18 @@ export class LoginComponent implements OnDestroy {
         },
         error: (error) => {
           this.loading.set(false);
+          console.log('Erro de login:', error);
+          console.log('Erro completo:', JSON.stringify(error, null, 2));
+          
+          // Prioriza "mensagem" (português) e depois "message" (inglês)
+          const errorDetail = error.error?.mensagem || error.error?.message || 'Credenciais inválidas';
+          
+          console.log('Mensagem de erro extraída:', errorDetail);
+          
           this.messageService.add({
             severity: 'error',
             summary: 'Erro',
-            detail: error.error?.message || 'Credenciais inválidas'
+            detail: errorDetail
           });
         }
       });

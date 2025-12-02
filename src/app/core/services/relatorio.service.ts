@@ -24,6 +24,15 @@ export class RelatorioService {
       }
     );
   }
+
+  baixarProntuario(pacienteId: number): Observable<Blob> {
+    return this.http.get(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.relatorios}/prontuario/${pacienteId}`,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
 }
 
 

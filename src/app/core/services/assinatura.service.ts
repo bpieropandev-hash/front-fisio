@@ -37,6 +37,13 @@ export class AssinaturaService {
       assinatura
     );
   }
+
+  cancelar(id: number): Observable<void> {
+    return this.http.put<void>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}/${id}/cancelar`,
+      {}
+    );
+  }
 }
 
 

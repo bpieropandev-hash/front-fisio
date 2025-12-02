@@ -16,6 +16,7 @@ export interface AssinaturaResponseDTO {
   diaVencimento: number;
   ativo: boolean;
   dataInicio: string;
+  dataCancelamento?: string;
 }
 
 

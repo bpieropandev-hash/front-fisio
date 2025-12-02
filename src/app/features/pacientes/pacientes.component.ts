@@ -13,7 +13,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { PacienteService } from '../../core/services/paciente.service';
+import { RelatorioService } from '../../core/services/relatorio.service';
 import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interfaces/paciente.interface';
+import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-pacientes',
@@ -80,12 +83,21 @@ import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interf
             />
           </td>
           <td>
-            <p-button
-              icon="pi pi-pencil"
-              (onClick)="abrirModalEdicao(paciente)"
-              styleClass="p-button-text p-button-rounded"
-              pTooltip="Editar"
-            />
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-file-pdf"
+                label="Prontuário PDF"
+                (onClick)="baixarProntuario(paciente.id, paciente.nome)"
+                styleClass="p-button-sm"
+                severity="secondary"
+              />
+              <p-button
+                icon="pi pi-pencil"
+                (onClick)="abrirModalEdicao(paciente)"
+                styleClass="p-button-text p-button-rounded"
+                pTooltip="Editar"
+              />
+            </div>
           </td>
         </tr>
       </ng-template>
@@ -334,6 +346,13 @@ import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interf
       border-top: 1px solid var(--surface-border);
     }
 
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     @media (max-width: 768px) {
       .page-header {
         flex-direction: column;
@@ -401,6 +420,7 @@ export class PacientesComponent implements OnInit {
 
   constructor(
     private pacienteService: PacienteService,
+    private relatorioService: RelatorioService,
     private fb: FormBuilder,
     private messageService: MessageService
   ) {
@@ -555,5 +575,52 @@ export class PacientesComponent implements OnInit {
     const cpfLimpo = cpf.replace(/\D/g, '');
     if (cpfLimpo.length !== 11) return cpf;
     return cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+
+  baixarProntuario(pacienteId: number, pacienteNome: string): void {
+    this.relatorioService.baixarProntuario(pacienteId).subscribe({
+      next: (blob) => {
+        // Verifica se o blob não está vazio
+        if (blob.size === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Aviso',
+            detail: 'O prontuário está vazio ou não há dados para exibir.'
+          });
+          return;
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `prontuario_${pacienteNome.replace(/\s+/g, '_')}_${pacienteId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Prontuário baixado com sucesso'
+        });
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error('Erro ao baixar prontuário:', error);
+        
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        
+        // Mensagem específica para 404 (paciente não encontrado)
+        if (error.status === 404) {
+          errorMessage.detail = 'Paciente não encontrado ou não possui atendimentos concluídos.';
+        }
+        
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
   }
 }
