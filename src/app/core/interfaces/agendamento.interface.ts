@@ -1,5 +1,5 @@
 export interface AgendamentoRequestDTO {
-  pacienteId: number;
+  pacienteIds: number[];
   servicoId: number;
   dataHora: string;
   dataFimRecorrencia?: string;

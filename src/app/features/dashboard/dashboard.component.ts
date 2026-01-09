@@ -63,6 +63,9 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
               [showTime]="false"
               styleClass="full-width"
               placeholder="Selecione a data inicial"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
             />
           </div>
 
@@ -74,6 +77,9 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
               [showTime]="false"
               styleClass="full-width"
               placeholder="Selecione a data final"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
             />
           </div>
 

@@ -1,7 +1,7 @@
 import { Component, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -301,6 +301,7 @@ export class LoginComponent implements OnDestroy {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private messageService: MessageService
   ) {
     this.loginForm = this.fb.group({
@@ -322,7 +323,10 @@ export class LoginComponent implements OnDestroy {
       this.loading.set(true);
       this.authService.login(this.loginForm.value).subscribe({
         next: () => {
-          this.router.navigate(['/agenda']);
+          // Redireciona para a URL salva ou para o dashboard
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+          const redirectTo = returnUrl || '/dashboard';
+          this.router.navigateByUrl(redirectTo);
         },
         error: (error) => {
           this.loading.set(false);

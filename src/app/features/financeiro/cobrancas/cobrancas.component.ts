@@ -131,6 +131,9 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
           [(ngModel)]="baixaData.dataPagamento"
           dateFormat="dd/mm/yy"
           styleClass="full-width"
+          [appendTo]="'body'"
+          [showIcon]="true"
+          [showButtonBar]="true"
         />
       </div>
 

@@ -155,6 +155,8 @@ import { HttpErrorResponse } from '@angular/common/http';
               dateFormat="dd/mm/yy"
               [showIcon]="true"
               styleClass="full-width"
+              [appendTo]="'body'"
+              [showButtonBar]="true"
             />
           </div>
         </div>

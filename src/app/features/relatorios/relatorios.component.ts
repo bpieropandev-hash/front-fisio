@@ -54,6 +54,8 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
               [showIcon]="true"
               styleClass="full-width"
               placeholder="Selecione a data inicial"
+              [appendTo]="'body'"
+              [showButtonBar]="true"
             />
             @if (!filtros.dataInicio && formSubmetido) {
               <small class="error-text">Data início é obrigatória</small>
@@ -70,6 +72,8 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
               [showIcon]="true"
               styleClass="full-width"
               placeholder="Selecione a data final"
+              [appendTo]="'body'"
+              [showButtonBar]="true"
             />
             @if (!filtros.dataFim && formSubmetido) {
               <small class="error-text">Data fim é obrigatória</small>

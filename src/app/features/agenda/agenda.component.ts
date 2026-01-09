@@ -21,7 +21,7 @@ import { ToastModule } from 'primeng/toast';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicoService } from '../../core/services/servico.service';
-import { AtendimentoResponseDTO } from '../../core/interfaces/agendamento.interface';
+import { AtendimentoResponseDTO, AgendamentoRequestDTO } from '../../core/interfaces/agendamento.interface';
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
@@ -125,6 +125,9 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
               [showTime]="false"
               styleClass="full-width"
               placeholder="Selecione a data"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
             />
           </div>
 
@@ -136,6 +139,9 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
               [showTime]="false"
               styleClass="full-width"
               placeholder="Selecione a data"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
             />
           </div>
 
@@ -201,13 +207,27 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
         <div class="form-group">
           <label>Data/Hora</label>
-          <p-datepicker
-            [(ngModel)]="dataHoraEdit"
-            [showTime]="true"
-            [hourFormat]="'24'"
-            dateFormat="dd/mm/yy"
-            styleClass="full-width"
-          />
+          <div class="datetime-selector">
+            <p-datepicker
+              [(ngModel)]="dataEdit"
+              dateFormat="dd/mm/yy"
+              styleClass="full-width date-input"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              (onSelect)="atualizarDataHoraEdit()"
+            />
+            <p-select
+              [(ngModel)]="horaEdit"
+              [options]="horariosDisponiveis"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione o horário"
+              styleClass="full-width time-input"
+              [appendTo]="'body'"
+              (ngModelChange)="atualizarDataHoraEdit()"
+            />
+          </div>
         </div>
 
         <div class="form-group">
@@ -227,9 +247,11 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
           <textarea
             pInputTextarea
             [(ngModel)]="evolucaoEdit"
-            rows="6"
+            rows="8"
             placeholder="Digite a evolução do atendimento..."
             styleClass="full-width evolution-textarea"
+            [ngClass]="'evolution-textarea'"
+            class="evolution-textarea"
           ></textarea>
         </div>
 
@@ -282,16 +304,20 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       } @else {
         <!-- Formulário de Novo Agendamento -->
         <div class="form-group">
-          <label>Paciente *</label>
-          <p-select
-            [(ngModel)]="novoAgendamento.pacienteId"
+          <label>Pacientes *</label>
+          <p-multiSelect
+            [(ngModel)]="novoAgendamento.pacienteIds"
             [options]="pacientes()"
             optionLabel="nome"
             optionValue="id"
-            placeholder="Selecione o paciente"
+            placeholder="Selecione um ou mais pacientes"
             styleClass="full-width"
             [appendTo]="'body'"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Buscar pacientes..."
           />
+          <small class="text-muted">Você pode selecionar múltiplos pacientes para o mesmo agendamento</small>
         </div>
 
         <div class="form-group">
@@ -309,13 +335,27 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
         <div class="form-group">
           <label>Data/Hora *</label>
-          <p-datepicker
-            [(ngModel)]="novoAgendamento.dataHora"
-            [showTime]="true"
-            [hourFormat]="'24'"
-            dateFormat="dd/mm/yy"
-            styleClass="full-width"
-          />
+          <div class="datetime-selector">
+            <p-datepicker
+              [(ngModel)]="dataNovoAgendamento"
+              dateFormat="dd/mm/yy"
+              styleClass="full-width date-input"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              (onSelect)="atualizarDataHoraNovoAgendamento()"
+            />
+            <p-select
+              [(ngModel)]="horaNovoAgendamento"
+              [options]="horariosDisponiveis"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione o horário"
+              styleClass="full-width time-input"
+              [appendTo]="'body'"
+              (ngModelChange)="atualizarDataHoraNovoAgendamento()"
+            />
+          </div>
         </div>
 
         <div class="form-group">
@@ -333,6 +373,9 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
               [showTime]="false"
               dateFormat="dd/mm/yy"
               styleClass="full-width"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
             />
           </div>
 
@@ -401,6 +444,83 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
     .full-width {
       width: 100%;
+    }
+
+    /* Estilos específicos para o textarea de evolução - com máxima especificidade */
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea,
+    ::ng-deep .p-inputtextarea.evolution-textarea,
+    ::ng-deep textarea[styleclass*="evolution-textarea"],
+    ::ng-deep textarea.evolution-textarea {
+      font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+      font-size: 15px !important;
+      line-height: 1.8 !important;
+      letter-spacing: 0.015em !important;
+      padding: 20px 24px !important;
+      border: 2px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      background: #ffffff !important;
+      color: #1e293b !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      resize: vertical !important;
+      min-height: 160px !important;
+      width: 100% !important;
+      box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea:hover,
+    ::ng-deep .p-inputtextarea.evolution-textarea:hover,
+    ::ng-deep textarea.evolution-textarea:hover {
+      border-color: #cbd5e1 !important;
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+      transform: translateY(-1px) !important;
+      background: #fafbfc !important;
+    }
+
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea:focus,
+    ::ng-deep .p-inputtextarea.evolution-textarea:focus,
+    ::ng-deep textarea.evolution-textarea:focus {
+      outline: none !important;
+      border-color: #4cc9f0 !important;
+      box-shadow: 
+        0 0 0 4px rgba(76, 201, 240, 0.12),
+        0 8px 24px rgba(76, 201, 240, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.08) !important;
+      background: #ffffff !important;
+      transform: translateY(-2px) !important;
+    }
+
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea::placeholder,
+    ::ng-deep .p-inputtextarea.evolution-textarea::placeholder,
+    ::ng-deep textarea.evolution-textarea::placeholder {
+      color: #94a3b8 !important;
+      opacity: 0.7 !important;
+      font-weight: 400 !important;
+    }
+
+    .datetime-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .datetime-selector .date-input {
+      flex: 1;
+    }
+
+    .datetime-selector .time-input {
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      .datetime-selector {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
     }
 
     .mensalista-badge {
@@ -695,13 +815,19 @@ export class AgendaComponent implements OnInit {
   };
   
   dataHoraEdit: Date | null = null;
+  dataEdit: Date | null = null;
+  horaEdit: string | null = null;
+  
+  dataNovoAgendamento: Date | null = null;
+  horaNovoAgendamento: string | null = null;
+  
   statusEdit: string = 'AGENDADO';
   evolucaoEdit: string = '';
   recebedorEdit: 'CLINICA' | 'PROFISSIONAL' | null = null;
   tipoPagamentoEdit: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | null = null;
 
   novoAgendamento = {
-    pacienteId: null as number | null,
+    pacienteIds: [] as number[],
     servicoId: null as number | null,
     dataHora: null as Date | null
   };
@@ -709,6 +835,18 @@ export class AgendaComponent implements OnInit {
   repetirAgendamento = false;
   dataFimRecorrencia: Date | null = null;
   diasSemanaSelecionados: number[] = [];
+
+  // Gera lista de horários de 30 em 30 minutos (00:00 até 23:30)
+  horariosDisponiveis = Array.from({ length: 48 }, (_, i) => {
+    const horas = Math.floor(i / 2);
+    const minutos = (i % 2) * 30;
+    const horaFormatada = String(horas).padStart(2, '0');
+    const minutoFormatado = String(minutos).padStart(2, '0');
+    return {
+      label: `${horaFormatada}:${minutoFormatado}`,
+      value: `${horaFormatada}:${minutoFormatado}`
+    };
+  });
 
   diasSemanaOptions = [
     { label: 'Seg', value: 1 },
@@ -967,7 +1105,22 @@ export class AgendaComponent implements OnInit {
   }
 
   onDateClick(info: any): void {
-    this.novoAgendamento.dataHora = info.date;
+    const dataSelecionada = new Date(info.date);
+    // Arredonda para o próximo intervalo de 30 minutos
+    const minutos = dataSelecionada.getMinutes();
+    const minutosArredondados = minutos < 30 ? 30 : 0;
+    const horasAjustadas = minutos >= 30 ? dataSelecionada.getHours() + 1 : dataSelecionada.getHours();
+    
+    // Define a data (sem hora)
+    this.dataNovoAgendamento = new Date(dataSelecionada);
+    this.dataNovoAgendamento.setHours(0, 0, 0, 0);
+    
+    // Define a hora no formato HH:MM
+    this.horaNovoAgendamento = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
+    
+    // Combina data e hora
+    this.novoAgendamento.dataHora = this.combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
+    
     this.abrirModalNovoAgendamento();
   }
 
@@ -991,6 +1144,20 @@ export class AgendaComponent implements OnInit {
     });
     
     this.dataHoraEdit = new Date(atendimento.dataHoraInicio);
+    const { data, hora } = this.separarDataHora(this.dataHoraEdit);
+    this.dataEdit = data;
+    // Arredonda a hora para o intervalo de 30 minutos mais próximo
+    if (hora) {
+      const [horas, minutos] = hora.split(':').map(Number);
+      const minutosArredondados = minutos < 15 ? 0 : minutos < 45 ? 30 : 0;
+      const horasAjustadas = minutos >= 45 ? horas + 1 : horas;
+      const horaArredondada = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
+      this.horaEdit = horaArredondada;
+      // Atualiza dataHoraEdit com a hora arredondada
+      this.dataHoraEdit = this.combinarDataHora(this.dataEdit, horaArredondada);
+    } else {
+      this.horaEdit = null;
+    }
     this.statusEdit = atendimento.status;
     this.evolucaoEdit = atendimento.evolucao || '';
     this.recebedorEdit = atendimento.recebedor || null;
@@ -1026,10 +1193,12 @@ export class AgendaComponent implements OnInit {
   abrirModalNovoAgendamento(): void {
     this.atendimentoSelecionado.set(null);
     this.novoAgendamento = {
-      pacienteId: null,
+      pacienteIds: [],
       servicoId: null,
       dataHora: null
     };
+    this.dataNovoAgendamento = null;
+    this.horaNovoAgendamento = null;
     this.repetirAgendamento = false;
     this.dataFimRecorrencia = null;
     this.diasSemanaSelecionados = [];
@@ -1041,6 +1210,48 @@ export class AgendaComponent implements OnInit {
     this.modalVisivel.set(false);
     this._modalVisivel = false;
     this.atendimentoSelecionado.set(null);
+  }
+
+  /**
+   * Combina data e hora selecionadas em um objeto Date
+   */
+  private combinarDataHora(data: Date | null, hora: string | null): Date | null {
+    if (!data || !hora) return null;
+    
+    const [horas, minutos] = hora.split(':').map(Number);
+    const dataCombinada = new Date(data);
+    dataCombinada.setHours(horas, minutos, 0, 0);
+    return dataCombinada;
+  }
+
+  /**
+   * Separa uma data/hora em data e hora
+   */
+  private separarDataHora(dataHora: Date | null): { data: Date | null; hora: string | null } {
+    if (!dataHora) return { data: null, hora: null };
+    
+    const data = new Date(dataHora);
+    data.setHours(0, 0, 0, 0);
+    
+    const horas = String(dataHora.getHours()).padStart(2, '0');
+    const minutos = String(dataHora.getMinutes()).padStart(2, '0');
+    const hora = `${horas}:${minutos}`;
+    
+    return { data, hora };
+  }
+
+  /**
+   * Atualiza dataHoraEdit quando data ou hora são alterados
+   */
+  atualizarDataHoraEdit(): void {
+    this.dataHoraEdit = this.combinarDataHora(this.dataEdit, this.horaEdit);
+  }
+
+  /**
+   * Atualiza novoAgendamento.dataHora quando data ou hora são alterados
+   */
+  atualizarDataHoraNovoAgendamento(): void {
+    this.novoAgendamento.dataHora = this.combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
   }
 
   salvarAtendimento(): void {
@@ -1107,11 +1318,11 @@ export class AgendaComponent implements OnInit {
   }
 
   criarAgendamento(): void {
-    if (!this.novoAgendamento.pacienteId || !this.novoAgendamento.servicoId || !this.novoAgendamento.dataHora) {
+    if (!this.novoAgendamento.pacienteIds || this.novoAgendamento.pacienteIds.length === 0 || !this.novoAgendamento.servicoId || !this.novoAgendamento.dataHora) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Atenção',
-        detail: 'Preencha todos os campos obrigatórios'
+        detail: 'Preencha todos os campos obrigatórios (selecione pelo menos um paciente)'
       });
       return;
     }
@@ -1157,9 +1368,9 @@ export class AgendaComponent implements OnInit {
       return;
     }
 
-    const agendamentoData: any = {
-      pacienteId: this.novoAgendamento.pacienteId,
-      servicoId: this.novoAgendamento.servicoId,
+    const agendamentoData: AgendamentoRequestDTO = {
+      pacienteIds: this.novoAgendamento.pacienteIds,
+      servicoId: this.novoAgendamento.servicoId!,
       dataHora: dataHoraISO
     };
 
