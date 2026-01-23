@@ -7,6 +7,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { TagModule } from 'primeng/tag';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
@@ -32,6 +33,7 @@ import { HttpErrorResponse } from '@angular/common/http';
     InputTextModule,
     InputNumberModule,
     SelectModule,
+    MultiSelectModule,
     TagModule,
     ToastModule,
     ConfirmDialogModule
@@ -109,13 +111,13 @@ import { HttpErrorResponse } from '@angular/common/http';
       (onHide)="fecharModal()"
     >
       <div class="form-group">
-        <label>Paciente *</label>
-        <p-select
-          [(ngModel)]="novaAssinatura.pacienteId"
+        <label>Paciente(s) *</label>
+        <p-multiSelect
+          [(ngModel)]="pacienteIdsSelecionados"
           [options]="pacientes()"
           optionLabel="nome"
           optionValue="id"
-          placeholder="Selecione o paciente"
+          placeholder="Selecione um ou mais pacientes"
           styleClass="full-width"
           [appendTo]="'body'"
         />
@@ -267,8 +269,8 @@ export class AssinaturasComponent implements OnInit {
   carregando = signal(false);
   salvando = signal(false);
 
-  novaAssinatura: AssinaturaCreateRequestDTO = {
-    pacienteId: 0,
+  pacienteIdsSelecionados: number[] = [];
+  novaAssinatura: Partial<AssinaturaCreateRequestDTO> = {
     servicoId: 0,
     valorMensal: 0,
     diaVencimento: 5,
@@ -316,8 +318,8 @@ export class AssinaturasComponent implements OnInit {
   }
 
   abrirModalNovaAssinatura(): void {
+    this.pacienteIdsSelecionados = [];
     this.novaAssinatura = {
-      pacienteId: 0,
       servicoId: 0,
       valorMensal: 0,
       diaVencimento: 5,
@@ -333,7 +335,7 @@ export class AssinaturasComponent implements OnInit {
   }
 
   criarAssinatura(): void {
-    if (!this.novaAssinatura.pacienteId || !this.novaAssinatura.servicoId || !this.novaAssinatura.valorMensal || !this.novaAssinatura.diaVencimento) {
+    if (!this.pacienteIdsSelecionados || this.pacienteIdsSelecionados.length === 0 || !this.novaAssinatura.servicoId || !this.novaAssinatura.valorMensal || !this.novaAssinatura.diaVencimento) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Atenção',
@@ -345,16 +347,22 @@ export class AssinaturasComponent implements OnInit {
     this.salvando.set(true);
 
     const data: AssinaturaCreateRequestDTO = {
-      ...this.novaAssinatura,
+      pacienteIds: this.pacienteIdsSelecionados,
+      servicoId: this.novaAssinatura.servicoId!,
+      valorMensal: this.novaAssinatura.valorMensal!,
+      diaVencimento: this.novaAssinatura.diaVencimento!,
       dataInicio: this.novaAssinatura.dataInicio || new Date().toISOString().split('T')[0]
     };
 
     this.assinaturaService.criar(data).subscribe({
-      next: () => {
+      next: (assinaturasCriadas) => {
+        const quantidade = assinaturasCriadas.length;
         this.messageService.add({
           severity: 'success',
           summary: 'Sucesso',
-          detail: 'Assinatura criada com sucesso'
+          detail: quantidade === 1 
+            ? 'Assinatura criada com sucesso' 
+            : `${quantidade} assinaturas criadas com sucesso`
         });
         this.fecharModal();
         this.carregarDados();
@@ -364,7 +372,7 @@ export class AssinaturasComponent implements OnInit {
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         // Mensagem específica para conflito (assinatura já existe)
         if (error.status === 409 || error.status === 400) {
-          errorMessage.detail = errorMessage.detail || 'Já existe uma assinatura ativa para este paciente e serviço.';
+          errorMessage.detail = errorMessage.detail || 'Erro ao criar assinatura(s). Verifique se os pacientes estão ativos e não possuem assinatura ativa para este serviço.';
         }
         this.messageService.add({
           severity: errorMessage.severity,

@@ -1,5 +1,5 @@
 export interface AssinaturaCreateRequestDTO {
-  pacienteId: number;
+  pacienteIds: number[];
   servicoId: number;
   valorMensal: number;
   diaVencimento: number;

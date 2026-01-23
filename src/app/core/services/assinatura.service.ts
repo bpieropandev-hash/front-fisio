@@ -31,8 +31,8 @@ export class AssinaturaService {
     );
   }
 
-  criar(assinatura: AssinaturaCreateRequestDTO): Observable<AssinaturaResponseDTO> {
-    return this.http.post<AssinaturaResponseDTO>(
+  criar(assinatura: AssinaturaCreateRequestDTO): Observable<AssinaturaResponseDTO[]> {
+    return this.http.post<AssinaturaResponseDTO[]>(
       `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}`,
       assinatura
     );
