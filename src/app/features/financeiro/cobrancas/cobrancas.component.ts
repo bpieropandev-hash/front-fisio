@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -8,6 +8,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { forkJoin } from 'rxjs';
@@ -33,6 +34,7 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
     DatePickerModule,
     SelectModule,
     TagModule,
+    TooltipModule,
     ToastModule
   ],
   providers: [MessageService],
@@ -66,8 +68,42 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
       </div>
     </div>
 
+    <div class="search-container">
+      <div class="search-wrapper">
+        <input
+          type="text"
+          pInputText
+          placeholder="Pesquisar por descrição, mês/ano, valor, status..."
+          [ngModel]="termoPesquisa()"
+          (ngModelChange)="termoPesquisa.set($event)"
+          class="search-input"
+        />
+        @if (termoPesquisa()) {
+          <p-button
+            icon="pi pi-times"
+            (onClick)="limparPesquisa()"
+            styleClass="p-button-text p-button-rounded p-button-plain clear-button"
+            pTooltip="Limpar pesquisa"
+            [rounded]="true"
+          />
+        }
+      </div>
+      @if (termoPesquisa() && cobrancasFiltradas().length > 0) {
+        <div class="search-results-info">
+          <i class="pi pi-info-circle"></i>
+          <span>{{ cobrancasFiltradas().length }} cobrança(s) encontrada(s)</span>
+        </div>
+      }
+      @if (termoPesquisa() && cobrancasFiltradas().length === 0) {
+        <div class="search-no-results">
+          <i class="pi pi-search"></i>
+          <span>Nenhuma cobrança encontrada com o termo "{{ termoPesquisa() }}"</span>
+        </div>
+      }
+    </div>
+
     <p-table
-      [value]="cobrancas()"
+      [value]="cobrancasFiltradas()"
       [paginator]="true"
       [rows]="10"
       [loading]="carregando()"
@@ -75,7 +111,6 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>ID</th>
           <th>Descrição</th>
           <th>Mês/Ano</th>
           <th>Valor</th>
@@ -88,7 +123,6 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
       </ng-template>
       <ng-template pTemplate="body" let-cobranca>
         <tr>
-          <td>{{ cobranca.id }}</td>
           <td>{{ cobranca.descricao }}</td>
           <td>{{ cobranca.mesReferencia }}/{{ cobranca.anoReferencia }}</td>
           <td>{{ cobranca.valor | currency: 'BRL' }}</td>
@@ -187,6 +221,117 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
       margin-bottom: 20px;
       flex-wrap: wrap;
       gap: 10px;
+    }
+
+    .search-container {
+      margin-bottom: 24px;
+    }
+
+    .search-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-primary);
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-color);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-wrapper:focus-within {
+      box-shadow: 0 4px 16px rgba(76, 201, 240, 0.15);
+      border-color: #4cc9f0;
+      transform: translateY(-1px);
+    }
+
+    .search-input {
+      flex: 1;
+      width: 100%;
+      font-size: larger;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #4cc9f0;
+      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.1);
+      background: var(--bg-primary);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .clear-button {
+      min-width: 40px;
+      height: 40px;
+      padding: 0;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      border-radius: 50%;
+    }
+
+    .clear-button:hover {
+      background: rgba(76, 201, 240, 0.1);
+      color: #4cc9f0;
+      transform: scale(1.1) rotate(90deg);
+    }
+
+    .search-results-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(76, 201, 240, 0.1);
+      color: #0ea5e9;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease;
+      border-left: 3px solid #4cc9f0;
+    }
+
+    .search-results-info i {
+      font-size: 1rem;
+    }
+
+    .search-no-results {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 24px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      animation: fadeIn 0.3s ease;
+      border: 1px dashed var(--border-color);
+    }
+
+    .search-no-results i {
+      font-size: 1.5rem;
+      color: var(--text-tertiary);
+      opacity: 0.6;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .header-actions {
@@ -293,12 +438,40 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
 })
 export class CobrancasComponent implements OnInit {
   cobrancas = signal<CobrancaMensalResponseDTO[]>([]);
+  termoPesquisa = signal<string>('');
   modalBaixaVisivel = signal(false);
   _modalBaixaVisivel = false;
   carregando = signal(false);
   salvando = signal(false);
   gerando = signal(false);
   cobrancaSelecionada = signal<CobrancaMensalResponseDTO | null>(null);
+
+  cobrancasFiltradas = computed(() => {
+    const termo = this.termoPesquisa().toLowerCase().trim();
+    const cobrancasLista = this.cobrancas();
+    
+    if (!termo) {
+      return cobrancasLista;
+    }
+
+    return cobrancasLista.filter(cobranca => {
+      const descricao = cobranca.descricao?.toLowerCase() || '';
+      const mesReferencia = cobranca.mesReferencia?.toString() || '';
+      const anoReferencia = cobranca.anoReferencia?.toString() || '';
+      const valor = cobranca.valor?.toString() || '';
+      const status = cobranca.status === 'PAGO' ? 'pago' : 'pendente';
+      const recebedor = cobranca.recebedor?.toLowerCase() || '';
+      const tipoPagamento = cobranca.tipoPagamento?.toLowerCase() || '';
+      
+      return descricao.includes(termo) || 
+             mesReferencia.includes(termo) ||
+             anoReferencia.includes(termo) ||
+             valor.includes(termo) ||
+             status.includes(termo) ||
+             recebedor.includes(termo) ||
+             tipoPagamento.includes(termo);
+    });
+  });
 
   mesGerar: number = new Date().getMonth() + 1;
   anoGerar: number = new Date().getFullYear();
@@ -346,7 +519,13 @@ export class CobrancasComponent implements OnInit {
             arraysCobrancas.forEach(cobrancas => {
               todasCobrancas.push(...cobrancas);
             });
-            this.cobrancas.set(todasCobrancas);
+            // Ordenar cobranças por descrição (ASC)
+            const cobrancasOrdenadas = todasCobrancas.sort((a, b) => {
+              const descricaoA = a.descricao?.toLowerCase() || '';
+              const descricaoB = b.descricao?.toLowerCase() || '';
+              return descricaoA.localeCompare(descricaoB, 'pt-BR');
+            });
+            this.cobrancas.set(cobrancasOrdenadas);
             this.carregando.set(false);
           },
           error: (error) => {
@@ -472,6 +651,10 @@ export class CobrancasComponent implements OnInit {
         this.salvando.set(false);
       }
     });
+  }
+
+  limparPesquisa(): void {
+    this.termoPesquisa.set('');
   }
 }
 

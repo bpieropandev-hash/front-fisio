@@ -7,11 +7,12 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { ServicoService } from '../../core/services/servico.service';
-import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfaces/servico.interface';
+import { ServicoCreateRequestDTO, ServicoResponseDTO, TipoServico } from '../../core/interfaces/servico.interface';
 
 @Component({
   selector: 'app-servicos',
@@ -25,6 +26,7 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfac
     InputTextModule,
     InputNumberModule,
     InputSwitchModule,
+    SelectModule,
     TagModule,
     ToastModule
   ],
@@ -59,6 +61,7 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfac
       <ng-template pTemplate="header">
         <tr>
           <th pSortableColumn="nome">Serviço <p-sortIcon field="nome" /></th>
+          <th>Tipo</th>
           <th>Valor Base</th>
           <th>Repasse Clínica</th>
           <th>Repasse Profissional</th>
@@ -73,6 +76,13 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfac
               <span class="name">{{ servico.nome }}</span>
               <small class="id">#{{ servico.id }}</small>
             </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="servico.tipo === 'FISIOTERAPIA' ? 'Fisioterapia' : 'Pilates'"
+              [severity]="servico.tipo === 'FISIOTERAPIA' ? 'info' : 'success'"
+              rounded
+            />
           </td>
           <td>{{ servico.valorBase | currency:'BRL' }}</td>
           <td>{{ servico.pctClinica }}%</td>
@@ -121,6 +131,19 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfac
             pInputText
             [(ngModel)]="formServico.nome"
             placeholder="Ex: Pilates - Plano Mensal"
+          />
+        </div>
+
+        <div class="full">
+          <label>Tipo *</label>
+          <p-select
+            [(ngModel)]="formServico.tipo"
+            [options]="tipoServicoOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Selecione o tipo"
+            styleClass="full-width"
+            [appendTo]="'body'"
           />
         </div>
 
@@ -315,6 +338,11 @@ export class ServicosComponent implements OnInit {
 
   formServico: ServicoCreateRequestDTO = this.formPadrao();
 
+  tipoServicoOptions = [
+    { label: 'Fisioterapia', value: 'FISIOTERAPIA' },
+    { label: 'Pilates', value: 'PILATES' }
+  ];
+
   constructor(
     private servicoService: ServicoService,
     private messageService: MessageService
@@ -327,6 +355,7 @@ export class ServicosComponent implements OnInit {
   private formPadrao(): ServicoCreateRequestDTO {
     return {
       nome: '',
+      tipo: 'FISIOTERAPIA',
       valorBase: 0,
       pctClinica: 20,
       pctProfissional: 80,
@@ -362,6 +391,7 @@ export class ServicosComponent implements OnInit {
     this.servicoEmEdicao = servico;
     this.formServico = {
       nome: servico.nome,
+      tipo: servico.tipo,
       valorBase: servico.valorBase,
       pctClinica: servico.pctClinica,
       pctProfissional: servico.pctProfissional,
@@ -371,11 +401,11 @@ export class ServicosComponent implements OnInit {
   }
 
   salvarServico(): void {
-    if (!this.formServico.nome || !this.formServico.valorBase) {
+    if (!this.formServico.nome || !this.formServico.tipo || !this.formServico.valorBase) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Campos obrigatórios',
-        detail: 'Preencha nome e valor base.'
+        detail: 'Preencha nome, tipo e valor base.'
       });
       return;
     }

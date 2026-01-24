@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -49,40 +49,69 @@ import { HttpErrorResponse } from '@angular/common/http';
       />
     </div>
 
+    <div class="search-container">
+      <div class="search-wrapper">
+        <input
+          type="text"
+          pInputText
+          placeholder="Pesquisar pacientes por nome, CPF, email ou telefone..."
+          [ngModel]="termoPesquisa()"
+          (ngModelChange)="termoPesquisa.set($event)"
+          class="search-input"
+        />
+        @if (termoPesquisa()) {
+          <p-button
+            icon="pi pi-times"
+            (onClick)="limparPesquisa()"
+            styleClass="p-button-text p-button-rounded p-button-plain clear-button"
+            pTooltip="Limpar pesquisa"
+            [rounded]="true"
+          />
+        }
+      </div>
+      @if (termoPesquisa() && pacientesFiltrados().length > 0) {
+        <div class="search-results-info">
+          <i class="pi pi-info-circle"></i>
+          <span>{{ pacientesFiltrados().length }} paciente(s) encontrado(s)</span>
+        </div>
+      }
+      @if (termoPesquisa() && pacientesFiltrados().length === 0) {
+        <div class="search-no-results">
+          <i class="pi pi-search"></i>
+          <span>Nenhum paciente encontrado com o termo "{{ termoPesquisa() }}"</span>
+        </div>
+      }
+    </div>
+
     <p-table
-      [value]="pacientes()"
+      [value]="pacientesFiltrados()"
       [paginator]="true"
       [rows]="10"
       [loading]="carregando()"
-      [tableStyle]="{ 'min-width': '50rem' }"
+      [tableStyle]="{ 'min-width': '40rem' }"
+      styleClass="compact-table"
     >
       <ng-template pTemplate="header">
         <tr>
-          <th>ID</th>
           <th>Nome</th>
           <th>CPF</th>
           <th>Telefone</th>
-          <th>Email</th>
-          <th>Data Nascimento</th>
           <th>Status</th>
           <th>Ações</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-paciente>
         <tr>
-          <td>{{ paciente.id }}</td>
           <td>{{ paciente.nome }}</td>
           <td>{{ formatarCPF(paciente.cpf) }}</td>
           <td>{{ paciente.telefone || '-' }}</td>
-          <td>{{ paciente.email || '-' }}</td>
-          <td>{{ paciente.dataNascimento ? (paciente.dataNascimento | date: 'dd/MM/yyyy') : '-' }}</td>
           <td>
             <p-tag
               [value]="paciente.ativo !== false ? 'Ativo' : 'Inativo'"
               [severity]="paciente.ativo !== false ? 'success' : 'danger'"
             />
           </td>
-          <td>
+          <td style="display: flex; justify-content: center;">
             <div class="action-buttons">
               <p-button
                 icon="pi pi-file-pdf"
@@ -307,6 +336,134 @@ import { HttpErrorResponse } from '@angular/common/http';
       margin-bottom: 20px;
     }
 
+    .search-container {
+      margin-bottom: 24px;
+    }
+
+    .search-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-primary);
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-color);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-wrapper:focus-within {
+      box-shadow: 0 4px 16px rgba(76, 201, 240, 0.15);
+      border-color: #4cc9f0;
+      transform: translateY(-1px);
+    }
+
+    .search-input {
+      flex: 1;
+      width: 100%;
+      font-size: larger;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #4cc9f0;
+      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.1);
+      background: var(--bg-primary);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .clear-button {
+      min-width: 40px;
+      height: 40px;
+      padding: 0;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      border-radius: 50%;
+    }
+
+    .clear-button:hover {
+      background: rgba(76, 201, 240, 0.1);
+      color: #4cc9f0;
+      transform: scale(1.1) rotate(90deg);
+    }
+
+    .search-results-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(76, 201, 240, 0.1);
+      color: #0ea5e9;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease;
+      border-left: 3px solid #4cc9f0;
+    }
+
+    .search-results-info i {
+      font-size: 1rem;
+    }
+
+    .search-no-results {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 24px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      animation: fadeIn 0.3s ease;
+      border: 1px dashed var(--border-color);
+    }
+
+    .search-no-results i {
+      font-size: 1.5rem;
+      color: var(--text-tertiary);
+      opacity: 0.6;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    ::ng-deep .compact-table .p-datatable-thead > tr > th {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    ::ng-deep .compact-table .p-datatable-tbody > tr > td {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      text-align: center;
+      justify-content: center;
+    }
+
+    ::ng-deep .compact-table {
+      font-size: 0.9rem;
+    }
+
     .form-row {
       display: flex;
       gap: 15px;
@@ -375,6 +532,16 @@ import { HttpErrorResponse } from '@angular/common/http';
         width: 100%;
       }
 
+      .search-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-wrapper .clear-button {
+        align-self: flex-end;
+        margin-top: 8px;
+      }
+
       .dialog-footer {
         flex-direction: column-reverse;
       }
@@ -414,11 +581,33 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class PacientesComponent implements OnInit {
   pacientes = signal<PacienteResponseDTO[]>([]);
+  termoPesquisa = signal<string>('');
   carregando = signal(false);
   salvando = signal(false);
   modalVisivel = false;
   pacienteEmEdicao: PacienteResponseDTO | null = null;
   pacienteForm: FormGroup;
+
+  pacientesFiltrados = computed(() => {
+    const termo = this.termoPesquisa().toLowerCase().trim();
+    const pacientesLista = this.pacientes();
+
+    if (!termo) {
+      return pacientesLista;
+    }
+
+    return pacientesLista.filter(paciente => {
+      const nome = paciente.nome?.toLowerCase() || '';
+      const cpf = paciente.cpf?.toLowerCase() || '';
+      const email = paciente.email?.toLowerCase() || '';
+      const telefone = paciente.telefone?.toLowerCase() || '';
+
+      return nome.includes(termo) ||
+        cpf.includes(termo) ||
+        email.includes(termo) ||
+        telefone.includes(termo);
+    });
+  });
 
   constructor(
     private pacienteService: PacienteService,
@@ -451,7 +640,13 @@ export class PacientesComponent implements OnInit {
     this.carregando.set(true);
     this.pacienteService.listar().subscribe({
       next: (pacientes) => {
-        this.pacientes.set(pacientes);
+        // Ordenar pacientes por nome
+        const pacientesOrdenados = pacientes.sort((a, b) => {
+          const nomeA = a.nome?.toLowerCase() || '';
+          const nomeB = b.nome?.toLowerCase() || '';
+          return nomeA.localeCompare(nomeB, 'pt-BR');
+        });
+        this.pacientes.set(pacientesOrdenados);
         this.carregando.set(false);
       },
       error: (error) => {
@@ -465,6 +660,11 @@ export class PacientesComponent implements OnInit {
       }
     });
   }
+
+  limparPesquisa(): void {
+    this.termoPesquisa.set('');
+  }
+
 
   abrirModalNovoPaciente(): void {
     this.pacienteEmEdicao = null;
@@ -600,7 +800,7 @@ export class PacientesComponent implements OnInit {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         this.messageService.add({
           severity: 'success',
           summary: 'Sucesso',
@@ -609,14 +809,14 @@ export class PacientesComponent implements OnInit {
       },
       error: (error: HttpErrorResponse) => {
         console.error('Erro ao baixar prontuário:', error);
-        
+
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
-        
+
         // Mensagem específica para 404 (paciente não encontrado)
         if (error.status === 404) {
           errorMessage.detail = 'Paciente não encontrado ou não possui atendimentos concluídos.';
         }
-        
+
         this.messageService.add({
           severity: errorMessage.severity,
           summary: errorMessage.summary,
