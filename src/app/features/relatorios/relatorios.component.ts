@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -14,14 +14,13 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 @Component({
     selector: 'app-relatorios',
     imports: [
-        CommonModule,
-        FormsModule,
-        CardModule,
-        ButtonModule,
-        DatePickerModule,
-        MultiSelectModule,
-        ToastModule
-    ],
+    FormsModule,
+    CardModule,
+    ButtonModule,
+    DatePickerModule,
+    MultiSelectModule,
+    ToastModule
+],
     providers: [MessageService],
     template: `
     <p-toast />

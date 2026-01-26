@@ -1,5 +1,5 @@
 import { Component, signal, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -13,14 +13,13 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
     selector: 'app-login',
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        ButtonModule,
-        InputTextModule,
-        PasswordModule,
-        CardModule,
-        ToastModule
-    ],
+    ReactiveFormsModule,
+    ButtonModule,
+    InputTextModule,
+    PasswordModule,
+    CardModule,
+    ToastModule
+],
     providers: [MessageService],
     template: `
     <p-toast />

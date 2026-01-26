@@ -2,35 +2,35 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { InputSwitchModule } from 'primeng/inputswitch';
-import { SelectModule } from 'primeng/select';
-import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
+import { Dialog } from 'primeng/dialog';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { InputNumber } from 'primeng/inputnumber';
+import { ToggleSwitch } from 'primeng/toggleswitch';
+import { Select } from 'primeng/select';
+import { Tag } from 'primeng/tag';
+import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { ServicoService } from '../../core/services/servico.service';
 import { ServicoCreateRequestDTO, ServicoResponseDTO, TipoServico } from '../../core/interfaces/servico.interface';
 
 @Component({
-    selector: 'app-servicos',
-    imports: [
-        CommonModule,
-        FormsModule,
-        TableModule,
-        DialogModule,
-        ButtonModule,
-        InputTextModule,
-        InputNumberModule,
-        InputSwitchModule,
-        SelectModule,
-        TagModule,
-        ToastModule
-    ],
-    providers: [MessageService],
-    template: `
+  selector: 'app-servicos',
+  imports: [
+    CommonModule,
+    FormsModule,
+    TableModule,
+    Dialog,
+    Button,
+    InputText,
+    InputNumber,
+    ToggleSwitch,
+    Select,
+    Tag,
+    Toast
+  ],
+  providers: [MessageService],
+  template: `
     <p-toast />
 
     <div class="page-header">
@@ -182,7 +182,7 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO, TipoServico } from '../../
 
         <div class="switch full">
           <label>Serviço ativo?</label>
-          <p-inputSwitch [(ngModel)]="formServico.ativo" />
+          <p-toggleswitch [(ngModel)]="formServico.ativo" />
         </div>
       </div>
 
@@ -202,7 +202,7 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO, TipoServico } from '../../
       </ng-template>
     </p-dialog>
   `,
-    styles: [`
+  styles: [`
     .page-header {
       display: flex;
       justify-content: space-between;
