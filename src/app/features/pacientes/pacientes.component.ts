@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -21,20 +21,19 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
     selector: 'app-pacientes',
     imports: [
-        CommonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        TableModule,
-        ButtonModule,
-        DialogModule,
-        InputTextModule,
-        InputMaskModule,
-        DatePickerModule,
-        TextareaModule,
-        TagModule,
-        TooltipModule,
-        ToastModule
-    ],
+    FormsModule,
+    ReactiveFormsModule,
+    TableModule,
+    ButtonModule,
+    DialogModule,
+    InputTextModule,
+    InputMaskModule,
+    DatePickerModule,
+    TextareaModule,
+    TagModule,
+    TooltipModule,
+    ToastModule
+],
     providers: [MessageService],
     template: `
     <p-toast />

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterOutlet } from '@angular/router';
 import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, RouterOutlet, MenubarModule, ButtonModule],
+    imports: [RouterOutlet, MenubarModule, ButtonModule],
     template: `
     @if (authService.isAuthenticated()) {
       <div class="top-shell">

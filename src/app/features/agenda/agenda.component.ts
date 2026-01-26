@@ -7,43 +7,41 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
-import { DatePickerModule } from 'primeng/datepicker';
-import { InputSwitchModule } from 'primeng/inputswitch';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { CardModule } from 'primeng/card';
-import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
+import { Dialog } from 'primeng/dialog';
+import { Button } from 'primeng/button';
+import { Textarea } from 'primeng/textarea';
+import { Select } from 'primeng/select';
+import { DatePicker } from 'primeng/datepicker';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { MultiSelect } from 'primeng/multiselect';
+import { Card } from 'primeng/card';
+import { Toast } from 'primeng/toast';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicoService } from '../../core/services/servico.service';
 import { AtendimentoResponseDTO, AgendamentoRequestDTO } from '../../core/interfaces/agendamento.interface';
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
+import { MessageService } from 'primeng/api';
 
 @Component({
-    selector: 'app-agenda',
-    imports: [
-        CommonModule,
-        FormsModule,
-        FullCalendarModule,
-        DialogModule,
-        ButtonModule,
-        InputTextModule,
-        TextareaModule,
-        SelectModule,
-        DatePickerModule,
-        InputSwitchModule,
-        MultiSelectModule,
-        CardModule,
-        ToastModule
-    ],
-    providers: [MessageService],
-    template: `
+  selector: 'app-agenda',
+  imports: [
+    CommonModule,
+    FormsModule,
+    FullCalendarModule,
+    Dialog,
+    Button,
+    Textarea,
+    Select,
+    DatePicker,
+    ToggleSwitchModule,
+    MultiSelect,
+    Card,
+    Toast
+  ],
+  providers: [MessageService],
+  template: `
     <p-toast />
     
     <div class="agenda-header">
@@ -359,7 +357,7 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
         <div class="form-group">
           <div class="flex align-items-center gap-2">
-            <p-inputSwitch [(ngModel)]="repetirAgendamento" />
+            <p-toggleswitch [(ngModel)]="repetirAgendamento" />
             <label>Repetir agendamento?</label>
           </div>
         </div>
@@ -410,7 +408,7 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       }
     </p-dialog>
   `,
-    styles: [`
+  styles: [`
     .agenda-header {
       display: flex;
       justify-content: space-between;
@@ -804,7 +802,7 @@ export class AgendaComponent implements OnInit {
   eventos = signal<EventInput[]>([]);
   eventosFiltrados = signal<EventInput[]>([]);
   filtrosVisiveis = signal(false);
-  
+
   filtros = {
     status: [] as string[],
     pacienteId: null as number | null,
@@ -812,14 +810,14 @@ export class AgendaComponent implements OnInit {
     dataInicio: null as Date | null,
     dataFim: null as Date | null
   };
-  
+
   dataHoraEdit: Date | null = null;
   dataEdit: Date | null = null;
   horaEdit: string | null = null;
-  
+
   dataNovoAgendamento: Date | null = null;
   horaNovoAgendamento: string | null = null;
-  
+
   statusEdit: string = 'AGENDADO';
   evolucaoEdit: string = '';
   recebedorEdit: 'CLINICA' | 'PROFISSIONAL' | null = null;
@@ -929,7 +927,7 @@ export class AgendaComponent implements OnInit {
       },
       error: (error) => console.error('Erro ao carregar serviços:', error)
     });
-    
+
     // Carrega eventos inicialmente
     this.carregarEventos();
   }
@@ -937,19 +935,19 @@ export class AgendaComponent implements OnInit {
   carregarEventos(): void {
     // Monta parâmetros de filtro para a API (apenas data e paciente para otimizar)
     const params: any = {};
-    
+
     if (this.filtros.dataInicio) {
       const dataInicio = new Date(this.filtros.dataInicio);
       dataInicio.setHours(0, 0, 0, 0);
       params.dataInicio = dataInicio.toISOString().replace('T', ' ').substring(0, 23);
     }
-    
+
     if (this.filtros.dataFim) {
       const dataFim = new Date(this.filtros.dataFim);
       dataFim.setHours(23, 59, 59, 999);
       params.dataFim = dataFim.toISOString().replace('T', ' ').substring(0, 23);
     }
-    
+
     if (this.filtros.pacienteId) {
       params.pacienteId = this.filtros.pacienteId;
     }
@@ -959,20 +957,20 @@ export class AgendaComponent implements OnInit {
         const eventos: EventInput[] = [];
         atendimentos.forEach(atendimento => {
           const isMensalista = atendimento.valorCobrado === 0;
-          
+
           // Busca o nome do paciente e serviço para exibir no título
           const paciente = this.pacientes().find(p => p.id === atendimento.pacienteId);
           const servico = this.servicos().find(s => s.id === atendimento.servicoBaseId);
           const pacienteNome = paciente?.nome || `Paciente #${atendimento.pacienteId}`;
           const servicoNome = servico?.nome || `Serviço #${atendimento.servicoBaseId}`;
-          
-          const title = isMensalista 
+
+          const title = isMensalista
             ? `📋 ${pacienteNome} - ${servicoNome}`
             : `${pacienteNome} - ${servicoNome}`;
-          
+
           // Obtém cores baseadas no status
           const cores = this.obterCoresPorStatus(atendimento.status);
-          
+
           eventos.push({
             id: atendimento.id.toString(),
             title: title,
@@ -1109,17 +1107,17 @@ export class AgendaComponent implements OnInit {
     const minutos = dataSelecionada.getMinutes();
     const minutosArredondados = minutos < 30 ? 30 : 0;
     const horasAjustadas = minutos >= 30 ? dataSelecionada.getHours() + 1 : dataSelecionada.getHours();
-    
+
     // Define a data (sem hora)
     this.dataNovoAgendamento = new Date(dataSelecionada);
     this.dataNovoAgendamento.setHours(0, 0, 0, 0);
-    
+
     // Define a hora no formato HH:MM
     this.horaNovoAgendamento = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
-    
+
     // Combina data e hora
     this.novoAgendamento.dataHora = this.combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
-    
+
     this.abrirModalNovoAgendamento();
   }
 
@@ -1135,13 +1133,13 @@ export class AgendaComponent implements OnInit {
     // Usa os dados que já vêm do backend
     const paciente = this.pacientes().find(p => p.id === atendimento.pacienteId);
     const servico = this.servicos().find(s => s.id === atendimento.servicoBaseId);
-    
+
     this.atendimentoSelecionado.set({
       ...atendimento,
       pacienteNome: paciente?.nome || 'Carregando...',
       servicoNome: servico?.nome || 'Carregando...'
     });
-    
+
     this.dataHoraEdit = new Date(atendimento.dataHoraInicio);
     const { data, hora } = this.separarDataHora(this.dataHoraEdit);
     this.dataEdit = data;
@@ -1163,7 +1161,7 @@ export class AgendaComponent implements OnInit {
     this.tipoPagamentoEdit = atendimento.tipoPagamento || null;
     this.modalVisivel.set(true);
     this._modalVisivel = true;
-    
+
     // Se não encontrou os nomes, busca do backend
     if (!paciente || !servico) {
       if (!paciente) {
@@ -1216,7 +1214,7 @@ export class AgendaComponent implements OnInit {
    */
   private combinarDataHora(data: Date | null, hora: string | null): Date | null {
     if (!data || !hora) return null;
-    
+
     const [horas, minutos] = hora.split(':').map(Number);
     const dataCombinada = new Date(data);
     dataCombinada.setHours(horas, minutos, 0, 0);
@@ -1228,14 +1226,14 @@ export class AgendaComponent implements OnInit {
    */
   private separarDataHora(dataHora: Date | null): { data: Date | null; hora: string | null } {
     if (!dataHora) return { data: null, hora: null };
-    
+
     const data = new Date(dataHora);
     data.setHours(0, 0, 0, 0);
-    
+
     const horas = String(dataHora.getHours()).padStart(2, '0');
     const minutos = String(dataHora.getMinutes()).padStart(2, '0');
     const hora = `${horas}:${minutos}`;
-    
+
     return { data, hora };
   }
 
@@ -1339,7 +1337,7 @@ export class AgendaComponent implements OnInit {
     if (this.repetirAgendamento && this.dataFimRecorrencia && this.novoAgendamento.dataHora) {
       const dataInicio = new Date(this.novoAgendamento.dataHora);
       const dataFim = new Date(this.dataFimRecorrencia);
-      
+
       if (dataFim <= dataInicio) {
         this.messageService.add({
           severity: 'warn',
@@ -1378,7 +1376,7 @@ export class AgendaComponent implements OnInit {
       // Formata data fim no formato YYYY-MM-DD
       const dataFimISO = this.dataFimRecorrencia.toISOString().split('T')[0];
       agendamentoData.dataFimRecorrencia = dataFimISO;
-      
+
       // Adiciona dias da semana se selecionados
       if (this.diasSemanaSelecionados && this.diasSemanaSelecionados.length > 0) {
         agendamentoData.diasSemana = this.diasSemanaSelecionados;
@@ -1400,7 +1398,7 @@ export class AgendaComponent implements OnInit {
       error: (error) => {
         console.error('Erro ao criar agendamento:', error);
         let errorMessage = 'Erro ao criar agendamento';
-        
+
         if (error.status === 403) {
           errorMessage = 'Acesso negado. Verifique suas permissões ou faça login novamente.';
         } else if (error.status === 401) {
@@ -1408,7 +1406,7 @@ export class AgendaComponent implements OnInit {
         } else if (error.error?.message) {
           errorMessage = error.error.message;
         }
-        
+
         this.messageService.add({
           severity: 'error',
           summary: 'Erro',
