@@ -1,0 +1,365 @@
+    <p-toast />
+    
+    <div class="agenda-header">
+      <h2>Agenda de Atendimentos</h2>
+      <div class="header-actions">
+        <p-button
+          [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
+          [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
+          (onClick)="toggleFiltros()"
+          [outlined]="!filtrosVisiveis()"
+        />
+        <p-button
+          label="Novo Agendamento"
+          icon="pi pi-plus"
+          (onClick)="abrirModalNovoAgendamento()"
+        />
+      </div>
+    </div>
+
+    <!-- Painel de Filtros (Oculto por padrão) -->
+    @if (filtrosVisiveis()) {
+      <p-card class="filters-card">
+        <div class="filters-header">
+          <h3>
+            <i class="pi pi-filter"></i>
+            Filtros
+          </h3>
+        </div>
+        
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label>Status</label>
+            <p-multiSelect
+              [(ngModel)]="filtros.status"
+              [options]="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Todos os status"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showClear]="true"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Paciente</label>
+            <p-select
+              [(ngModel)]="filtros.pacienteId"
+              [options]="pacientes()"
+              optionLabel="nome"
+              optionValue="id"
+              placeholder="Todos os pacientes"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showClear]="true"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Serviço</label>
+            <p-select
+              [(ngModel)]="filtros.servicoId"
+              [options]="servicos()"
+              optionLabel="nome"
+              optionValue="id"
+              placeholder="Todos os serviços"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showClear]="true"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Data Início</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataInicio"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Data Fim</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataFim"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+            />
+          </div>
+
+          <div class="filter-group filter-actions">
+            <p-button
+              label="Limpar Filtros"
+              icon="pi pi-times"
+              (onClick)="limparFiltros()"
+              styleClass="p-button-text"
+            />
+            <p-button
+              label="Aplicar Filtros"
+              icon="pi pi-check"
+              (onClick)="aplicarFiltros()"
+            />
+          </div>
+        </div>
+      </p-card>
+    }
+
+    <!-- Legenda de Status -->
+    <div class="status-legend">
+      <div class="legend-item">
+        <span class="legend-color agendado"></span>
+        <span>Agendado</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color concluido"></span>
+        <span>Concluído</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color cancelado"></span>
+        <span>Cancelado</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color falta"></span>
+        <span>Falta</span>
+      </div>
+    </div>
+
+    <full-calendar [options]="calendarOptions()" />
+
+    <!-- Modal de Edição/Baixa -->
+    <p-dialog
+      [(visible)]="_modalVisivel"
+      [header]="atendimentoSelecionado() ? 'Editar Atendimento' : 'Novo Agendamento'"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '900px', maxHeight: '90vh' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModal()"
+    >
+      @if (atendimentoSelecionado()) {
+        <div class="form-group">
+          <label>Paciente</label>
+          <p>{{ atendimentoSelecionado()?.pacienteNome || 'Carregando...' }}</p>
+        </div>
+
+        <div class="form-group">
+          <label>Serviço</label>
+          <p>{{ atendimentoSelecionado()?.servicoNome || 'Carregando...' }}</p>
+        </div>
+
+        <div class="form-group">
+          <label>Data/Hora</label>
+          <div class="datetime-selector">
+            <p-datepicker
+              [(ngModel)]="dataEdit"
+              dateFormat="dd/mm/yy"
+              styleClass="full-width date-input"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              (onSelect)="atualizarDataHoraEdit()"
+            />
+            <p-select
+              [(ngModel)]="horaEdit"
+              [options]="horariosDisponiveis"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione o horário"
+              styleClass="full-width time-input"
+              [appendTo]="'body'"
+              (ngModelChange)="atualizarDataHoraEdit()"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <p-select
+            [(ngModel)]="statusEdit"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="full-width"
+            [appendTo]="'body'"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Evolução</label>
+          <textarea
+            pInputTextarea
+            [(ngModel)]="evolucaoEdit"
+            rows="8"
+            placeholder="Digite a evolução do atendimento..."
+            styleClass="full-width evolution-textarea"
+            [ngClass]="'evolution-textarea'"
+            class="evolution-textarea"
+          ></textarea>
+        </div>
+
+        @if (atendimentoSelecionado()?.valorCobrado && atendimentoSelecionado()!.valorCobrado > 0) {
+          <div class="form-group">
+            <label>Recebedor *</label>
+            <p-select
+              [(ngModel)]="recebedorEdit"
+              [options]="recebedorOptions"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="full-width"
+              [required]="statusEdit === 'CONCLUIDO'"
+              [appendTo]="'body'"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Tipo de Pagamento *</label>
+            <p-select
+              [(ngModel)]="tipoPagamentoEdit"
+              [options]="tipoPagamentoOptions"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="full-width"
+              [required]="statusEdit === 'CONCLUIDO'"
+              [appendTo]="'body'"
+            />
+          </div>
+        } @else {
+          <div class="mensalista-badge">
+            <i class="pi pi-id-card"></i> Mensalista - Sem cobrança
+          </div>
+        }
+
+        <div class="dialog-footer">
+          <p-button
+            label="Cancelar"
+            icon="pi pi-times"
+            (onClick)="fecharModal()"
+            styleClass="p-button-text"
+          />
+          <p-button
+            label="Salvar"
+            icon="pi pi-check"
+            (onClick)="salvarAtendimento()"
+            [loading]="salvando()"
+          />
+        </div>
+      } @else {
+        <!-- Formulário de Novo Agendamento -->
+        <div class="form-group">
+          <label>Pacientes *</label>
+          <p-multiSelect
+            [(ngModel)]="novoAgendamento.pacienteIds"
+            [options]="pacientes()"
+            optionLabel="nome"
+            optionValue="id"
+            placeholder="Selecione um ou mais pacientes"
+            styleClass="full-width"
+            [appendTo]="'body'"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Buscar pacientes..."
+          />
+          <small class="text-muted">Você pode selecionar múltiplos pacientes para o mesmo agendamento</small>
+        </div>
+
+        <div class="form-group">
+          <label>Serviço *</label>
+          <p-select
+            [(ngModel)]="novoAgendamento.servicoId"
+            [options]="servicos()"
+            optionLabel="nome"
+            optionValue="id"
+            placeholder="Selecione o serviço"
+            styleClass="full-width"
+            [appendTo]="'body'"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Data/Hora *</label>
+          <div class="datetime-selector">
+            <p-datepicker
+              [(ngModel)]="dataNovoAgendamento"
+              dateFormat="dd/mm/yy"
+              styleClass="full-width date-input"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              (onSelect)="atualizarDataHoraNovoAgendamento()"
+            />
+            <p-select
+              [(ngModel)]="horaNovoAgendamento"
+              [options]="horariosDisponiveis"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione o horário"
+              styleClass="full-width time-input"
+              [appendTo]="'body'"
+              (ngModelChange)="atualizarDataHoraNovoAgendamento()"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="flex align-items-center gap-2">
+            <p-toggleswitch [(ngModel)]="repetirAgendamento" />
+            <label>Repetir agendamento?</label>
+          </div>
+        </div>
+
+        @if (repetirAgendamento) {
+          <div class="form-group">
+            <label>Repetir até *</label>
+            <p-datepicker
+              [(ngModel)]="dataFimRecorrencia"
+              [showTime]="false"
+              dateFormat="dd/mm/yy"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Dias da Semana</label>
+            <p-multiSelect
+              [(ngModel)]="diasSemanaSelecionados"
+              [options]="diasSemanaOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione os dias da semana"
+              styleClass="full-width"
+              [appendTo]="'body'"
+            />
+            <small class="text-muted">Selecione os dias da semana. Se nenhum for selecionado, repetirá no mesmo dia da semana da data inicial.</small>
+          </div>
+        }
+
+        <div class="dialog-footer">
+          <p-button
+            label="Cancelar"
+            icon="pi pi-times"
+            (onClick)="fecharModal()"
+            styleClass="p-button-text"
+          />
+          <p-button
+            label="Criar"
+            icon="pi pi-check"
+            (onClick)="criarAgendamento()"
+            [loading]="salvando()"
+          />
+        </div>
+      }
+    </p-dialog>

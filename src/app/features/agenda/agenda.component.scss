@@ -1,0 +1,452 @@
+    .agenda-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 1rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .header-actions ::ng-deep .p-button {
+      height: 2.5rem !important;
+      min-height: 2.5rem !important;
+      padding: 0.625rem 1.25rem !important;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    /* Estilos específicos para o textarea de evolução - com máxima especificidade */
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea,
+    ::ng-deep .p-inputtextarea.evolution-textarea,
+    ::ng-deep textarea[styleclass*="evolution-textarea"],
+    ::ng-deep textarea.evolution-textarea {
+      font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+      font-size: 15px !important;
+      line-height: 1.8 !important;
+      letter-spacing: 0.015em !important;
+      padding: 20px 24px !important;
+      border: 2px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      background: #ffffff !important;
+      color: #1e293b !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      resize: vertical !important;
+      min-height: 160px !important;
+      width: 100% !important;
+      box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea:hover,
+    ::ng-deep .p-inputtextarea.evolution-textarea:hover,
+    ::ng-deep textarea.evolution-textarea:hover {
+      border-color: #cbd5e1 !important;
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+      transform: translateY(-1px) !important;
+      background: #fafbfc !important;
+    }
+
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea:focus,
+    ::ng-deep .p-inputtextarea.evolution-textarea:focus,
+    ::ng-deep textarea.evolution-textarea:focus {
+      outline: none !important;
+      border-color: #4cc9f0 !important;
+      box-shadow: 
+        0 0 0 4px rgba(76, 201, 240, 0.12),
+        0 8px 24px rgba(76, 201, 240, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.08) !important;
+      background: #ffffff !important;
+      transform: translateY(-2px) !important;
+    }
+
+    ::ng-deep textarea.evolution-textarea.p-inputtextarea::placeholder,
+    ::ng-deep .p-inputtextarea.evolution-textarea::placeholder,
+    ::ng-deep textarea.evolution-textarea::placeholder {
+      color: #94a3b8 !important;
+      opacity: 0.7 !important;
+      font-weight: 400 !important;
+    }
+
+    .datetime-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .datetime-selector .date-input {
+      flex: 1;
+    }
+
+    .datetime-selector .time-input {
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      .datetime-selector {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+
+    .mensalista-badge {
+      padding: 12px;
+      background-color: #e3f2fd;
+      border-radius: 4px;
+      color: #1976d2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .text-muted {
+      color: #64748b;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+      display: block;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .align-items-center {
+      align-items: center;
+    }
+
+    .gap-2 {
+      gap: 0.5rem;
+    }
+
+    ::ng-deep .fc-event-title {
+      white-space: normal;
+    }
+
+    ::ng-deep .mensalista-event {
+      background-color: #4caf50 !important;
+      border-color: #4caf50 !important;
+    }
+
+    /* Cores garantidas por STATUS (todas as views) */
+    ::ng-deep .fc .status-agendado,
+    ::ng-deep .fc .status-agendado .fc-event-main {
+      background-color: #a5d6a7 !important;
+      border-color: #16a34a !important;
+      color: #1b5e20 !important;
+    }
+
+    ::ng-deep .fc .status-concluido,
+    ::ng-deep .fc .status-concluido .fc-event-main {
+      background-color: #90caf9 !important;
+      border-color: #2563eb !important;
+      color: #0d47a1 !important;
+    }
+
+    ::ng-deep .fc .status-cancelado,
+    ::ng-deep .fc .status-cancelado .fc-event-main {
+      background-color: #ef9a9a !important;
+      border-color: #dc2626 !important;
+      color: #b71c1c !important;
+    }
+
+    ::ng-deep .fc .status-falta,
+    ::ng-deep .fc .status-falta .fc-event-main {
+      background-color: #fff59d !important;
+      border-color: #ca8a04 !important;
+      color: #f57f17 !important;
+    }
+
+    /* Month (dayGrid) - render minimalista dos eventos */
+    ::ng-deep .fc-daygrid-event .fc-month-min {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      padding: 1px 2px;
+      font-size: 11px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: none;
+    }
+
+    ::ng-deep .fc-daygrid-event .fc-month-min__badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 16px;
+      padding: 0 6px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      background: rgba(255, 255, 255, 0.75);
+      color: rgba(15, 23, 42, 0.9);
+    }
+
+    ::ng-deep .fc-daygrid-event .fc-month-min__time {
+      flex: 0 0 auto;
+      font-weight: 600;
+    }
+
+    ::ng-deep .fc-daygrid-event .fc-month-min__name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    /* Estilo discreto e elegante para o indicador de horário atual */
+    ::ng-deep .fc-timegrid-now-indicator-line {
+      border-color: #64748b !important;
+      border-width: 1px !important;
+      border-style: dashed !important;
+      opacity: 0.6 !important;
+      z-index: 5 !important;
+    }
+
+    ::ng-deep .fc-timegrid-now-indicator-arrow {
+      border-color: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* Melhorar visibilidade do indicador */
+    ::ng-deep .fc-timegrid-now-indicator-container {
+      pointer-events: none !important;
+    }
+
+    .filters-card {
+      margin-bottom: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .filters-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .filters-header h3 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filters-header i {
+      color: #64748b;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 0.875rem;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      align-items: flex-end;
+    }
+
+    .status-legend {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 2px solid;
+    }
+
+    .legend-color.agendado {
+      background-color: #a5d6a7;
+      border-color: #66bb6a;
+    }
+
+    .legend-color.concluido {
+      background-color: #90caf9;
+      border-color: #42a5f5;
+    }
+
+    .legend-color.cancelado {
+      background-color: #ef9a9a;
+      border-color: #e57373;
+    }
+
+    .legend-color.falta {
+      background-color: #fff59d;
+      border-color: #ffd54f;
+    }
+
+    @media (max-width: 768px) {
+      .agenda-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+
+      .agenda-header h2 {
+        font-size: 1.5rem;
+        margin: 0;
+      }
+
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .header-actions .p-button {
+        width: 100%;
+      }
+
+      .filter-actions {
+        flex-direction: column-reverse;
+      }
+
+      .filter-actions .p-button {
+        width: 100%;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status-legend {
+        gap: 0.75rem;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+      }
+
+      .filters-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .filters-header h3 {
+        font-size: 1rem;
+      }
+
+      ::ng-deep .fc-toolbar {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      ::ng-deep .fc-toolbar-chunk {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+
+      ::ng-deep .fc-button {
+        padding: 0.375rem 0.5rem !important;
+        font-size: 0.875rem !important;
+      }
+
+      ::ng-deep .fc-event-title {
+        font-size: 0.75rem !important;
+        padding: 2px 4px !important;
+      }
+
+      .dialog-footer {
+        flex-direction: column-reverse;
+      }
+
+      .dialog-footer .p-button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .agenda-header h2 {
+        font-size: 1.25rem;
+      }
+
+      .status-legend {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      ::ng-deep .fc-header-toolbar {
+        font-size: 0.75rem;
+      }
+
+      ::ng-deep .fc-daygrid-day-number,
+      ::ng-deep .fc-timegrid-slot-label {
+        font-size: 0.75rem !important;
+      }
+    }

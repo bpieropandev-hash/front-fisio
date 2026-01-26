@@ -1,0 +1,170 @@
+    <p-toast />
+
+    <div class="page-header">
+      <div>
+        <p class="eyebrow">Catálogo</p>
+        <h2>Serviços e valores</h2>
+        <p class="subtext">Gerencie serviços de fisioterapia e pilates com facilidade.</p>
+      </div>
+
+      <p-button
+        label="Novo serviço"
+        icon="pi pi-plus"
+        size="large"
+        (onClick)="abrirModalNovo()"
+      />
+    </div>
+
+    <p-table
+      [value]="servicos()"
+      [loading]="carregando()"
+      [paginator]="true"
+      [rows]="10"
+      [tableStyle]="{ 'min-width': '60rem' }"
+      sortField="nome"
+      sortMode="single"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="nome">Serviço <p-sortIcon field="nome" /></th>
+          <th>Tipo</th>
+          <th>Valor Base</th>
+          <th>Repasse Clínica</th>
+          <th>Repasse Profissional</th>
+          <th>Status</th>
+          <th class="actions-col">Ações</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-servico>
+        <tr>
+          <td>
+            <div class="servico-title">
+              <span class="name">{{ servico.nome }}</span>
+              <small class="id">#{{ servico.id }}</small>
+            </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="servico.tipo === 'FISIOTERAPIA' ? 'Fisioterapia' : 'Pilates'"
+              [severity]="servico.tipo === 'FISIOTERAPIA' ? 'info' : 'success'"
+              rounded
+            />
+          </td>
+          <td>{{ servico.valorBase | currency:'BRL' }}</td>
+          <td>{{ servico.pctClinica }}%</td>
+          <td>{{ servico.pctProfissional }}%</td>
+          <td>
+            <p-tag
+              [value]="servico.ativo ? 'Ativo' : 'Inativo'"
+              [severity]="servico.ativo ? 'success' : 'warn'"
+              rounded
+            />
+          </td>
+          <td class="actions-col">
+            <p-button
+              icon="pi pi-pencil"
+              size="small"
+              rounded
+              (onClick)="editarServico(servico)"
+              severity="secondary"
+            />
+            <p-button
+              icon="pi pi-trash"
+              size="small"
+              rounded
+              severity="danger"
+              [outlined]="true"
+              (onClick)="desativarServico(servico)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <p-dialog
+      [(visible)]="modalVisivel"
+      [header]="servicoEmEdicao ? 'Editar serviço' : 'Novo serviço'"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModal()"
+    >
+      <div class="form-grid">
+        <div class="full">
+          <label>Nome do serviço *</label>
+          <input
+            pInputText
+            [(ngModel)]="formServico.nome"
+            placeholder="Ex: Pilates - Plano Mensal"
+          />
+        </div>
+
+        <div class="full">
+          <label>Tipo *</label>
+          <p-select
+            [(ngModel)]="formServico.tipo"
+            [options]="tipoServicoOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Selecione o tipo"
+            styleClass="full-width"
+            [appendTo]="'body'"
+          />
+        </div>
+
+        <div>
+          <label>Valor base (R$) *</label>
+          <p-inputNumber
+            [(ngModel)]="formServico.valorBase"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            placeholder="0,00"
+          />
+        </div>
+
+        <div>
+          <label>% Clínica *</label>
+          <p-inputNumber
+            [(ngModel)]="formServico.pctClinica"
+            suffix="%"
+            [min]="0"
+            [max]="100"
+            [step]="1"
+          />
+        </div>
+
+        <div>
+          <label>% Profissional *</label>
+          <p-inputNumber
+            [(ngModel)]="formServico.pctProfissional"
+            suffix="%"
+            [min]="0"
+            [max]="100"
+            [step]="1"
+          />
+          <small class="helper">Soma ideal: 100%</small>
+        </div>
+
+        <div class="switch full">
+          <label>Serviço ativo?</label>
+          <p-toggleswitch [(ngModel)]="formServico.ativo" />
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <p-button
+          label="Cancelar"
+          severity="secondary"
+          variant="text"
+          (onClick)="fecharModal()"
+        />
+        <p-button
+          label="Salvar"
+          icon="pi pi-check"
+          [loading]="salvando()"
+          (onClick)="salvarServico()"
+        />
+      </ng-template>
+    </p-dialog>

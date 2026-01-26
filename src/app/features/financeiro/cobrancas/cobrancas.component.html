@@ -1,0 +1,173 @@
+    <p-toast />
+    
+    <div class="page-header">
+      <h2>Cobranças Mensais</h2>
+      <div class="header-actions">
+        <div class="gerar-mes-group">
+          <p-inputNumber
+            [(ngModel)]="mesGerar"
+            [min]="1"
+            [max]="12"
+            placeholder="Mês"
+            styleClass="mes-input"
+          />
+          <p-inputNumber
+            [(ngModel)]="anoGerar"
+            [min]="2020"
+            placeholder="Ano"
+            styleClass="ano-input"
+          />
+          <p-button
+            label="Gerar Mês"
+            icon="pi pi-calendar-plus"
+            (onClick)="gerarMensalidades()"
+            [loading]="gerando()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="search-container">
+      <div class="search-wrapper">
+        <input
+          type="text"
+          pInputText
+          placeholder="Pesquisar por descrição, mês/ano, valor, status..."
+          [ngModel]="termoPesquisa()"
+          (ngModelChange)="termoPesquisa.set($event)"
+          class="search-input"
+        />
+        @if (termoPesquisa()) {
+          <p-button
+            icon="pi pi-times"
+            (onClick)="limparPesquisa()"
+            styleClass="p-button-text p-button-rounded p-button-plain clear-button"
+            pTooltip="Limpar pesquisa"
+            [rounded]="true"
+          />
+        }
+      </div>
+      @if (termoPesquisa() && cobrancasFiltradas().length > 0) {
+        <div class="search-results-info">
+          <i class="pi pi-info-circle"></i>
+          <span>{{ cobrancasFiltradas().length }} cobrança(s) encontrada(s)</span>
+        </div>
+      }
+      @if (termoPesquisa() && cobrancasFiltradas().length === 0) {
+        <div class="search-no-results">
+          <i class="pi pi-search"></i>
+          <span>Nenhuma cobrança encontrada com o termo "{{ termoPesquisa() }}"</span>
+        </div>
+      }
+    </div>
+
+    <p-table
+      [value]="cobrancasFiltradas()"
+      [paginator]="true"
+      [rows]="10"
+      [loading]="carregando()"
+      [tableStyle]="{ 'min-width': '50rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Descrição</th>
+          <th>Mês/Ano</th>
+          <th>Valor</th>
+          <th>Status</th>
+          <th>Data Pagamento</th>
+          <th>Recebedor</th>
+          <th>Tipo Pagamento</th>
+          <th>Ações</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-cobranca>
+        <tr>
+          <td>{{ cobranca.descricao }}</td>
+          <td>{{ cobranca.mesReferencia }}/{{ cobranca.anoReferencia }}</td>
+          <td>{{ cobranca.valor | currency: 'BRL' }}</td>
+          <td>
+              <p-tag
+              [value]="cobranca.status === 'PAGO' ? 'Pago' : 'Pendente'"
+              [severity]="cobranca.status === 'PAGO' ? 'success' : 'warn'"
+            />
+          </td>
+          <td>{{ cobranca.dataPagamento | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ cobranca.recebedor || '-' }}</td>
+          <td>{{ cobranca.tipoPagamento || '-' }}</td>
+          <td>
+            @if (cobranca.status === 'PENDENTE') {
+              <p-button
+                label="Dar Baixa"
+                icon="pi pi-check"
+                (onClick)="abrirModalBaixa(cobranca)"
+                styleClass="p-button-sm"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <!-- Modal Dar Baixa -->
+    <p-dialog
+      [(visible)]="_modalBaixaVisivel"
+      header="Dar Baixa na Cobrança"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModalBaixa()"
+    >
+      <div class="form-group">
+        <label>Data de Pagamento *</label>
+        <p-datepicker
+          [(ngModel)]="baixaData.dataPagamento"
+          dateFormat="dd/mm/yy"
+          styleClass="full-width"
+          [appendTo]="'body'"
+          [showIcon]="true"
+          [showButtonBar]="true"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Recebedor *</label>
+        <p-select
+          [(ngModel)]="baixaData.recebedor"
+          [options]="recebedorOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecione o recebedor"
+          styleClass="full-width"
+          [appendTo]="'body'"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Tipo de Pagamento *</label>
+        <p-select
+          [(ngModel)]="baixaData.tipoPagamento"
+          [options]="tipoPagamentoOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecione o tipo de pagamento"
+          styleClass="full-width"
+          [appendTo]="'body'"
+        />
+      </div>
+
+      <div class="dialog-footer">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          (onClick)="fecharModalBaixa()"
+          styleClass="p-button-text"
+        />
+        <p-button
+          label="Confirmar Baixa"
+          icon="pi pi-check"
+          (onClick)="confirmarBaixa()"
+          [loading]="salvando()"
+        />
+      </div>
+    </p-dialog>

@@ -1,0 +1,86 @@
+    <p-toast />
+    
+    <div class="relatorios-header">
+      <h2>Relatórios</h2>
+      <p class="subtitle">Gere relatórios financeiros em PDF</p>
+    </div>
+
+    <p-card class="relatorio-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>
+            <i class="pi pi-file-pdf"></i>
+            Relatório de Acerto Financeiro
+          </h3>
+        </div>
+      </ng-template>
+
+      <form (ngSubmit)="gerarRelatorio()" class="relatorio-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dataInicio">Data Início *</label>
+            <p-datepicker
+              id="dataInicio"
+              [(ngModel)]="filtros.dataInicio"
+              name="dataInicio"
+              dateFormat="dd/mm/yy"
+              [showIcon]="true"
+              styleClass="full-width"
+              placeholder="Selecione a data inicial"
+              [appendTo]="'body'"
+              [showButtonBar]="true"
+            />
+            @if (!filtros.dataInicio && formSubmetido) {
+              <small class="error-text">Data início é obrigatória</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="dataFim">Data Fim *</label>
+            <p-datepicker
+              id="dataFim"
+              [(ngModel)]="filtros.dataFim"
+              name="dataFim"
+              dateFormat="dd/mm/yy"
+              [showIcon]="true"
+              styleClass="full-width"
+              placeholder="Selecione a data final"
+              [appendTo]="'body'"
+              [showButtonBar]="true"
+            />
+            @if (!filtros.dataFim && formSubmetido) {
+              <small class="error-text">Data fim é obrigatória</small>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="servicos">Serviços *</label>
+          <p-multiSelect
+            id="servicos"
+            [(ngModel)]="filtros.servicoIds"
+            name="servicos"
+            [options]="servicos()"
+            optionLabel="nome"
+            optionValue="id"
+            placeholder="Selecione os serviços"
+            styleClass="full-width"
+            [appendTo]="'body'"
+            [showClear]="true"
+          />
+          @if ((!filtros.servicoIds || filtros.servicoIds.length === 0) && formSubmetido) {
+            <small class="error-text">Selecione pelo menos um serviço</small>
+          }
+        </div>
+
+        <div class="form-actions">
+          <p-button
+            type="submit"
+            label="Gerar PDF"
+            icon="pi pi-file-pdf"
+            [loading]="gerando()"
+            [disabled]="gerando()"
+          />
+        </div>
+      </form>
+    </p-card>

@@ -1,0 +1,327 @@
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
+    .dashboard-header ::ng-deep .p-button {
+      height: 2.5rem !important;
+      min-height: 2.5rem !important;
+      padding: 0.625rem 1.25rem !important;
+    }
+
+    .dashboard-header h2 {
+      margin: 0 0 0.5rem 0;
+      color: #1e293b;
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    .dashboard-header .subtitle {
+      margin: 0;
+      color: #64748b;
+      font-size: 1rem;
+    }
+
+    .filters-card {
+      margin-bottom: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .filters-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .filters-header h3 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filters-header i {
+      color: #64748b;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 0.875rem;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-content {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1rem;
+    }
+
+    .card-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      color: white;
+    }
+
+    .card-icon.total {
+      background: linear-gradient(135deg, #4cc9f0 0%, #90f7ec 100%);
+    }
+
+    .card-icon.revenue {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .card-icon.alerts {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .card-info {
+      flex: 1;
+    }
+
+    .card-info h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-value {
+      margin: 0 0 0.25rem 0;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .card-label {
+      color: #94a3b8;
+      font-size: 0.875rem;
+    }
+
+    .alerts-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-header {
+      padding: 1.5rem;
+    }
+
+    .card-header h3 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-header i {
+      color: #f59e0b;
+    }
+
+    .no-alerts-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .no-alerts-content {
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .no-alerts-content i {
+      font-size: 4rem;
+      color: #10b981;
+      margin-bottom: 1rem;
+    }
+
+    .no-alerts-content h3 {
+      margin: 0 0 0.5rem 0;
+      color: #1e293b;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .no-alerts-content p {
+      margin: 0;
+      color: #64748b;
+      font-size: 1rem;
+    }
+
+    .text-center {
+      text-align: center;
+      padding: 2rem;
+      color: #64748b;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .dashboard-header h2 {
+        font-size: 1.5rem;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-actions {
+        flex-direction: column-reverse;
+      }
+
+      .filter-actions .p-button {
+        width: 100%;
+      }
+
+      .summary-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .card-content {
+        gap: 1rem;
+        padding: 0.75rem;
+      }
+
+      .card-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+      }
+
+      .card-value {
+        font-size: 1.5rem;
+      }
+
+      .card-header {
+        padding: 1rem;
+      }
+
+      .card-header h3 {
+        font-size: 1rem;
+      }
+
+      ::ng-deep .p-datatable {
+        font-size: 0.875rem;
+      }
+
+      ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+      ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+        padding: 0.5rem !important;
+        font-size: 0.75rem !important;
+      }
+
+      ::ng-deep .p-datatable-wrapper {
+        overflow-x: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dashboard-header h2 {
+        font-size: 1.25rem;
+      }
+
+      .card-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .card-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto;
+      }
+
+      .card-value {
+        font-size: 1.25rem;
+      }
+
+      .no-alerts-content {
+        padding: 2rem 1rem;
+      }
+
+      .no-alerts-content i {
+        font-size: 3rem;
+      }
+
+      .no-alerts-content h3 {
+        font-size: 1.25rem;
+      }
+    }

@@ -1,0 +1,289 @@
+    <p-toast />
+    
+    <div class="page-header">
+      <h2>Pacientes</h2>
+      <p-button
+        label="Novo Paciente"
+        icon="pi pi-plus"
+        (onClick)="abrirModalNovoPaciente()"
+      />
+    </div>
+
+    <div class="search-container">
+      <div class="search-wrapper">
+        <input
+          type="text"
+          pInputText
+          placeholder="Pesquisar pacientes por nome, CPF, email ou telefone..."
+          [ngModel]="termoPesquisa()"
+          (ngModelChange)="termoPesquisa.set($event)"
+          class="search-input"
+        />
+        @if (termoPesquisa()) {
+          <p-button
+            icon="pi pi-times"
+            (onClick)="limparPesquisa()"
+            styleClass="p-button-text p-button-rounded p-button-plain clear-button"
+            pTooltip="Limpar pesquisa"
+            [rounded]="true"
+          />
+        }
+      </div>
+      @if (termoPesquisa() && pacientesFiltrados().length > 0) {
+        <div class="search-results-info">
+          <i class="pi pi-info-circle"></i>
+          <span>{{ pacientesFiltrados().length }} paciente(s) encontrado(s)</span>
+        </div>
+      }
+      @if (termoPesquisa() && pacientesFiltrados().length === 0) {
+        <div class="search-no-results">
+          <i class="pi pi-search"></i>
+          <span>Nenhum paciente encontrado com o termo "{{ termoPesquisa() }}"</span>
+        </div>
+      }
+    </div>
+
+    <p-table
+      [value]="pacientesFiltrados()"
+      [paginator]="true"
+      [rows]="10"
+      [loading]="carregando()"
+      [tableStyle]="{ 'min-width': '40rem' }"
+      styleClass="compact-table"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Nome</th>
+          <th>CPF</th>
+          <th>Telefone</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-paciente>
+        <tr>
+          <td>{{ paciente.nome }}</td>
+          <td>{{ formatarCPF(paciente.cpf) }}</td>
+          <td>{{ paciente.telefone || '-' }}</td>
+          <td>
+            <p-tag
+              [value]="paciente.ativo !== false ? 'Ativo' : 'Inativo'"
+              [severity]="paciente.ativo !== false ? 'success' : 'danger'"
+            />
+          </td>
+          <td style="display: flex; justify-content: center;">
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-file-pdf"
+                label="Prontuário PDF"
+                (onClick)="baixarProntuario(paciente.id, paciente.nome)"
+                styleClass="p-button-sm"
+                severity="secondary"
+              />
+              <p-button
+                icon="pi pi-pencil"
+                (onClick)="abrirModalEdicao(paciente)"
+                styleClass="p-button-text p-button-rounded"
+                pTooltip="Editar"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <!-- Modal Criar/Editar Paciente -->
+    <p-dialog
+      [(visible)]="modalVisivel"
+      [header]="pacienteEmEdicao ? 'Editar Paciente' : 'Novo Paciente'"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '1000px', maxHeight: '90vh' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModal()"
+    >
+      <form [formGroup]="pacienteForm" (ngSubmit)="salvarPaciente()">
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="nome">Nome *</label>
+            <input
+              id="nome"
+              type="text"
+              pInputText
+              formControlName="nome"
+              placeholder="Nome completo"
+              [class.ng-invalid]="pacienteForm.get('nome')?.invalid && pacienteForm.get('nome')?.touched"
+            />
+            @if (pacienteForm.get('nome')?.invalid && pacienteForm.get('nome')?.touched) {
+              <small class="error-text">Nome é obrigatório</small>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cpf">CPF *</label>
+            <input
+              id="cpf"
+              type="text"
+              pInputText
+              formControlName="cpf"
+              placeholder="000.000.000-00"
+              [class.ng-invalid]="pacienteForm.get('cpf')?.invalid && pacienteForm.get('cpf')?.touched"
+            />
+            @if (pacienteForm.get('cpf')?.invalid && pacienteForm.get('cpf')?.touched) {
+              <small class="error-text">CPF é obrigatório</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="dataNascimento">Data de Nascimento</label>
+            <p-datepicker
+              id="dataNascimento"
+              formControlName="dataNascimento"
+              dateFormat="dd/mm/yy"
+              [showIcon]="true"
+              styleClass="full-width"
+              [appendTo]="'body'"
+              [showButtonBar]="true"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="telefone">Telefone</label>
+            <input
+              id="telefone"
+              type="text"
+              pInputText
+              formControlName="telefone"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              pInputText
+              formControlName="email"
+              placeholder="email@exemplo.com"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cep">CEP</label>
+            <input
+              id="cep"
+              type="text"
+              pInputText
+              formControlName="cep"
+              placeholder="00000-000"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="logradouro">Logradouro</label>
+            <input
+              id="logradouro"
+              type="text"
+              pInputText
+              formControlName="logradouro"
+              placeholder="Rua, Avenida, etc."
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="numero">Número</label>
+            <input
+              id="numero"
+              type="text"
+              pInputText
+              formControlName="numero"
+              placeholder="123"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="bairro">Bairro</label>
+            <input
+              id="bairro"
+              type="text"
+              pInputText
+              formControlName="bairro"
+              placeholder="Bairro"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cidade">Cidade</label>
+            <input
+              id="cidade"
+              type="text"
+              pInputText
+              formControlName="cidade"
+              placeholder="Cidade"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="estado">Estado</label>
+            <input
+              id="estado"
+              type="text"
+              pInputText
+              formControlName="estado"
+              placeholder="UF"
+              maxlength="2"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="complemento">Complemento</label>
+            <input
+              id="complemento"
+              type="text"
+              pInputText
+              formControlName="complemento"
+              placeholder="Apto, Bloco, etc."
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="anamnese">Anamnese</label>
+          <textarea
+            id="anamnese"
+            pInputTextarea
+            formControlName="anamnese"
+            rows="6"
+            placeholder="Informações médicas relevantes..."
+            styleClass="full-width"
+          ></textarea>
+        </div>
+
+        <div class="dialog-footer">
+          <p-button
+            label="Cancelar"
+            icon="pi pi-times"
+            (onClick)="fecharModal()"
+            styleClass="p-button-text"
+          />
+          <p-button
+            type="submit"
+            [label]="pacienteEmEdicao ? 'Atualizar' : 'Criar'"
+            icon="pi pi-check"
+            [loading]="salvando()"
+            [disabled]="pacienteForm.invalid"
+          />
+        </div>
+      </form>
+    </p-dialog>

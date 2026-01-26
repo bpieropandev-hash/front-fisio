@@ -1,0 +1,177 @@
+    <p-toast />
+    
+    <div class="dashboard-header">
+      <div>
+        <h2>Dashboard</h2>
+        <p class="subtitle">Visão geral e alertas do mês atual</p>
+      </div>
+      <p-button
+        [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
+        [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
+        (onClick)="toggleFiltros()"
+        [outlined]="!filtrosVisiveis()"
+      />
+    </div>
+
+    <!-- Painel de Filtros (Oculto por padrão) -->
+    @if (filtrosVisiveis()) {
+      <p-card class="filters-card">
+        <div class="filters-header">
+          <h3>
+            <i class="pi pi-filter"></i>
+            Filtros de Período
+          </h3>
+        </div>
+        
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label>Data Início</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataInicio"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data inicial"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Data Fim</label>
+            <p-datepicker
+              [(ngModel)]="filtros.dataFim"
+              dateFormat="dd/mm/yy"
+              [showTime]="false"
+              styleClass="full-width"
+              placeholder="Selecione a data final"
+              [appendTo]="'body'"
+              [showIcon]="true"
+              [showButtonBar]="true"
+            />
+          </div>
+
+          <div class="filter-group filter-actions">
+            <p-button
+              label="Limpar Filtros"
+              icon="pi pi-times"
+              (onClick)="limparFiltros()"
+              styleClass="p-button-text"
+            />
+            <p-button
+              label="Aplicar Filtros"
+              icon="pi pi-check"
+              (onClick)="aplicarFiltros()"
+            />
+          </div>
+        </div>
+      </p-card>
+    }
+
+    @if (carregando()) {
+      <div class="loading-container">
+        <p-progressSpinner />
+      </div>
+    } @else {
+      <!-- Cards de Resumo -->
+      <div class="summary-cards">
+        <p-card class="summary-card">
+          <div class="card-content">
+            <div class="card-icon total">
+              <i class="pi pi-calendar-check"></i>
+            </div>
+            <div class="card-info">
+              <h3>Total de Atendimentos Concluídos</h3>
+              <p class="card-value">{{ resumo()?.totalAtendimentos || 0 }}</p>
+              <small class="card-label">Mês atual</small>
+            </div>
+          </div>
+        </p-card>
+
+        <p-card class="summary-card">
+          <div class="card-content">
+            <div class="card-icon revenue">
+              <i class="pi pi-dollar"></i>
+            </div>
+            <div class="card-info">
+              <h3>Faturamento Profissional</h3>
+              <p class="card-value">{{ (resumo()?.faturamentoProfissional || 0) | currency: 'BRL' }}</p>
+              <small class="card-label">Mês atual</small>
+            </div>
+          </div>
+        </p-card>
+
+        <p-card class="summary-card">
+          <div class="card-content">
+            <div class="card-icon alerts">
+              <i class="pi pi-exclamation-triangle"></i>
+            </div>
+            <div class="card-info">
+              <h3>Alertas</h3>
+              <p class="card-value">{{ resumo()?.alertasPendencia?.length || 0 }}</p>
+              <small class="card-label">Pendências financeiras</small>
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <!-- Tabela de Alertas -->
+      @if (resumo()?.alertasPendencia && resumo()!.alertasPendencia.length > 0) {
+        <p-card class="alerts-card">
+          <ng-template pTemplate="header">
+            <div class="card-header">
+              <h3>
+                <i class="pi pi-exclamation-triangle"></i>
+                Alertas de Pendências Financeiras
+              </h3>
+            </div>
+          </ng-template>
+          
+          <p-table
+            [value]="resumo()!.alertasPendencia"
+            [tableStyle]="{ 'min-width': '50rem' }"
+            styleClass="p-datatable-striped"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Paciente</th>
+                <th>Status</th>
+                <th>Ação</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-pacienteNome>
+              <tr>
+                <td>
+                  <strong>{{ pacienteNome }}</strong>
+                </td>
+                <td>
+                  <p-tag value="Pendente" severity="warn" />
+                </td>
+                <td>
+                  <p-button
+                    label="Resolver"
+                    icon="pi pi-arrow-right"
+                    (onClick)="resolverAlerta()"
+                    styleClass="p-button-sm"
+                  />
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="empty">
+              <tr>
+                <td colspan="3" class="text-center">Nenhum alerta encontrado</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      } @else {
+        <p-card class="no-alerts-card">
+          <div class="no-alerts-content">
+            <i class="pi pi-check-circle"></i>
+            <h3>Nenhum alerta encontrado</h3>
+            <p>Todos os pacientes mensalistas possuem cobranças pagas no mês atual.</p>
+          </div>
+        </p-card>
+      }
+    }

@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, EventContentArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -41,756 +41,8 @@ import { MessageService } from 'primeng/api';
     Toast
   ],
   providers: [MessageService],
-  template: `
-    <p-toast />
-    
-    <div class="agenda-header">
-      <h2>Agenda de Atendimentos</h2>
-      <div class="header-actions">
-        <p-button
-          [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
-          [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
-          (onClick)="toggleFiltros()"
-          [outlined]="!filtrosVisiveis()"
-        />
-        <p-button
-          label="Novo Agendamento"
-          icon="pi pi-plus"
-          (onClick)="abrirModalNovoAgendamento()"
-        />
-      </div>
-    </div>
-
-    <!-- Painel de Filtros (Oculto por padrão) -->
-    @if (filtrosVisiveis()) {
-      <p-card class="filters-card">
-        <div class="filters-header">
-          <h3>
-            <i class="pi pi-filter"></i>
-            Filtros
-          </h3>
-        </div>
-        
-        <div class="filters-grid">
-          <div class="filter-group">
-            <label>Status</label>
-            <p-multiSelect
-              [(ngModel)]="filtros.status"
-              [options]="statusOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Todos os status"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showClear]="true"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label>Paciente</label>
-            <p-select
-              [(ngModel)]="filtros.pacienteId"
-              [options]="pacientes()"
-              optionLabel="nome"
-              optionValue="id"
-              placeholder="Todos os pacientes"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showClear]="true"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label>Serviço</label>
-            <p-select
-              [(ngModel)]="filtros.servicoId"
-              [options]="servicos()"
-              optionLabel="nome"
-              optionValue="id"
-              placeholder="Todos os serviços"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showClear]="true"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label>Data Início</label>
-            <p-datepicker
-              [(ngModel)]="filtros.dataInicio"
-              dateFormat="dd/mm/yy"
-              [showTime]="false"
-              styleClass="full-width"
-              placeholder="Selecione a data"
-              [appendTo]="'body'"
-              [showIcon]="true"
-              [showButtonBar]="true"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label>Data Fim</label>
-            <p-datepicker
-              [(ngModel)]="filtros.dataFim"
-              dateFormat="dd/mm/yy"
-              [showTime]="false"
-              styleClass="full-width"
-              placeholder="Selecione a data"
-              [appendTo]="'body'"
-              [showIcon]="true"
-              [showButtonBar]="true"
-            />
-          </div>
-
-          <div class="filter-group filter-actions">
-            <p-button
-              label="Limpar Filtros"
-              icon="pi pi-times"
-              (onClick)="limparFiltros()"
-              styleClass="p-button-text"
-            />
-            <p-button
-              label="Aplicar Filtros"
-              icon="pi pi-check"
-              (onClick)="aplicarFiltros()"
-            />
-          </div>
-        </div>
-      </p-card>
-    }
-
-    <!-- Legenda de Status -->
-    <div class="status-legend">
-      <div class="legend-item">
-        <span class="legend-color agendado"></span>
-        <span>Agendado</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-color concluido"></span>
-        <span>Concluído</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-color cancelado"></span>
-        <span>Cancelado</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-color falta"></span>
-        <span>Falta</span>
-      </div>
-    </div>
-
-    <full-calendar [options]="calendarOptions()" />
-
-    <!-- Modal de Edição/Baixa -->
-    <p-dialog
-      [(visible)]="_modalVisivel"
-      [header]="atendimentoSelecionado() ? 'Editar Atendimento' : 'Novo Agendamento'"
-      [modal]="true"
-      [style]="{ width: '90vw', maxWidth: '900px', maxHeight: '90vh' }"
-      [draggable]="false"
-      [resizable]="false"
-      (onHide)="fecharModal()"
-    >
-      @if (atendimentoSelecionado()) {
-        <div class="form-group">
-          <label>Paciente</label>
-          <p>{{ atendimentoSelecionado()?.pacienteNome || 'Carregando...' }}</p>
-        </div>
-
-        <div class="form-group">
-          <label>Serviço</label>
-          <p>{{ atendimentoSelecionado()?.servicoNome || 'Carregando...' }}</p>
-        </div>
-
-        <div class="form-group">
-          <label>Data/Hora</label>
-          <div class="datetime-selector">
-            <p-datepicker
-              [(ngModel)]="dataEdit"
-              dateFormat="dd/mm/yy"
-              styleClass="full-width date-input"
-              [appendTo]="'body'"
-              [showIcon]="true"
-              [showButtonBar]="true"
-              (onSelect)="atualizarDataHoraEdit()"
-            />
-            <p-select
-              [(ngModel)]="horaEdit"
-              [options]="horariosDisponiveis"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Selecione o horário"
-              styleClass="full-width time-input"
-              [appendTo]="'body'"
-              (ngModelChange)="atualizarDataHoraEdit()"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Status</label>
-          <p-select
-            [(ngModel)]="statusEdit"
-            [options]="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-            styleClass="full-width"
-            [appendTo]="'body'"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Evolução</label>
-          <textarea
-            pInputTextarea
-            [(ngModel)]="evolucaoEdit"
-            rows="8"
-            placeholder="Digite a evolução do atendimento..."
-            styleClass="full-width evolution-textarea"
-            [ngClass]="'evolution-textarea'"
-            class="evolution-textarea"
-          ></textarea>
-        </div>
-
-        @if (atendimentoSelecionado()?.valorCobrado && atendimentoSelecionado()!.valorCobrado > 0) {
-          <div class="form-group">
-            <label>Recebedor *</label>
-            <p-select
-              [(ngModel)]="recebedorEdit"
-              [options]="recebedorOptions"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="full-width"
-              [required]="statusEdit === 'CONCLUIDO'"
-              [appendTo]="'body'"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Tipo de Pagamento *</label>
-            <p-select
-              [(ngModel)]="tipoPagamentoEdit"
-              [options]="tipoPagamentoOptions"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="full-width"
-              [required]="statusEdit === 'CONCLUIDO'"
-              [appendTo]="'body'"
-            />
-          </div>
-        } @else {
-          <div class="mensalista-badge">
-            <i class="pi pi-id-card"></i> Mensalista - Sem cobrança
-          </div>
-        }
-
-        <div class="dialog-footer">
-          <p-button
-            label="Cancelar"
-            icon="pi pi-times"
-            (onClick)="fecharModal()"
-            styleClass="p-button-text"
-          />
-          <p-button
-            label="Salvar"
-            icon="pi pi-check"
-            (onClick)="salvarAtendimento()"
-            [loading]="salvando()"
-          />
-        </div>
-      } @else {
-        <!-- Formulário de Novo Agendamento -->
-        <div class="form-group">
-          <label>Pacientes *</label>
-          <p-multiSelect
-            [(ngModel)]="novoAgendamento.pacienteIds"
-            [options]="pacientes()"
-            optionLabel="nome"
-            optionValue="id"
-            placeholder="Selecione um ou mais pacientes"
-            styleClass="full-width"
-            [appendTo]="'body'"
-            [showClear]="true"
-            [filter]="true"
-            filterPlaceholder="Buscar pacientes..."
-          />
-          <small class="text-muted">Você pode selecionar múltiplos pacientes para o mesmo agendamento</small>
-        </div>
-
-        <div class="form-group">
-          <label>Serviço *</label>
-          <p-select
-            [(ngModel)]="novoAgendamento.servicoId"
-            [options]="servicos()"
-            optionLabel="nome"
-            optionValue="id"
-            placeholder="Selecione o serviço"
-            styleClass="full-width"
-            [appendTo]="'body'"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Data/Hora *</label>
-          <div class="datetime-selector">
-            <p-datepicker
-              [(ngModel)]="dataNovoAgendamento"
-              dateFormat="dd/mm/yy"
-              styleClass="full-width date-input"
-              [appendTo]="'body'"
-              [showIcon]="true"
-              [showButtonBar]="true"
-              (onSelect)="atualizarDataHoraNovoAgendamento()"
-            />
-            <p-select
-              [(ngModel)]="horaNovoAgendamento"
-              [options]="horariosDisponiveis"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Selecione o horário"
-              styleClass="full-width time-input"
-              [appendTo]="'body'"
-              (ngModelChange)="atualizarDataHoraNovoAgendamento()"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="flex align-items-center gap-2">
-            <p-toggleswitch [(ngModel)]="repetirAgendamento" />
-            <label>Repetir agendamento?</label>
-          </div>
-        </div>
-
-        @if (repetirAgendamento) {
-          <div class="form-group">
-            <label>Repetir até *</label>
-            <p-datepicker
-              [(ngModel)]="dataFimRecorrencia"
-              [showTime]="false"
-              dateFormat="dd/mm/yy"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showIcon]="true"
-              [showButtonBar]="true"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Dias da Semana</label>
-            <p-multiSelect
-              [(ngModel)]="diasSemanaSelecionados"
-              [options]="diasSemanaOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Selecione os dias da semana"
-              styleClass="full-width"
-              [appendTo]="'body'"
-            />
-            <small class="text-muted">Selecione os dias da semana. Se nenhum for selecionado, repetirá no mesmo dia da semana da data inicial.</small>
-          </div>
-        }
-
-        <div class="dialog-footer">
-          <p-button
-            label="Cancelar"
-            icon="pi pi-times"
-            (onClick)="fecharModal()"
-            styleClass="p-button-text"
-          />
-          <p-button
-            label="Criar"
-            icon="pi pi-check"
-            (onClick)="criarAgendamento()"
-            [loading]="salvando()"
-          />
-        </div>
-      }
-    </p-dialog>
-  `,
-  styles: [`
-    .agenda-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      gap: 1rem;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .header-actions ::ng-deep .p-button {
-      height: 2.5rem !important;
-      min-height: 2.5rem !important;
-      padding: 0.625rem 1.25rem !important;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-
-    .full-width {
-      width: 100%;
-    }
-
-    /* Estilos específicos para o textarea de evolução - com máxima especificidade */
-    ::ng-deep textarea.evolution-textarea.p-inputtextarea,
-    ::ng-deep .p-inputtextarea.evolution-textarea,
-    ::ng-deep textarea[styleclass*="evolution-textarea"],
-    ::ng-deep textarea.evolution-textarea {
-      font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-      font-size: 15px !important;
-      line-height: 1.8 !important;
-      letter-spacing: 0.015em !important;
-      padding: 20px 24px !important;
-      border: 2px solid #e2e8f0 !important;
-      border-radius: 12px !important;
-      background: #ffffff !important;
-      color: #1e293b !important;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      resize: vertical !important;
-      min-height: 160px !important;
-      width: 100% !important;
-      box-shadow: 
-        0 1px 3px rgba(0, 0, 0, 0.08),
-        0 0 0 1px rgba(0, 0, 0, 0.04) !important;
-    }
-
-    ::ng-deep textarea.evolution-textarea.p-inputtextarea:hover,
-    ::ng-deep .p-inputtextarea.evolution-textarea:hover,
-    ::ng-deep textarea.evolution-textarea:hover {
-      border-color: #cbd5e1 !important;
-      box-shadow: 
-        0 4px 12px rgba(0, 0, 0, 0.1),
-        0 0 0 1px rgba(0, 0, 0, 0.06) !important;
-      transform: translateY(-1px) !important;
-      background: #fafbfc !important;
-    }
-
-    ::ng-deep textarea.evolution-textarea.p-inputtextarea:focus,
-    ::ng-deep .p-inputtextarea.evolution-textarea:focus,
-    ::ng-deep textarea.evolution-textarea:focus {
-      outline: none !important;
-      border-color: #4cc9f0 !important;
-      box-shadow: 
-        0 0 0 4px rgba(76, 201, 240, 0.12),
-        0 8px 24px rgba(76, 201, 240, 0.15),
-        0 2px 8px rgba(0, 0, 0, 0.08) !important;
-      background: #ffffff !important;
-      transform: translateY(-2px) !important;
-    }
-
-    ::ng-deep textarea.evolution-textarea.p-inputtextarea::placeholder,
-    ::ng-deep .p-inputtextarea.evolution-textarea::placeholder,
-    ::ng-deep textarea.evolution-textarea::placeholder {
-      color: #94a3b8 !important;
-      opacity: 0.7 !important;
-      font-weight: 400 !important;
-    }
-
-    .datetime-selector {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      align-items: end;
-    }
-
-    .datetime-selector .date-input {
-      flex: 1;
-    }
-
-    .datetime-selector .time-input {
-      flex: 1;
-    }
-
-    @media (max-width: 768px) {
-      .datetime-selector {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-    }
-
-    .mensalista-badge {
-      padding: 12px;
-      background-color: #e3f2fd;
-      border-radius: 4px;
-      color: #1976d2;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-
-    .dialog-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .text-muted {
-      color: #64748b;
-      font-size: 0.875rem;
-      margin-top: 0.5rem;
-      display: block;
-    }
-
-    .flex {
-      display: flex;
-    }
-
-    .align-items-center {
-      align-items: center;
-    }
-
-    .gap-2 {
-      gap: 0.5rem;
-    }
-
-    ::ng-deep .fc-event-title {
-      white-space: normal;
-    }
-
-    ::ng-deep .mensalista-event {
-      background-color: #4caf50 !important;
-      border-color: #4caf50 !important;
-    }
-
-    /* Estilo discreto e elegante para o indicador de horário atual */
-    ::ng-deep .fc-timegrid-now-indicator-line {
-      border-color: #64748b !important;
-      border-width: 1px !important;
-      border-style: dashed !important;
-      opacity: 0.6 !important;
-      z-index: 5 !important;
-    }
-
-    ::ng-deep .fc-timegrid-now-indicator-arrow {
-      border-color: transparent !important;
-      background-color: transparent !important;
-    }
-
-    /* Melhorar visibilidade do indicador */
-    ::ng-deep .fc-timegrid-now-indicator-container {
-      pointer-events: none !important;
-    }
-
-    .filters-card {
-      margin-bottom: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      animation: slideDown 0.3s ease-out;
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .filters-header {
-      margin-bottom: 1.5rem;
-    }
-
-    .filters-header h3 {
-      margin: 0;
-      color: #1e293b;
-      font-size: 1.25rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .filters-header i {
-      color: #64748b;
-    }
-
-    .filters-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .filter-group label {
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: #1e293b;
-      font-size: 0.875rem;
-    }
-
-    .filter-actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-      align-items: flex-end;
-    }
-
-    .status-legend {
-      display: flex;
-      gap: 1.5rem;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      background: #f8fafc;
-      border-radius: 8px;
-      flex-wrap: wrap;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      color: #64748b;
-    }
-
-    .legend-color {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      border: 2px solid;
-    }
-
-    .legend-color.agendado {
-      background-color: #a5d6a7;
-      border-color: #66bb6a;
-    }
-
-    .legend-color.concluido {
-      background-color: #90caf9;
-      border-color: #42a5f5;
-    }
-
-    .legend-color.cancelado {
-      background-color: #ef9a9a;
-      border-color: #e57373;
-    }
-
-    .legend-color.falta {
-      background-color: #fff59d;
-      border-color: #ffd54f;
-    }
-
-    @media (max-width: 768px) {
-      .agenda-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-      }
-
-      .agenda-header h2 {
-        font-size: 1.5rem;
-        margin: 0;
-      }
-
-      .header-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .header-actions .p-button {
-        width: 100%;
-      }
-
-      .filter-actions {
-        flex-direction: column-reverse;
-      }
-
-      .filter-actions .p-button {
-        width: 100%;
-      }
-
-      .filters-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .status-legend {
-        gap: 0.75rem;
-        padding: 0.75rem;
-        font-size: 0.875rem;
-      }
-
-      .filters-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-
-      .filters-header h3 {
-        font-size: 1rem;
-      }
-
-      ::ng-deep .fc-toolbar {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      ::ng-deep .fc-toolbar-chunk {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem;
-      }
-
-      ::ng-deep .fc-button {
-        padding: 0.375rem 0.5rem !important;
-        font-size: 0.875rem !important;
-      }
-
-      ::ng-deep .fc-event-title {
-        font-size: 0.75rem !important;
-        padding: 2px 4px !important;
-      }
-
-      .dialog-footer {
-        flex-direction: column-reverse;
-      }
-
-      .dialog-footer .p-button {
-        width: 100%;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .agenda-header h2 {
-        font-size: 1.25rem;
-      }
-
-      .status-legend {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      ::ng-deep .fc-header-toolbar {
-        font-size: 0.75rem;
-      }
-
-      ::ng-deep .fc-daygrid-day-number,
-      ::ng-deep .fc-timegrid-slot-label {
-        font-size: 0.75rem !important;
-      }
-    }
-
-  `]
+  templateUrl: './agenda.component.html',
+  styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
   modalVisivel = signal(false);
@@ -802,6 +54,7 @@ export class AgendaComponent implements OnInit {
   eventos = signal<EventInput[]>([]);
   eventosFiltrados = signal<EventInput[]>([]);
   filtrosVisiveis = signal(false);
+  private ignoreNextDateClick = false;
 
   filtros = {
     status: [] as string[],
@@ -884,8 +137,18 @@ export class AgendaComponent implements OnInit {
     },
     locale: ptBrLocale,
     events: this.eventosFiltrados(),
+    eventDisplay: 'block',
     eventClick: (info) => this.onEventClick(info),
     dateClick: (info) => this.onDateClick(info),
+    dayMaxEventRows: 3,
+    moreLinkText: (n) => `+${n} mais`,
+    eventContent: (arg) => this.renderEventContent(arg),
+    eventClassNames: (arg) => {
+      const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+      const status = this.normalizarStatusClass(atendimento?.status);
+      return status ? [`status-${status}`] : [];
+    },
+    eventDidMount: (info) => this.onEventDidMount(info),
     editable: true,
     eventResize: (info) => this.onEventResize(info),
     eventDrop: (info) => this.onEventDrop(info),
@@ -963,24 +226,32 @@ export class AgendaComponent implements OnInit {
           const servico = this.servicos().find(s => s.id === atendimento.servicoBaseId);
           const pacienteNome = paciente?.nome || `Paciente #${atendimento.pacienteId}`;
           const servicoNome = servico?.nome || `Serviço #${atendimento.servicoBaseId}`;
+          const servicoTipo = this.obterTipoServico(servicoNome, servico?.tipo);
 
           const title = isMensalista
             ? `📋 ${pacienteNome} - ${servicoNome}`
             : `${pacienteNome} - ${servicoNome}`;
 
-          // Obtém cores baseadas no status
-          const cores = this.obterCoresPorStatus(atendimento.status);
+          // Cores: manter por STATUS (fundo/borda/texto)
+          const coresStatus = this.obterCoresPorStatus(atendimento.status);
 
           eventos.push({
             id: atendimento.id.toString(),
             title: title,
             start: atendimento.dataHoraInicio,
-            backgroundColor: cores.backgroundColor,
-            borderColor: cores.borderColor,
-            textColor: cores.textColor,
+            backgroundColor: coresStatus.backgroundColor,
+            borderColor: coresStatus.borderColor,
+            textColor: coresStatus.textColor,
+            classNames: (() => {
+              const status = this.normalizarStatusClass(atendimento.status);
+              return status ? [`status-${status}`] : [];
+            })(),
             extendedProps: {
               atendimento: atendimento,
-              isMensalista: isMensalista
+              isMensalista: isMensalista,
+              pacienteNome,
+              servicoNome,
+              servicoTipo
             }
           });
         });
@@ -999,34 +270,170 @@ export class AgendaComponent implements OnInit {
     switch (status) {
       case 'AGENDADO':
         return {
-          backgroundColor: '#a5d6a7', // Verde claro
-          borderColor: '#66bb6a',
+          backgroundColor: '#a5d6a7',
+          borderColor: '#16a34a',
           textColor: '#1b5e20'
         };
       case 'CONCLUIDO':
         return {
-          backgroundColor: '#90caf9', // Azul claro
-          borderColor: '#42a5f5',
+          backgroundColor: '#90caf9',
+          borderColor: '#2563eb',
           textColor: '#0d47a1'
         };
       case 'CANCELADO':
         return {
-          backgroundColor: '#ef9a9a', // Vermelho claro
-          borderColor: '#e57373',
+          backgroundColor: '#ef9a9a',
+          borderColor: '#dc2626',
           textColor: '#b71c1c'
         };
       case 'FALTA':
         return {
-          backgroundColor: '#fff59d', // Amarelo claro
-          borderColor: '#ffd54f',
+          backgroundColor: '#fff59d',
+          borderColor: '#ca8a04',
           textColor: '#f57f17'
         };
       default:
         return {
-          backgroundColor: '#e0e0e0', // Cinza
-          borderColor: '#bdbdbd',
+          backgroundColor: '#e0e0e0',
+          borderColor: '#64748b',
           textColor: '#424242'
         };
+    }
+  }
+
+  private obterTipoServico(servicoNome: string, servicoTipo?: string): 'PILATES' | 'FISIOTERAPIA' | 'AVALIACAO' | 'OUTRO' {
+    const nome = (servicoNome || '').toLowerCase();
+    if (nome.includes('avalia')) return 'AVALIACAO';
+    // Preferir o tipo vindo do backend quando existir
+    if (servicoTipo === 'PILATES') return 'PILATES';
+    if (servicoTipo === 'FISIOTERAPIA') return 'FISIOTERAPIA';
+    // Fallback por nome
+    if (nome.includes('pilates')) return 'PILATES';
+    if (nome.includes('fisio')) return 'FISIOTERAPIA';
+    return 'OUTRO';
+  }
+
+  private obterLabelStatus(status: string | undefined): string {
+    switch (status) {
+      case 'AGENDADO':
+        return 'Agendado';
+      case 'CONCLUIDO':
+        return 'Concluído';
+      case 'CANCELADO':
+        return 'Cancelado';
+      case 'FALTA':
+        return 'Falta';
+      default:
+        return status || '—';
+    }
+  }
+
+  private formatHora(date: Date | null | undefined): string {
+    if (!date) return '';
+    return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
+  }
+
+  private obterSiglaTipoServico(tipo: string | undefined): string {
+    switch (tipo) {
+      case 'PILATES':
+        return 'PIL';
+      case 'FISIOTERAPIA':
+        return 'FIS';
+      case 'AVALIACAO':
+        return 'AVL';
+      default:
+        return 'OUT';
+    }
+  }
+
+  private normalizarStatusClass(status: string | undefined): string {
+    // Ex.: "CONCLUIDO" -> "concluido"
+    return (status || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private renderEventContent(arg: EventContentArg) {
+    // Month: minimalista. Week/Day: render explícito (para não sumir quando eventContent existe)
+    if (arg.view.type !== 'dayGridMonth') {
+      const container = document.createElement('div');
+      container.className = 'fc-event-title';
+      container.textContent = arg.event.title;
+      return { domNodes: [container] };
+    }
+
+    const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+    const pacienteNome = (arg.event.extendedProps?.['pacienteNome'] as string | undefined) || '';
+    const servicoNome = (arg.event.extendedProps?.['servicoNome'] as string | undefined) || arg.event.title;
+    const servicoTipo = (arg.event.extendedProps?.['servicoTipo'] as string | undefined) || '';
+    const statusLabel = this.obterLabelStatus(atendimento?.status);
+
+    const inicio = arg.event.start;
+    const hora = this.formatHora(inicio);
+    const sigla = this.obterSiglaTipoServico(servicoTipo);
+
+    // Tooltip (title nativo) com quebras de linha
+    const tooltip = [
+      `Paciente: ${pacienteNome || '—'}`,
+      `Tipo: ${servicoTipo || '—'}`,
+      `Serviço: ${servicoNome || '—'}`,
+      `Horário: ${hora || '—'}`,
+      `Status: ${statusLabel || '—'}`
+    ].join('\n');
+
+    const container = document.createElement('div');
+    container.className = 'fc-month-min';
+    container.title = tooltip;
+    container.setAttribute('aria-label', tooltip);
+
+    const badge = document.createElement('span');
+    badge.className = 'fc-month-min__badge';
+    badge.textContent = sigla;
+    container.appendChild(badge);
+
+    if (hora) {
+      const time = document.createElement('span');
+      time.className = 'fc-month-min__time';
+      time.textContent = hora;
+      container.appendChild(time);
+    }
+
+    const name = document.createElement('span');
+    name.className = 'fc-month-min__name';
+    name.textContent = pacienteNome || arg.event.title;
+    container.appendChild(name);
+
+    return { domNodes: [container] };
+  }
+
+  private onEventDidMount(info: any): void {
+    const atendimento = info?.event?.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+    const status = atendimento?.status;
+    if (!status || !info?.el) return;
+
+    const cores = this.obterCoresPorStatus(status);
+    const el = info.el as HTMLElement;
+
+    // Elemento principal
+    el.style.backgroundColor = cores.backgroundColor;
+    el.style.borderColor = cores.borderColor;
+    el.style.color = cores.textColor;
+
+    // TimeGrid: a área pintada costuma ser .fc-event-main
+    const main = el.querySelector('.fc-event-main') as HTMLElement | null;
+    if (main) {
+      main.style.backgroundColor = cores.backgroundColor;
+      main.style.borderColor = cores.borderColor;
+      main.style.color = cores.textColor;
+    }
+
+    // DayGrid "dot event": pinta o dot
+    const dot = el.querySelector('.fc-daygrid-event-dot') as HTMLElement | null;
+    if (dot) {
+      dot.style.borderColor = cores.borderColor;
     }
   }
 
@@ -1097,11 +504,29 @@ export class AgendaComponent implements OnInit {
   }
 
   onEventClick(info: any): void {
+    // Impede que o clique no evento dispare também o dateClick (muito comum no dayGridMonth)
+    if (info?.jsEvent) {
+      info.jsEvent.preventDefault?.();
+      info.jsEvent.stopPropagation?.();
+      info.jsEvent.stopImmediatePropagation?.();
+    }
+    // Camada extra: alguns cliques disparam dateClick programaticamente (especialmente no mês)
+    this.ignoreNextDateClick = true;
+    setTimeout(() => (this.ignoreNextDateClick = false), 0);
     const atendimento = info.event.extendedProps['atendimento'] as AtendimentoResponseDTO;
     this.abrirModalEdicao(atendimento);
   }
 
   onDateClick(info: any): void {
+    if (this.ignoreNextDateClick) return;
+    // Evita conflito: clicar em um evento não deve disparar dateClick (abrir "Novo Agendamento")
+    const target = info?.jsEvent?.target as HTMLElement | null | undefined;
+    if (target) {
+      const clicouEmEvento = !!target.closest('.fc-event');
+      const clicouEmMais = !!target.closest('.fc-more-link, .fc-daygrid-more-link');
+      if (clicouEmEvento || clicouEmMais) return;
+    }
+
     const dataSelecionada = new Date(info.date);
     // Arredonda para o próximo intervalo de 30 minutos
     const minutos = dataSelecionada.getMinutes();

@@ -1,0 +1,24 @@
+@if (authService.isAuthenticated()) {
+  <div class="top-shell">
+    <p-menubar [model]="menuItems">
+      <ng-template pTemplate="end">
+        <p-button
+          [icon]="themeService.theme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
+          [label]="themeService.theme() === 'dark' ? 'Claro' : 'Escuro'"
+          (onClick)="themeService.toggleTheme()"
+          styleClass="p-button-text"
+          [title]="themeService.theme() === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'"
+        />
+        <p-button
+          label="Sair"
+          icon="pi pi-sign-out"
+          (onClick)="logout()"
+          styleClass="p-button-text"
+        />
+      </ng-template>
+    </p-menubar>
+  </div>
+}
+<main class="main-content">
+  <router-outlet />
+</main>

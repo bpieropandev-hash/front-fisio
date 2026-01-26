@@ -10,73 +10,8 @@ import { Router } from '@angular/router';
 @Component({
     selector: 'app-root',
     imports: [RouterOutlet, MenubarModule, ButtonModule],
-    template: `
-    @if (authService.isAuthenticated()) {
-      <div class="top-shell">
-        <p-menubar [model]="menuItems">
-          <ng-template pTemplate="end">
-            <p-button
-              [icon]="themeService.theme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
-              [label]="themeService.theme() === 'dark' ? 'Claro' : 'Escuro'"
-              (onClick)="themeService.toggleTheme()"
-              styleClass="p-button-text"
-              [title]="themeService.theme() === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'"
-            />
-            <p-button
-              label="Sair"
-              icon="pi pi-sign-out"
-              (onClick)="logout()"
-              styleClass="p-button-text"
-            />
-          </ng-template>
-        </p-menubar>
-      </div>
-    }
-    <main class="main-content">
-      <router-outlet />
-    </main>
-  `,
-    styles: [`
-    :host {
-      display: block;
-    }
-
-    .top-shell {
-      padding: 1.25rem 2.5rem;
-    }
-
-    .main-content {
-      padding: 2.5rem;
-    }
-
-    @media (max-width: 768px) {
-      .top-shell {
-        padding: 0.75rem 1rem;
-      }
-
-      .main-content {
-        padding: 1rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .top-shell {
-        padding: 0.5rem;
-      }
-
-      .main-content {
-        padding: 0.75rem;
-      }
-
-      ::ng-deep .p-menubar .p-button-label {
-        display: none;
-      }
-
-      ::ng-deep .p-menubar .p-button-icon {
-        margin: 0;
-      }
-    }
-  `]
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
   menuItems = [

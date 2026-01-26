@@ -1,0 +1,44 @@
+    <p-toast />
+    
+    <div class="login-container">
+      <div class="background">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <h3>Login</h3>
+
+        <label for="login">Login</label>
+        <input
+          id="login"
+          type="text"
+          formControlName="login"
+          placeholder="Digite seu login"
+          [class.ng-invalid]="loginForm.get('login')?.invalid && loginForm.get('login')?.touched"
+        />
+        @if (loginForm.get('login')?.invalid && loginForm.get('login')?.touched) {
+          <small class="error-text">Login é obrigatório</small>
+        }
+
+        <label for="senha">Senha</label>
+        <input
+          id="senha"
+          type="password"
+          formControlName="senha"
+          placeholder="Digite sua senha"
+          [class.ng-invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
+        />
+        @if (loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched) {
+          <small class="error-text">Senha é obrigatória</small>
+        }
+
+        <button type="submit" [disabled]="loginForm.invalid || loading()">
+          @if (loading()) {
+            <span>Entrando...</span>
+          } @else {
+            <span>Entrar</span>
+          }
+        </button>
+      </form>
+    </div>
