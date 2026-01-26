@@ -22,23 +22,22 @@ import {
 import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.interface';
 
 @Component({
-  selector: 'app-cobrancas',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    TableModule,
-    ButtonModule,
-    DialogModule,
-    InputNumberModule,
-    DatePickerModule,
-    SelectModule,
-    TagModule,
-    TooltipModule,
-    ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+    selector: 'app-cobrancas',
+    imports: [
+        CommonModule,
+        FormsModule,
+        TableModule,
+        ButtonModule,
+        DialogModule,
+        InputNumberModule,
+        DatePickerModule,
+        SelectModule,
+        TagModule,
+        TooltipModule,
+        ToastModule
+    ],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="page-header">
@@ -213,7 +212,7 @@ import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.inter
       </div>
     </p-dialog>
   `,
-  styles: [`
+    styles: [`
     .page-header {
       display: flex;
       justify-content: space-between;

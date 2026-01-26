@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -19,10 +19,8 @@ import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
-  selector: 'app-pacientes',
-  standalone: true,
-  imports: [
-    CommonModule,
+    selector: 'app-pacientes',
+    imports: [
     FormsModule,
     ReactiveFormsModule,
     TableModule,
@@ -35,9 +33,9 @@ import { HttpErrorResponse } from '@angular/common/http';
     TagModule,
     TooltipModule,
     ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="page-header">
@@ -328,7 +326,7 @@ import { HttpErrorResponse } from '@angular/common/http';
       </form>
     </p-dialog>
   `,
-  styles: [`
+    styles: [`
     .page-header {
       display: flex;
       justify-content: space-between;

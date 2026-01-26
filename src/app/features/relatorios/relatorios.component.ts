@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -12,19 +12,17 @@ import { ServicoService } from '../../core/services/servico.service';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
 @Component({
-  selector: 'app-relatorios',
-  standalone: true,
-  imports: [
-    CommonModule,
+    selector: 'app-relatorios',
+    imports: [
     FormsModule,
     CardModule,
     ButtonModule,
     DatePickerModule,
     MultiSelectModule,
     ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="relatorios-header">
@@ -112,7 +110,7 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       </form>
     </p-card>
   `,
-  styles: [`
+    styles: [`
     .relatorios-header {
       margin-bottom: 2rem;
     }
