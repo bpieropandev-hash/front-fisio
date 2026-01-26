@@ -12,19 +12,18 @@ import { ServicoService } from '../../core/services/servico.service';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
 @Component({
-  selector: 'app-relatorios',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    CardModule,
-    ButtonModule,
-    DatePickerModule,
-    MultiSelectModule,
-    ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+    selector: 'app-relatorios',
+    imports: [
+        CommonModule,
+        FormsModule,
+        CardModule,
+        ButtonModule,
+        DatePickerModule,
+        MultiSelectModule,
+        ToastModule
+    ],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="relatorios-header">
@@ -112,7 +111,7 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       </form>
     </p-card>
   `,
-  styles: [`
+    styles: [`
     .relatorios-header {
       margin-bottom: 2rem;
     }

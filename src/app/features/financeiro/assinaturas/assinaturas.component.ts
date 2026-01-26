@@ -23,25 +23,24 @@ import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
-  selector: 'app-assinaturas',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    TableModule,
-    ButtonModule,
-    DialogModule,
-    InputTextModule,
-    InputNumberModule,
-    SelectModule,
-    MultiSelectModule,
-    TagModule,
-    TooltipModule,
-    ToastModule,
-    ConfirmDialogModule
-  ],
-  providers: [MessageService, ConfirmationService],
-  template: `
+    selector: 'app-assinaturas',
+    imports: [
+        CommonModule,
+        FormsModule,
+        TableModule,
+        ButtonModule,
+        DialogModule,
+        InputTextModule,
+        InputNumberModule,
+        SelectModule,
+        MultiSelectModule,
+        TagModule,
+        TooltipModule,
+        ToastModule,
+        ConfirmDialogModule
+    ],
+    providers: [MessageService, ConfirmationService],
+    template: `
     <p-toast />
     <p-confirmDialog />
     
@@ -218,7 +217,7 @@ import { HttpErrorResponse } from '@angular/common/http';
       </div>
     </p-dialog>
   `,
-  styles: [`
+    styles: [`
     .page-header {
       display: flex;
       justify-content: space-between;

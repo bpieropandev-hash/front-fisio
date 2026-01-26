@@ -26,25 +26,24 @@ import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 
 @Component({
-  selector: 'app-agenda',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    FullCalendarModule,
-    DialogModule,
-    ButtonModule,
-    InputTextModule,
-    TextareaModule,
-    SelectModule,
-    DatePickerModule,
-    InputSwitchModule,
-    MultiSelectModule,
-    CardModule,
-    ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+    selector: 'app-agenda',
+    imports: [
+        CommonModule,
+        FormsModule,
+        FullCalendarModule,
+        DialogModule,
+        ButtonModule,
+        InputTextModule,
+        TextareaModule,
+        SelectModule,
+        DatePickerModule,
+        InputSwitchModule,
+        MultiSelectModule,
+        CardModule,
+        ToastModule
+    ],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="agenda-header">
@@ -411,7 +410,7 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
       }
     </p-dialog>
   `,
-  styles: [`
+    styles: [`
     .agenda-header {
       display: flex;
       justify-content: space-between;

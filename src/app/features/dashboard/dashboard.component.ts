@@ -14,21 +14,20 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    CardModule,
-    TableModule,
-    ButtonModule,
-    TagModule,
-    ProgressSpinnerModule,
-    DatePickerModule,
-    ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+    selector: 'app-dashboard',
+    imports: [
+        CommonModule,
+        FormsModule,
+        CardModule,
+        TableModule,
+        ButtonModule,
+        TagModule,
+        ProgressSpinnerModule,
+        DatePickerModule,
+        ToastModule
+    ],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="dashboard-header">
@@ -207,7 +206,7 @@ import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
       }
     }
   `,
-  styles: [`
+    styles: [`
     .dashboard-header {
       display: flex;
       justify-content: space-between;

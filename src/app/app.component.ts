@@ -8,10 +8,9 @@ import { ThemeService } from './core/services/theme.service';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, MenubarModule, ButtonModule],
-  template: `
+    selector: 'app-root',
+    imports: [CommonModule, RouterOutlet, MenubarModule, ButtonModule],
+    template: `
     @if (authService.isAuthenticated()) {
       <div class="top-shell">
         <p-menubar [model]="menuItems">
@@ -37,7 +36,7 @@ import { Router } from '@angular/router';
       <router-outlet />
     </main>
   `,
-  styles: [`
+    styles: [`
     :host {
       display: block;
     }

@@ -15,23 +15,22 @@ import { ServicoService } from '../../core/services/servico.service';
 import { ServicoCreateRequestDTO, ServicoResponseDTO, TipoServico } from '../../core/interfaces/servico.interface';
 
 @Component({
-  selector: 'app-servicos',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    TableModule,
-    DialogModule,
-    ButtonModule,
-    InputTextModule,
-    InputNumberModule,
-    InputSwitchModule,
-    SelectModule,
-    TagModule,
-    ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+    selector: 'app-servicos',
+    imports: [
+        CommonModule,
+        FormsModule,
+        TableModule,
+        DialogModule,
+        ButtonModule,
+        InputTextModule,
+        InputNumberModule,
+        InputSwitchModule,
+        SelectModule,
+        TagModule,
+        ToastModule
+    ],
+    providers: [MessageService],
+    template: `
     <p-toast />
 
     <div class="page-header">
@@ -203,7 +202,7 @@ import { ServicoCreateRequestDTO, ServicoResponseDTO, TipoServico } from '../../
       </ng-template>
     </p-dialog>
   `,
-  styles: [`
+    styles: [`
     .page-header {
       display: flex;
       justify-content: space-between;

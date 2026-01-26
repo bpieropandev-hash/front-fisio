@@ -19,25 +19,24 @@ import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
-  selector: 'app-pacientes',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    TableModule,
-    ButtonModule,
-    DialogModule,
-    InputTextModule,
-    InputMaskModule,
-    DatePickerModule,
-    TextareaModule,
-    TagModule,
-    TooltipModule,
-    ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+    selector: 'app-pacientes',
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        TableModule,
+        ButtonModule,
+        DialogModule,
+        InputTextModule,
+        InputMaskModule,
+        DatePickerModule,
+        TextareaModule,
+        TagModule,
+        TooltipModule,
+        ToastModule
+    ],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="page-header">
@@ -328,7 +327,7 @@ import { HttpErrorResponse } from '@angular/common/http';
       </form>
     </p-dialog>
   `,
-  styles: [`
+    styles: [`
     .page-header {
       display: flex;
       justify-content: space-between;

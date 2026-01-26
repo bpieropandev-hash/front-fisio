@@ -11,19 +11,18 @@ import { ToastModule } from 'primeng/toast';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    ButtonModule,
-    InputTextModule,
-    PasswordModule,
-    CardModule,
-    ToastModule
-  ],
-  providers: [MessageService],
-  template: `
+    selector: 'app-login',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        ButtonModule,
+        InputTextModule,
+        PasswordModule,
+        CardModule,
+        ToastModule
+    ],
+    providers: [MessageService],
+    template: `
     <p-toast />
     
     <div class="login-container">
@@ -69,7 +68,7 @@ import { AuthService } from '../../../core/services/auth.service';
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     .login-container {
       min-height: 100vh;
       position: relative;
