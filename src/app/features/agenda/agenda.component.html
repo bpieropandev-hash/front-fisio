@@ -208,29 +208,29 @@
           ></textarea>
         </div>
 
-        @if (atendimentoSelecionado()?.valorCobrado && atendimentoSelecionado()!.valorCobrado > 0) {
+        @if (ehAtendimentoAvulso(atendimentoSelecionado())) {
           <div class="form-group">
-            <label>Recebedor *</label>
+            <label>Recebedor</label>
             <p-select
               [(ngModel)]="recebedorEdit"
               [options]="recebedorOptions"
               optionLabel="label"
               optionValue="value"
+              placeholder="Opcional – pagamento avulso"
               styleClass="full-width"
-              [required]="statusEdit === 'CONCLUIDO'"
               [appendTo]="'body'"
             />
           </div>
 
           <div class="form-group">
-            <label>Tipo de Pagamento *</label>
+            <label>Tipo de Pagamento</label>
             <p-select
               [(ngModel)]="tipoPagamentoEdit"
               [options]="tipoPagamentoOptions"
               optionLabel="label"
               optionValue="value"
+              placeholder="Opcional – pagamento avulso"
               styleClass="full-width"
-              [required]="statusEdit === 'CONCLUIDO'"
               [appendTo]="'body'"
             />
           </div>

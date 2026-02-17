@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { API_CONFIG } from '../config/api.config';
 import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../interfaces/servico.interface';
 
@@ -11,8 +12,10 @@ export class ServicoService {
   constructor(private http: HttpClient) {}
 
   listar(): Observable<ServicoResponseDTO[]> {
-    return this.http.get<ServicoResponseDTO[]>(
+    return this.http.get<ServicoResponseDTO[] | { content?: ServicoResponseDTO[] }>(
       `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.servicos}`
+    ).pipe(
+      map((res) => Array.isArray(res) ? res : (res?.content ?? []))
     );
   }
 

@@ -20,6 +20,7 @@ import {
   GerarCobrancasRequestDTO
 } from '../../../core/interfaces/cobranca.interface';
 import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.interface';
+import { formatDateForApi } from '../../../core/utils/date-format.util';
 
 @Component({
     selector: 'app-cobrancas',
@@ -98,6 +99,14 @@ export class CobrancasComponent implements OnInit {
     { label: 'Cartão de Débito', value: 'CARTAO_DEBITO' },
     { label: 'PIX', value: 'PIX' }
   ];
+
+  obterLabelRecebedor(valor: string | undefined): string {
+    return this.recebedorOptions.find(o => o.value === valor)?.label ?? valor ?? '-';
+  }
+
+  obterLabelTipoPagamento(valor: string | undefined): string {
+    return this.tipoPagamentoOptions.find(o => o.value === valor)?.label ?? valor ?? '-';
+  }
 
   constructor(
     private cobrancaService: CobrancaService,
@@ -226,11 +235,14 @@ export class CobrancasComponent implements OnInit {
 
     this.salvando.set(true);
 
+    const dataPagamento = this.baixaData.dataPagamento;
+    const dataPagamentoStr = typeof dataPagamento === 'string'
+      ? dataPagamento
+      : dataPagamento ? formatDateForApi(dataPagamento as Date) : undefined;
+
     const updateData: CobrancaMensalUpdateRequestDTO = {
       status: 'PAGO',
-      dataPagamento: typeof this.baixaData.dataPagamento === 'string' 
-        ? this.baixaData.dataPagamento 
-        : (this.baixaData.dataPagamento as Date).toISOString().split('T')[0],
+      dataPagamento: dataPagamentoStr,
       recebedor: this.baixaData.recebedor,
       tipoPagamento: this.baixaData.tipoPagamento
     };

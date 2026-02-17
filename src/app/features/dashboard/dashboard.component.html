@@ -108,9 +108,9 @@
               <i class="pi pi-exclamation-triangle"></i>
             </div>
             <div class="card-info">
-              <h3>Alertas</h3>
+              <h3>Alertas de Pendências</h3>
               <p class="card-value">{{ resumo()?.alertasPendencia?.length || 0 }}</p>
-              <small class="card-label">Pendências financeiras</small>
+              <small class="card-label">Atendimentos avulsos e assinaturas</small>
             </div>
           </div>
         </p-card>
@@ -136,23 +136,28 @@
             <ng-template pTemplate="header">
               <tr>
                 <th>Paciente</th>
-                <th>Status</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
                 <th>Ação</th>
               </tr>
             </ng-template>
-            <ng-template pTemplate="body" let-pacienteNome>
+            <ng-template pTemplate="body" let-alerta>
               <tr>
                 <td>
-                  <strong>{{ pacienteNome }}</strong>
+                  <strong>{{ alerta.nomePaciente }}</strong>
                 </td>
                 <td>
-                  <p-tag value="Pendente" severity="warn" />
+                  <p-tag
+                    [value]="obterLabelTipoPendencia(alerta.tipoPendencia)"
+                    [severity]="alerta.tipoPendencia === 'ATENDIMENTO_AVULSO' ? 'warn' : 'info'"
+                  />
                 </td>
+                <td>{{ alerta.descricao }}</td>
                 <td>
                   <p-button
                     label="Resolver"
                     icon="pi pi-arrow-right"
-                    (onClick)="resolverAlerta()"
+                    (onClick)="resolverAlerta(alerta)"
                     styleClass="p-button-sm"
                   />
                 </td>
@@ -160,7 +165,7 @@
             </ng-template>
             <ng-template pTemplate="empty">
               <tr>
-                <td colspan="3" class="text-center">Nenhum alerta encontrado</td>
+                <td colspan="4" class="text-center">Nenhum alerta encontrado</td>
               </tr>
             </ng-template>
           </p-table>
@@ -170,7 +175,7 @@
           <div class="no-alerts-content">
             <i class="pi pi-check-circle"></i>
             <h3>Nenhum alerta encontrado</h3>
-            <p>Todos os pacientes mensalistas possuem cobranças pagas no mês atual.</p>
+            <p>Não há pendências de pagamento (atendimentos avulsos ou assinaturas).</p>
           </div>
         </p-card>
       }

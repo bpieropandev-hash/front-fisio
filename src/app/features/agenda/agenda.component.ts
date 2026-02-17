@@ -23,6 +23,7 @@ import { AtendimentoResponseDTO, AgendamentoRequestDTO } from '../../core/interf
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 import { MessageService } from 'primeng/api';
+import { formatDateTimeForApi } from '../../core/utils/date-format.util';
 
 @Component({
   selector: 'app-agenda',
@@ -120,6 +121,11 @@ export class AgendaComponent implements OnInit {
     { label: 'Profissional', value: 'PROFISSIONAL' }
   ];
 
+  /** Retorna true se o atendimento é avulso (tem valor cobrado). Mensalistas têm valorCobrado = 0. */
+  ehAtendimentoAvulso(atendimento: { valorCobrado?: number } | null | undefined): boolean {
+    return Number(atendimento?.valorCobrado ?? 0) > 0;
+  }
+
   tipoPagamentoOptions = [
     { label: 'Dinheiro', value: 'DINHEIRO' },
     { label: 'Cartão de Crédito', value: 'CARTAO_CREDITO' },
@@ -202,13 +208,13 @@ export class AgendaComponent implements OnInit {
     if (this.filtros.dataInicio) {
       const dataInicio = new Date(this.filtros.dataInicio);
       dataInicio.setHours(0, 0, 0, 0);
-      params.dataInicio = dataInicio.toISOString().replace('T', ' ').substring(0, 23);
+      params.dataInicio = formatDateTimeForApi(dataInicio);
     }
 
     if (this.filtros.dataFim) {
       const dataFim = new Date(this.filtros.dataFim);
       dataFim.setHours(23, 59, 59, 999);
-      params.dataFim = dataFim.toISOString().replace('T', ' ').substring(0, 23);
+      params.dataFim = formatDateTimeForApi(dataFim, true);
     }
 
     if (this.filtros.pacienteId) {
@@ -681,16 +687,11 @@ export class AgendaComponent implements OnInit {
     if (!atendimento) return;
 
     const isConcluido = this.statusEdit === 'CONCLUIDO';
-    const temValor = atendimento.valorCobrado > 0;
+    const valorCobrado = Number(atendimento.valorCobrado ?? 0);
+    const ehAtendimentoAvulso = valorCobrado > 0;
 
-    if (isConcluido && temValor && (!this.recebedorEdit || !this.tipoPagamentoEdit)) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Atenção',
-        detail: 'Recebedor e Tipo de Pagamento são obrigatórios para concluir atendimentos com valor'
-      });
-      return;
-    }
+    // Não exige recebedor/tipoPagamento. Mensalistas pagam via cobrança mensal.
+    // Avulsos podem concluir sem preencher (ficam PAYMENT_PENDING) ou preencher (ficam PAID).
 
     if (isConcluido && !this.evolucaoEdit) {
       this.messageService.add({
@@ -712,7 +713,7 @@ export class AgendaComponent implements OnInit {
       updateData.dataHoraInicio = this.dataHoraEdit.toISOString();
     }
 
-    if (temValor && isConcluido) {
+    if (ehAtendimentoAvulso && isConcluido) {
       updateData.recebedor = this.recebedorEdit;
       updateData.tipoPagamento = this.tipoPagamentoEdit;
     }
