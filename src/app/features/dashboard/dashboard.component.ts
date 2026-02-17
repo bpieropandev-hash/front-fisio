@@ -11,7 +11,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { DashboardService } from '../../core/services/dashboard.service';
-import { DashboardResumoDTO } from '../../core/interfaces/dashboard.interface';
+import { DashboardResumoDTO, AlertaPendenciaDTO } from '../../core/interfaces/dashboard.interface';
 
 @Component({
     selector: 'app-dashboard',
@@ -106,7 +106,20 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  resolverAlerta(): void {
-    this.router.navigate(['/financeiro/cobrancas']);
+  resolverAlerta(alerta: AlertaPendenciaDTO): void {
+    switch (alerta.tipoPendencia) {
+      case 'ATENDIMENTO_AVULSO':
+        this.router.navigate(['/agenda']);
+        break;
+      case 'ASSINATURA':
+        this.router.navigate(['/financeiro/cobrancas']);
+        break;
+      default:
+        this.router.navigate(['/financeiro/cobrancas']);
+    }
+  }
+
+  obterLabelTipoPendencia(tipo: string): string {
+    return tipo === 'ATENDIMENTO_AVULSO' ? 'Atendimento avulso' : 'Assinatura';
   }
 }

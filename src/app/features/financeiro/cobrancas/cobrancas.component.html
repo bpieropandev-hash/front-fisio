@@ -91,9 +91,9 @@
               [severity]="cobranca.status === 'PAGO' ? 'success' : 'warn'"
             />
           </td>
-          <td>{{ cobranca.dataPagamento | date: 'dd/MM/yyyy' }}</td>
-          <td>{{ cobranca.recebedor || '-' }}</td>
-          <td>{{ cobranca.tipoPagamento || '-' }}</td>
+          <td>{{ cobranca.dataPagamento ? (cobranca.dataPagamento | date: 'dd/MM/yyyy') : '-' }}</td>
+          <td>{{ obterLabelRecebedor(cobranca.recebedor) }}</td>
+          <td>{{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</td>
           <td>
             @if (cobranca.status === 'PENDENTE') {
               <p-button
