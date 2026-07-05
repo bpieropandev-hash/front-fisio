@@ -139,7 +139,7 @@
 
     <!-- Modal de Edição/Baixa -->
     <p-dialog
-      [(visible)]="_modalVisivel"
+      [(visible)]="modalVisivel"
       [header]="atendimentoSelecionado() ? 'Editar Atendimento' : 'Novo Agendamento'"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '900px', maxHeight: '90vh' }"
@@ -172,7 +172,7 @@
             />
             <p-select
               [(ngModel)]="horaEdit"
-              [options]="horariosDisponiveis"
+              [options]="horariosEdicao"
               optionLabel="label"
               optionValue="value"
               placeholder="Selecione o horário"

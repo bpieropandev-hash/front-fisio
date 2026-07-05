@@ -25,3 +25,14 @@ export function formatDateForApi(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+/**
+ * Formata data/hora para corpo de requisição (POST/PUT): yyyy-MM-dd'T'HH:mm:ss.
+ * Corresponde exatamente ao @JsonFormat dos DTOs do backend.
+ * Usa horário LOCAL — nunca usar toISOString() (converte para UTC e desloca o horário).
+ */
+export function formatDateTimeForApiBody(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}

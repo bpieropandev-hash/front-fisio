@@ -23,7 +23,10 @@ import { AtendimentoResponseDTO, AgendamentoRequestDTO } from '../../core/interf
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 import { MessageService } from 'primeng/api';
-import { formatDateTimeForApi } from '../../core/utils/date-format.util';
+import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+import { formatDateTimeForApi, formatDateTimeForApiBody, formatDateForApi } from '../../core/utils/date-format.util';
+import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 
 @Component({
   selector: 'app-agenda',
@@ -46,8 +49,7 @@ import { formatDateTimeForApi } from '../../core/utils/date-format.util';
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
-  modalVisivel = signal(false);
-  _modalVisivel = false;
+  modalVisivel = false;
   atendimentoSelecionado = signal<AtendimentoResponseDTO & { pacienteNome?: string; servicoNome?: string } | null>(null);
   salvando = signal(false);
   pacientes = signal<PacienteResponseDTO[]>([]);
@@ -68,6 +70,10 @@ export class AgendaComponent implements OnInit {
   dataHoraEdit: Date | null = null;
   dataEdit: Date | null = null;
   horaEdit: string | null = null;
+  /** Data/hora original do atendimento em edição — só enviamos ao backend se o usuário alterar */
+  private dataHoraOriginal: Date | null = null;
+  /** Opções de horário do modal de edição: grade de 30min + o horário exato do atendimento */
+  horariosEdicao: { label: string; value: string }[] = [];
 
   dataNovoAgendamento: Date | null = null;
   horaNovoAgendamento: string | null = null;
@@ -156,7 +162,8 @@ export class AgendaComponent implements OnInit {
     },
     eventDidMount: (info) => this.onEventDidMount(info),
     editable: true,
-    eventResize: (info) => this.onEventResize(info),
+    // Duração não é editável: o backend não expõe atualização de dataHoraFim
+    eventDurationEditable: false,
     eventDrop: (info) => this.onEventDrop(info),
     nowIndicator: true,
     slotMinTime: '06:00:00',
@@ -175,30 +182,24 @@ export class AgendaComponent implements OnInit {
   }
 
   carregarDados(): void {
-    this.pacienteService.listar().subscribe({
-      next: (pacientes) => {
+    // Pacientes e serviços em paralelo; eventos só depois — assim os títulos
+    // sempre resolvem os nomes (sem "Paciente #42") e a API é chamada uma vez
+    forkJoin({
+      pacientes: this.pacienteService.listar(),
+      servicos: this.servicoService.listar()
+    }).subscribe({
+      next: ({ pacientes, servicos }) => {
         this.pacientes.set(pacientes.filter(p => p.ativo !== false));
-        // Carrega eventos após pacientes e serviços estarem disponíveis
-        if (this.servicos().length > 0 || pacientes.length > 0) {
-          this.carregarEventos();
-        }
-      },
-      error: (error) => console.error('Erro ao carregar pacientes:', error)
-    });
-
-    this.servicoService.listar().subscribe({
-      next: (servicos) => {
         this.servicos.set(servicos.filter(s => s.ativo !== false));
-        // Carrega eventos após pacientes e serviços estarem disponíveis
-        if (this.pacientes().length > 0 || servicos.length > 0) {
-          this.carregarEventos();
-        }
+        this.carregarEventos();
       },
-      error: (error) => console.error('Erro ao carregar serviços:', error)
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
+        // Mesmo sem nomes, ainda mostra a agenda
+        this.carregarEventos();
+      }
     });
-
-    // Carrega eventos inicialmente
-    this.carregarEventos();
   }
 
   carregarEventos(): void {
@@ -534,10 +535,12 @@ export class AgendaComponent implements OnInit {
     }
 
     const dataSelecionada = new Date(info.date);
-    // Arredonda para o próximo intervalo de 30 minutos
-    const minutos = dataSelecionada.getMinutes();
-    const minutosArredondados = minutos < 30 ? 30 : 0;
-    const horasAjustadas = minutos >= 30 ? dataSelecionada.getHours() + 1 : dataSelecionada.getHours();
+    // Arredonda para o intervalo de 30 minutos MAIS PRÓXIMO
+    // (clicar às 10:00 em ponto sugere 10:00, não 10:30)
+    const totalMinutos = dataSelecionada.getHours() * 60 + dataSelecionada.getMinutes();
+    const arredondado = Math.round(totalMinutos / 30) * 30;
+    const horasAjustadas = Math.floor(arredondado / 60) % 24;
+    const minutosArredondados = arredondado % 60;
 
     // Define a data (sem hora)
     this.dataNovoAgendamento = new Date(dataSelecionada);
@@ -552,12 +555,33 @@ export class AgendaComponent implements OnInit {
     this.abrirModalNovoAgendamento();
   }
 
-  onEventResize(info: any): void {
-    // Implementar atualização de data/hora
-  }
-
+  /** Arrastar evento no calendário = remarcar o atendimento. Persiste ou reverte. */
   onEventDrop(info: any): void {
-    // Implementar atualização de data/hora
+    const atendimento = info?.event?.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+    const novaData: Date | null = info?.event?.start ?? null;
+
+    if (!atendimento || !novaData) {
+      info?.revert?.();
+      return;
+    }
+
+    this.agendamentoService.atualizar(atendimento.id, {
+      dataHoraInicio: formatDateTimeForApiBody(novaData)
+    }).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Remarcado',
+          detail: `Atendimento movido para ${novaData.toLocaleDateString('pt-BR')} às ${this.formatHora(novaData)}`
+        });
+        this.carregarEventos();
+      },
+      error: (error: HttpErrorResponse) => {
+        info?.revert?.();
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
+      }
+    });
   }
 
   abrirModalEdicao(atendimento: AtendimentoResponseDTO): void {
@@ -572,26 +596,19 @@ export class AgendaComponent implements OnInit {
     });
 
     this.dataHoraEdit = new Date(atendimento.dataHoraInicio);
+    this.dataHoraOriginal = new Date(atendimento.dataHoraInicio);
     const { data, hora } = this.separarDataHora(this.dataHoraEdit);
     this.dataEdit = data;
-    // Arredonda a hora para o intervalo de 30 minutos mais próximo
-    if (hora) {
-      const [horas, minutos] = hora.split(':').map(Number);
-      const minutosArredondados = minutos < 15 ? 0 : minutos < 45 ? 30 : 0;
-      const horasAjustadas = minutos >= 45 ? horas + 1 : horas;
-      const horaArredondada = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
-      this.horaEdit = horaArredondada;
-      // Atualiza dataHoraEdit com a hora arredondada
-      this.dataHoraEdit = this.combinarDataHora(this.dataEdit, horaArredondada);
-    } else {
-      this.horaEdit = null;
-    }
+    // Mostra o horário EXATO do atendimento (nunca arredondar: salvar mudaria
+    // o horário real silenciosamente). Se não estiver na grade de 30min,
+    // adiciona como opção extra do select.
+    this.horaEdit = hora;
+    this.horariosEdicao = this.montarHorariosComExtra(hora);
     this.statusEdit = atendimento.status;
     this.evolucaoEdit = atendimento.evolucao || '';
     this.recebedorEdit = atendimento.recebedor || null;
     this.tipoPagamentoEdit = atendimento.tipoPagamento || null;
-    this.modalVisivel.set(true);
-    this._modalVisivel = true;
+    this.modalVisivel = true;
 
     // Se não encontrou os nomes, busca do backend
     if (!paciente || !servico) {
@@ -630,14 +647,23 @@ export class AgendaComponent implements OnInit {
     this.repetirAgendamento = false;
     this.dataFimRecorrencia = null;
     this.diasSemanaSelecionados = [];
-    this.modalVisivel.set(true);
-    this._modalVisivel = true;
+    this.modalVisivel = true;
   }
 
   fecharModal(): void {
-    this.modalVisivel.set(false);
-    this._modalVisivel = false;
+    this.modalVisivel = false;
     this.atendimentoSelecionado.set(null);
+    this.dataHoraOriginal = null;
+  }
+
+  /** Grade padrão de 30min + horário exato do atendimento (se estiver fora da grade) */
+  private montarHorariosComExtra(hora: string | null): { label: string; value: string }[] {
+    const base = [...this.horariosDisponiveis];
+    if (hora && !base.some(h => h.value === hora)) {
+      base.push({ label: hora, value: hora });
+      base.sort((a, b) => a.value.localeCompare(b.value));
+    }
+    return base;
   }
 
   /**
@@ -709,8 +735,12 @@ export class AgendaComponent implements OnInit {
       evolucao: this.evolucaoEdit
     };
 
-    if (this.dataHoraEdit) {
-      updateData.dataHoraInicio = this.dataHoraEdit.toISOString();
+    // Só envia data/hora se o usuário realmente alterou — editar apenas a
+    // evolução não pode mudar o horário do atendimento
+    if (this.dataHoraEdit && this.dataHoraOriginal &&
+        this.dataHoraEdit.getTime() !== this.dataHoraOriginal.getTime()) {
+      // Formato local esperado pelo backend; toISOString() deslocaria o horário para UTC
+      updateData.dataHoraInicio = formatDateTimeForApiBody(this.dataHoraEdit);
     }
 
     if (ehAtendimentoAvulso && isConcluido) {
@@ -729,12 +759,9 @@ export class AgendaComponent implements OnInit {
         this.carregarEventos();
         this.salvando.set(false);
       },
-      error: (error) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: error.error?.message || 'Erro ao atualizar atendimento'
-        });
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
         this.salvando.set(false);
       }
     });
@@ -776,32 +803,20 @@ export class AgendaComponent implements OnInit {
 
     this.salvando.set(true);
 
-    let dataHoraISO: string;
-    if (this.novoAgendamento.dataHora instanceof Date) {
-      dataHoraISO = this.novoAgendamento.dataHora.toISOString();
-    } else if (typeof this.novoAgendamento.dataHora === 'string') {
-      dataHoraISO = new Date(this.novoAgendamento.dataHora).toISOString();
-    } else {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Erro',
-        detail: 'Data/hora inválida'
-      });
-      this.salvando.set(false);
-      return;
-    }
+    // Formato local esperado pelo backend; toISOString() deslocaria o horário para UTC
+    const dataHora = this.novoAgendamento.dataHora instanceof Date
+      ? this.novoAgendamento.dataHora
+      : new Date(this.novoAgendamento.dataHora);
 
     const agendamentoData: AgendamentoRequestDTO = {
       pacienteIds: this.novoAgendamento.pacienteIds,
       servicoId: this.novoAgendamento.servicoId!,
-      dataHora: dataHoraISO
+      dataHora: formatDateTimeForApiBody(dataHora)
     };
 
     // Adiciona campos de recorrência se necessário
     if (this.repetirAgendamento && this.dataFimRecorrencia) {
-      // Formata data fim no formato YYYY-MM-DD
-      const dataFimISO = this.dataFimRecorrencia.toISOString().split('T')[0];
-      agendamentoData.dataFimRecorrencia = dataFimISO;
+      agendamentoData.dataFimRecorrencia = formatDateForApi(this.dataFimRecorrencia);
 
       // Adiciona dias da semana se selecionados
       if (this.diasSemanaSelecionados && this.diasSemanaSelecionados.length > 0) {
@@ -821,23 +836,9 @@ export class AgendaComponent implements OnInit {
         this.carregarEventos();
         this.salvando.set(false);
       },
-      error: (error) => {
-        console.error('Erro ao criar agendamento:', error);
-        let errorMessage = 'Erro ao criar agendamento';
-
-        if (error.status === 403) {
-          errorMessage = 'Acesso negado. Verifique suas permissões ou faça login novamente.';
-        } else if (error.status === 401) {
-          errorMessage = 'Sessão expirada. Faça login novamente.';
-        } else if (error.error?.message) {
-          errorMessage = error.error.message;
-        }
-
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: errorMessage
-        });
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
         this.salvando.set(false);
       }
     });
