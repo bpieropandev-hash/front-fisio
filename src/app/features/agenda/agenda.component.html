@@ -10,12 +10,130 @@
           [outlined]="!filtrosVisiveis()"
         />
         <p-button
+          label="Fechar Atendimentos"
+          icon="pi pi-check-square"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="abrirModalLote()"
+        />
+        <p-button
           label="Novo Agendamento"
           icon="pi pi-plus"
           (onClick)="abrirModalNovoAgendamento()"
         />
       </div>
     </div>
+
+    <!-- Modal Fechar Atendimentos em Lote -->
+    <p-dialog
+      [(visible)]="modalLoteVisivel"
+      header="Fechar Atendimentos"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '900px', maxHeight: '90vh' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModalLote()"
+    >
+      <div class="form-group">
+        <label>Paciente *</label>
+        <p-select
+          [(ngModel)]="pacienteLoteId"
+          (onChange)="aoSelecionarPacienteLote()"
+          [options]="pacientes()"
+          optionLabel="nome"
+          optionValue="id"
+          placeholder="Selecione o paciente"
+          styleClass="full-width"
+          [appendTo]="'body'"
+          [filter]="true"
+        />
+      </div>
+
+      @if (carregandoLote()) {
+        <div class="lote-loading">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Carregando atendimentos...</span>
+        </div>
+      } @else if (pacienteLoteId && itensLote().length === 0) {
+        <p class="lote-vazio">Nenhum atendimento agendado (passado) encontrado para este paciente.</p>
+      } @else if (itensLote().length > 0) {
+        <div class="lote-toolbar">
+          <span>{{ itensLote().length }} atendimento(s) encontrado(s)</span>
+          <p-button
+            label="Copiar evolução do 1º para todos"
+            icon="pi pi-copy"
+            styleClass="p-button-sm p-button-text"
+            (onClick)="copiarEvolucaoParaTodos()"
+          />
+        </div>
+
+        <div class="lote-itens">
+          @for (item of itensLote(); track item.id) {
+            <div class="lote-item">
+              <div class="lote-item-header">
+                <p-checkbox
+                  [ngModel]="item.selecionado"
+                  (ngModelChange)="atualizarItemLote(item.id, 'selecionado', $event)"
+                  [binary]="true"
+                />
+                <strong>{{ item.dataHoraInicio | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                @if (!item.avulso) {
+                  <span class="lote-tag-mensalista">Mensalista</span>
+                }
+              </div>
+
+              <textarea
+                pTextarea
+                [ngModel]="item.evolucao"
+                (ngModelChange)="atualizarItemLote(item.id, 'evolucao', $event)"
+                placeholder="Evolução do atendimento *"
+                rows="3"
+                class="full-width"
+              ></textarea>
+
+              @if (item.avulso) {
+                <div class="lote-pagamento-row">
+                  <p-select
+                    [ngModel]="item.recebedor"
+                    (ngModelChange)="atualizarItemLote(item.id, 'recebedor', $event)"
+                    [options]="recebedorOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Recebedor"
+                    [appendTo]="'body'"
+                  />
+                  <p-select
+                    [ngModel]="item.tipoPagamento"
+                    (ngModelChange)="atualizarItemLote(item.id, 'tipoPagamento', $event)"
+                    [options]="tipoPagamentoOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Tipo de pagamento"
+                    [appendTo]="'body'"
+                  />
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="dialog-footer">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          (onClick)="fecharModalLote()"
+          styleClass="p-button-text"
+        />
+        <p-button
+          label="Concluir Todos"
+          icon="pi pi-check"
+          (onClick)="confirmarConclusaoLote()"
+          [loading]="salvandoLote()"
+          [disabled]="itensLote().length === 0"
+        />
+      </div>
+    </p-dialog>
 
     <!-- Painel de Filtros (Oculto por padrão) -->
     @if (filtrosVisiveis()) {

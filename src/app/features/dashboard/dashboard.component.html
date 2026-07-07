@@ -84,7 +84,7 @@
             <div class="card-info">
               <h3>Total de Atendimentos Concluídos</h3>
               <p class="card-value">{{ resumo()?.totalAtendimentos || 0 }}</p>
-              <small class="card-label">Mês atual</small>
+              <small class="card-label">{{ periodoLabel() }}</small>
             </div>
           </div>
         </p-card>
@@ -97,7 +97,7 @@
             <div class="card-info">
               <h3>Faturamento Profissional</h3>
               <p class="card-value">{{ (resumo()?.faturamentoProfissional || 0) | currency: 'BRL' }}</p>
-              <small class="card-label">Mês atual</small>
+              <small class="card-label">{{ periodoLabel() }}</small>
             </div>
           </div>
         </p-card>

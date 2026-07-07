@@ -127,6 +127,70 @@
       margin-top: 20px;
     }
 
+    .lote-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 24px;
+      justify-content: center;
+      color: var(--text-secondary);
+    }
+
+    .lote-vazio {
+      padding: 24px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .lote-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .lote-itens {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .lote-item {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lote-item-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lote-tag-mensalista {
+      font-size: 0.75rem;
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .lote-pagamento-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .lote-pagamento-row .p-select {
+      flex: 1;
+      min-width: 160px;
+    }
+
     .text-muted {
       color: #64748b;
       font-size: 0.875rem;

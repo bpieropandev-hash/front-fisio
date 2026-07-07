@@ -12,6 +12,9 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardResumoDTO, AlertaPendenciaDTO } from '../../core/interfaces/dashboard.interface';
+import { formatDateForApi } from '../../core/utils/date-format.util';
+import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'app-dashboard',
@@ -34,6 +37,7 @@ export class DashboardComponent implements OnInit {
   carregando = signal(true);
   resumo = signal<DashboardResumoDTO | null>(null);
   filtrosVisiveis = signal(false);
+  periodoLabel = signal('Mês atual');
   
   filtros = {
     dataInicio: null as Date | null,
@@ -63,47 +67,50 @@ export class DashboardComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
-    // Validação básica
-    if (this.filtros.dataInicio && this.filtros.dataFim) {
-      if (this.filtros.dataInicio > this.filtros.dataFim) {
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'Atenção',
-          detail: 'A data de início deve ser anterior à data de fim'
-        });
-        return;
-      }
+    if (this.filtros.dataInicio && this.filtros.dataFim &&
+        this.filtros.dataInicio > this.filtros.dataFim) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Atenção',
+        detail: 'A data de início deve ser anterior à data de fim'
+      });
+      return;
     }
 
-    // Por enquanto, apenas recarrega os dados
-    // Quando o backend suportar filtros por período, passar os parâmetros aqui
     this.carregarDados();
-    
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Filtros aplicados',
-      detail: 'Os filtros foram aplicados (funcionalidade em desenvolvimento)'
-    });
   }
 
   carregarDados(): void {
     this.carregando.set(true);
 
-    this.dashboardService.buscarResumo().subscribe({
+    const inicio = this.filtros.dataInicio ? formatDateForApi(this.filtros.dataInicio) : undefined;
+    const fim = this.filtros.dataFim ? formatDateForApi(this.filtros.dataFim) : undefined;
+    this.periodoLabel.set(this.montarPeriodoLabel());
+
+    this.dashboardService.buscarResumo(inicio, fim).subscribe({
       next: (resumo) => {
         this.resumo.set(resumo);
         this.carregando.set(false);
       },
-      error: (error) => {
-        console.error('Erro ao carregar resumo do dashboard:', error);
+      error: (error: HttpErrorResponse) => {
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao carregar dados do dashboard'
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
         });
         this.carregando.set(false);
       }
     });
+  }
+
+  private montarPeriodoLabel(): string {
+    const { dataInicio, dataFim } = this.filtros;
+    if (!dataInicio && !dataFim) return 'Mês atual';
+    const fmt = (d: Date) => d.toLocaleDateString('pt-BR');
+    if (dataInicio && dataFim) return `${fmt(dataInicio)} a ${fmt(dataFim)}`;
+    if (dataInicio) return `A partir de ${fmt(dataInicio)}`;
+    return `Até ${fmt(dataFim!)}`;
   }
 
   resolverAlerta(alerta: AlertaPendenciaDTO): void {

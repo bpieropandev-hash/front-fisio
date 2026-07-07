@@ -1,26 +1,25 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { forkJoin } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CobrancaService } from '../../../core/services/cobranca.service';
-import { AssinaturaService } from '../../../core/services/assinatura.service';
 import {
   CobrancaMensalResponseDTO,
   CobrancaMensalUpdateRequestDTO,
   GerarCobrancasRequestDTO
 } from '../../../core/interfaces/cobranca.interface';
-import { AssinaturaResponseDTO } from '../../../core/interfaces/assinatura.interface';
 import { formatDateForApi } from '../../../core/utils/date-format.util';
+import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
 
 @Component({
     selector: 'app-cobrancas',
@@ -30,7 +29,6 @@ import { formatDateForApi } from '../../../core/utils/date-format.util';
         TableModule,
         ButtonModule,
         DialogModule,
-        InputNumberModule,
         DatePickerModule,
         SelectModule,
         TagModule,
@@ -44,17 +42,31 @@ import { formatDateForApi } from '../../../core/utils/date-format.util';
 export class CobrancasComponent implements OnInit {
   cobrancas = signal<CobrancaMensalResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
-  modalBaixaVisivel = signal(false);
-  _modalBaixaVisivel = false;
+  modalBaixaVisivel = false;
   carregando = signal(false);
   salvando = signal(false);
   gerando = signal(false);
   cobrancaSelecionada = signal<CobrancaMensalResponseDTO | null>(null);
 
+  filtroStatus = signal<'todos' | 'pago' | 'pendente'>('todos');
+
+  filtroStatusOptions = [
+    { label: 'Todos', value: 'todos' },
+    { label: 'Pago', value: 'pago' },
+    { label: 'Pendente', value: 'pendente' }
+  ];
+
   cobrancasFiltradas = computed(() => {
     const termo = this.termoPesquisa().toLowerCase().trim();
-    const cobrancasLista = this.cobrancas();
-    
+    const filtroStatus = this.filtroStatus();
+    let cobrancasLista = this.cobrancas();
+
+    if (filtroStatus === 'pago') {
+      cobrancasLista = cobrancasLista.filter(c => c.status === 'PAGO');
+    } else if (filtroStatus === 'pendente') {
+      cobrancasLista = cobrancasLista.filter(c => c.status !== 'PAGO');
+    }
+
     if (!termo) {
       return cobrancasLista;
     }
@@ -67,8 +79,8 @@ export class CobrancasComponent implements OnInit {
       const status = cobranca.status === 'PAGO' ? 'pago' : 'pendente';
       const recebedor = cobranca.recebedor?.toLowerCase() || '';
       const tipoPagamento = cobranca.tipoPagamento?.toLowerCase() || '';
-      
-      return descricao.includes(termo) || 
+
+      return descricao.includes(termo) ||
              mesReferencia.includes(termo) ||
              anoReferencia.includes(termo) ||
              valor.includes(termo) ||
@@ -78,8 +90,7 @@ export class CobrancasComponent implements OnInit {
     });
   });
 
-  mesGerar: number = new Date().getMonth() + 1;
-  anoGerar: number = new Date().getFullYear();
+  mesAnoGerar: Date = new Date();
 
   baixaData: CobrancaMensalUpdateRequestDTO = {
     status: 'PAGO',
@@ -108,56 +119,80 @@ export class CobrancasComponent implements OnInit {
     return this.tipoPagamentoOptions.find(o => o.value === valor)?.label ?? valor ?? '-';
   }
 
+  /** null = todos os meses. Default: mês atual (reduz payload no caso comum). */
+  filtroMesAno = signal<Date | null>(new Date());
+
   constructor(
     private cobrancaService: CobrancaService,
-    private assinaturaService: AssinaturaService,
-    private messageService: MessageService
-  ) {}
+    private messageService: MessageService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {
+    const params = this.route.snapshot.queryParamMap;
+    const mesParam = params.get('mes');
+    const anoParam = params.get('ano');
+    if (mesParam === 'todos') {
+      this.filtroMesAno.set(null);
+    } else if (mesParam && anoParam) {
+      this.filtroMesAno.set(new Date(Number(anoParam), Number(mesParam) - 1, 1));
+    }
+    const statusParam = params.get('status');
+    if (statusParam === 'pago' || statusParam === 'pendente') {
+      this.filtroStatus.set(statusParam);
+    }
+  }
 
   ngOnInit(): void {
     this.carregarCobrancas();
   }
 
+  aoMudarFiltroMesAno(valor: Date | null): void {
+    this.filtroMesAno.set(valor);
+    this.atualizarQueryParams();
+    this.carregarCobrancas();
+  }
+
+  aoMudarFiltroStatus(valor: 'todos' | 'pago' | 'pendente'): void {
+    this.filtroStatus.set(valor);
+    this.atualizarQueryParams();
+  }
+
+  private atualizarQueryParams(): void {
+    const mesAno = this.filtroMesAno();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        mes: mesAno ? mesAno.getMonth() + 1 : 'todos',
+        ano: mesAno ? mesAno.getFullYear() : null,
+        status: this.filtroStatus() === 'todos' ? null : this.filtroStatus()
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+  }
+
   carregarCobrancas(): void {
     this.carregando.set(true);
-    this.assinaturaService.listar().subscribe({
-      next: (assinaturas) => {
-        const requests = assinaturas.map(assinatura =>
-          this.cobrancaService.listarPorAssinatura(assinatura.id)
-        );
-        
-        forkJoin(requests).subscribe({
-          next: (arraysCobrancas) => {
-            const todasCobrancas: CobrancaMensalResponseDTO[] = [];
-            arraysCobrancas.forEach(cobrancas => {
-              todasCobrancas.push(...cobrancas);
-            });
-            // Ordenar cobranças por descrição (ASC)
-            const cobrancasOrdenadas = todasCobrancas.sort((a, b) => {
-              const descricaoA = a.descricao?.toLowerCase() || '';
-              const descricaoB = b.descricao?.toLowerCase() || '';
-              return descricaoA.localeCompare(descricaoB, 'pt-BR');
-            });
-            this.cobrancas.set(cobrancasOrdenadas);
-            this.carregando.set(false);
-          },
-          error: (error) => {
-            console.error('Erro ao carregar cobranças:', error);
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Erro',
-              detail: 'Erro ao carregar cobranças'
-            });
-            this.carregando.set(false);
-          }
+    const mesAno = this.filtroMesAno();
+    const mes = mesAno ? mesAno.getMonth() + 1 : undefined;
+    const ano = mesAno ? mesAno.getFullYear() : undefined;
+
+    this.cobrancaService.listar(mes, ano).subscribe({
+      next: (cobrancas) => {
+        const cobrancasOrdenadas = cobrancas.sort((a, b) => {
+          const descricaoA = a.descricao?.toLowerCase() || '';
+          const descricaoB = b.descricao?.toLowerCase() || '';
+          return descricaoA.localeCompare(descricaoB, 'pt-BR');
         });
+        this.cobrancas.set(cobrancasOrdenadas);
+        this.carregando.set(false);
       },
-      error: (error) => {
-        console.error('Erro ao carregar assinaturas:', error);
+      error: (error: HttpErrorResponse) => {
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: 'Erro ao carregar assinaturas'
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
         });
         this.carregando.set(false);
       }
@@ -165,7 +200,7 @@ export class CobrancasComponent implements OnInit {
   }
 
   gerarMensalidades(): void {
-    if (!this.mesGerar || !this.anoGerar) {
+    if (!this.mesAnoGerar) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Atenção',
@@ -177,8 +212,8 @@ export class CobrancasComponent implements OnInit {
     this.gerando.set(true);
 
     const request: GerarCobrancasRequestDTO = {
-      mes: this.mesGerar,
-      ano: this.anoGerar
+      mes: this.mesAnoGerar.getMonth() + 1,
+      ano: this.mesAnoGerar.getFullYear()
     };
 
     this.cobrancaService.gerarMensalidades(request).subscribe({
@@ -189,13 +224,14 @@ export class CobrancasComponent implements OnInit {
           detail: 'Mensalidades geradas com sucesso'
         });
         this.gerando.set(false);
-        setTimeout(() => this.carregarCobrancas(), 500);
+        this.carregarCobrancas();
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: error.error?.message || 'Erro ao gerar mensalidades'
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
         });
         this.gerando.set(false);
       }
@@ -210,13 +246,11 @@ export class CobrancasComponent implements OnInit {
       recebedor: undefined,
       tipoPagamento: undefined
     };
-    this.modalBaixaVisivel.set(true);
-    this._modalBaixaVisivel = true;
+    this.modalBaixaVisivel = true;
   }
 
   fecharModalBaixa(): void {
-    this.modalBaixaVisivel.set(false);
-    this._modalBaixaVisivel = false;
+    this.modalBaixaVisivel = false;
     this.cobrancaSelecionada.set(null);
   }
 
@@ -258,11 +292,12 @@ export class CobrancasComponent implements OnInit {
         this.carregarCobrancas();
         this.salvando.set(false);
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: error.error?.message || 'Erro ao dar baixa na cobrança'
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
         });
         this.salvando.set(false);
       }
@@ -273,4 +308,3 @@ export class CobrancasComponent implements OnInit {
     this.termoPesquisa.set('');
   }
 }
-

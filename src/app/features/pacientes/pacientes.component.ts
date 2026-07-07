@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -10,12 +11,16 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
+import { ToggleSwitch } from 'primeng/toggleswitch';
+import { SelectModule } from 'primeng/select';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { PacienteService } from '../../core/services/paciente.service';
 import { RelatorioService } from '../../core/services/relatorio.service';
 import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interfaces/paciente.interface';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+import { formatDateForApi } from '../../core/utils/date-format.util';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -32,9 +37,12 @@ import { HttpErrorResponse } from '@angular/common/http';
     TextareaModule,
     TagModule,
     TooltipModule,
-    ToastModule
+    ToggleSwitch,
+    SelectModule,
+    ToastModule,
+    ConfirmDialogModule
 ],
-    providers: [MessageService],
+    providers: [MessageService, ConfirmationService],
     templateUrl: './pacientes.component.html',
     styleUrls: ['./pacientes.component.scss']
 })
@@ -47,9 +55,30 @@ export class PacientesComponent implements OnInit {
   pacienteEmEdicao: PacienteResponseDTO | null = null;
   pacienteForm: FormGroup;
 
+  mostrarInativos = signal(false);
+  filtroAssinatura = signal<'todos' | 'com' | 'sem'>('todos');
+
+  filtroAssinaturaOptions = [
+    { label: 'Todos', value: 'todos' },
+    { label: 'Com assinatura ativa', value: 'com' },
+    { label: 'Sem assinatura ativa', value: 'sem' }
+  ];
+
   pacientesFiltrados = computed(() => {
     const termo = this.termoPesquisa().toLowerCase().trim();
-    const pacientesLista = this.pacientes();
+    const mostrarInativos = this.mostrarInativos();
+    const filtroAssinatura = this.filtroAssinatura();
+    let pacientesLista = this.pacientes();
+
+    if (!mostrarInativos) {
+      pacientesLista = pacientesLista.filter(p => p.ativo !== false);
+    }
+
+    if (filtroAssinatura === 'com') {
+      pacientesLista = pacientesLista.filter(p => p.possuiAssinaturaAtiva === true);
+    } else if (filtroAssinatura === 'sem') {
+      pacientesLista = pacientesLista.filter(p => p.possuiAssinaturaAtiva !== true);
+    }
 
     if (!termo) {
       return pacientesLista;
@@ -72,8 +101,18 @@ export class PacientesComponent implements OnInit {
     private pacienteService: PacienteService,
     private relatorioService: RelatorioService,
     private fb: FormBuilder,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
+    const params = this.route.snapshot.queryParamMap;
+    this.mostrarInativos.set(params.get('inativos') === '1');
+    const filtroAssinaturaParam = params.get('assinatura');
+    if (filtroAssinaturaParam === 'com' || filtroAssinaturaParam === 'sem') {
+      this.filtroAssinatura.set(filtroAssinaturaParam);
+    }
+
     this.pacienteForm = this.fb.group({
       nome: ['', Validators.required],
       cpf: ['', Validators.required],
@@ -122,6 +161,28 @@ export class PacientesComponent implements OnInit {
 
   limparPesquisa(): void {
     this.termoPesquisa.set('');
+  }
+
+  aoMudarMostrarInativos(valor: boolean): void {
+    this.mostrarInativos.set(valor);
+    this.atualizarQueryParams();
+  }
+
+  aoMudarFiltroAssinatura(valor: 'todos' | 'com' | 'sem'): void {
+    this.filtroAssinatura.set(valor);
+    this.atualizarQueryParams();
+  }
+
+  private atualizarQueryParams(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        inativos: this.mostrarInativos() ? '1' : null,
+        assinatura: this.filtroAssinatura() === 'todos' ? null : this.filtroAssinatura()
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
 
@@ -173,7 +234,7 @@ export class PacientesComponent implements OnInit {
     const pacienteData: PacienteCreateRequestDTO = {
       nome: formValue.nome,
       cpf: formValue.cpf.replace(/\D/g, ''),
-      dataNascimento: formValue.dataNascimento ? formValue.dataNascimento.toISOString().split('T')[0] : undefined,
+      dataNascimento: formValue.dataNascimento ? formatDateForApi(formValue.dataNascimento) : undefined,
       telefone: formValue.telefone || undefined,
       email: formValue.email || undefined,
       logradouro: formValue.logradouro || undefined,
@@ -198,11 +259,12 @@ export class PacientesComponent implements OnInit {
           this.carregarPacientes();
           this.salvando.set(false);
         },
-        error: (error) => {
+        error: (error: HttpErrorResponse) => {
+          const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
           this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: error.error?.message || 'Erro ao atualizar paciente'
+            severity: errorMessage.severity,
+            summary: errorMessage.summary,
+            detail: errorMessage.detail
           });
           this.salvando.set(false);
         }
@@ -219,16 +281,71 @@ export class PacientesComponent implements OnInit {
           this.carregarPacientes();
           this.salvando.set(false);
         },
-        error: (error) => {
+        error: (error: HttpErrorResponse) => {
+          const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
           this.messageService.add({
-            severity: 'error',
-            summary: 'Erro',
-            detail: error.error?.message || 'Erro ao criar paciente'
+            severity: errorMessage.severity,
+            summary: errorMessage.summary,
+            detail: errorMessage.detail
           });
           this.salvando.set(false);
         }
       });
     }
+  }
+
+  confirmarInativacao(paciente: PacienteResponseDTO): void {
+    this.confirmationService.confirm({
+      message: `Tem certeza que deseja inativar ${paciente.nome}?`,
+      header: 'Confirmar Inativação',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sim, inativar',
+      rejectLabel: 'Não',
+      accept: () => {
+        this.pacienteService.inativar(paciente.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Sucesso',
+              detail: 'Paciente inativado com sucesso'
+            });
+            this.carregarPacientes();
+          },
+          error: (error: HttpErrorResponse) => {
+            const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+            if (error.status === 400) {
+              errorMessage.detail = errorMessage.detail || 'Paciente possui assinatura ativa. Cancele-a antes de inativar.';
+            }
+            this.messageService.add({
+              severity: errorMessage.severity,
+              summary: errorMessage.summary,
+              detail: errorMessage.detail
+            });
+          }
+        });
+      }
+    });
+  }
+
+  reativarPaciente(paciente: PacienteResponseDTO): void {
+    this.pacienteService.reativar(paciente.id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Paciente reativado com sucesso'
+        });
+        this.carregarPacientes();
+      },
+      error: (error: HttpErrorResponse) => {
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
   }
 
   formatarCPF(cpf: string): string {

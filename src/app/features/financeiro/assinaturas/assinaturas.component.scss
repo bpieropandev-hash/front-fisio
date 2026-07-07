@@ -5,6 +5,28 @@
       margin-bottom: 20px;
     }
 
+    .filtros-linha {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filtro-campo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filtro-campo label {
+      font-weight: 500;
+    }
+
+    .filtro-select {
+      min-width: 200px;
+    }
+
     .search-container {
       margin-bottom: 24px;
     }
@@ -116,8 +138,21 @@
       }
     }
 
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .form-group {
       margin-bottom: 20px;
+    }
+
+    .troca-plano-info {
+      margin-bottom: 20px;
+      color: #64748b;
+      font-size: 0.9rem;
     }
 
     .form-group label {

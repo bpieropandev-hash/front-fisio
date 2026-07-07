@@ -14,12 +14,13 @@ import { Select } from 'primeng/select';
 import { DatePicker } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MultiSelect } from 'primeng/multiselect';
+import { Checkbox } from 'primeng/checkbox';
 import { Card } from 'primeng/card';
 import { Toast } from 'primeng/toast';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicoService } from '../../core/services/servico.service';
-import { AtendimentoResponseDTO, AgendamentoRequestDTO } from '../../core/interfaces/agendamento.interface';
+import { AtendimentoResponseDTO, AgendamentoRequestDTO, ConcluirAtendimentoLoteItemDTO } from '../../core/interfaces/agendamento.interface';
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 import { MessageService } from 'primeng/api';
@@ -27,6 +28,16 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { formatDateTimeForApi, formatDateTimeForApiBody, formatDateForApi } from '../../core/utils/date-format.util';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+
+interface ItemLoteUI {
+  id: number;
+  dataHoraInicio: string;
+  avulso: boolean;
+  selecionado: boolean;
+  evolucao: string;
+  recebedor: 'CLINICA' | 'PROFISSIONAL' | null;
+  tipoPagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | null;
+}
 
 @Component({
   selector: 'app-agenda',
@@ -41,6 +52,7 @@ import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
     DatePicker,
     ToggleSwitchModule,
     MultiSelect,
+    Checkbox,
     Card,
     Toast
   ],
@@ -138,6 +150,123 @@ export class AgendaComponent implements OnInit {
     { label: 'Cartão de Débito', value: 'CARTAO_DEBITO' },
     { label: 'PIX', value: 'PIX' }
   ];
+
+  // --- Fechamento em lote (spec 07 F1) ---
+  modalLoteVisivel = false;
+  pacienteLoteId: number | null = null;
+  carregandoLote = signal(false);
+  salvandoLote = signal(false);
+  itensLote = signal<ItemLoteUI[]>([]);
+
+  abrirModalLote(): void {
+    this.pacienteLoteId = null;
+    this.itensLote.set([]);
+    this.modalLoteVisivel = true;
+  }
+
+  fecharModalLote(): void {
+    this.modalLoteVisivel = false;
+  }
+
+  aoSelecionarPacienteLote(): void {
+    if (!this.pacienteLoteId) {
+      this.itensLote.set([]);
+      return;
+    }
+
+    this.carregandoLote.set(true);
+    this.agendamentoService.listar({ pacienteId: this.pacienteLoteId }).subscribe({
+      next: (atendimentos) => {
+        const agora = new Date();
+        const itens: ItemLoteUI[] = atendimentos
+          .filter(a => a.status === 'AGENDADO' && new Date(a.dataHoraInicio) < agora)
+          .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
+          .map(a => ({
+            id: a.id,
+            dataHoraInicio: a.dataHoraInicio,
+            avulso: this.ehAtendimentoAvulso(a),
+            selecionado: true,
+            evolucao: '',
+            recebedor: null,
+            tipoPagamento: null
+          }));
+        this.itensLote.set(itens);
+        this.carregandoLote.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.carregandoLote.set(false);
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
+  }
+
+  copiarEvolucaoParaTodos(): void {
+    const itens = this.itensLote();
+    if (itens.length === 0) return;
+    const primeiraEvolucao = itens[0].evolucao;
+    this.itensLote.set(itens.map(i => ({ ...i, evolucao: primeiraEvolucao })));
+  }
+
+  atualizarItemLote(id: number, campo: 'evolucao' | 'recebedor' | 'tipoPagamento' | 'selecionado', valor: any): void {
+    this.itensLote.set(this.itensLote().map(i => i.id === id ? { ...i, [campo]: valor } : i));
+  }
+
+  confirmarConclusaoLote(): void {
+    const selecionados = this.itensLote().filter(i => i.selecionado);
+    if (selecionados.length === 0) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Selecione ao menos um atendimento' });
+      return;
+    }
+
+    const semEvolucao = selecionados.some(i => !i.evolucao || !i.evolucao.trim());
+    if (semEvolucao) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Evolução é obrigatória para todos os atendimentos selecionados' });
+      return;
+    }
+
+    this.salvandoLote.set(true);
+    const itens: ConcluirAtendimentoLoteItemDTO[] = selecionados.map(i => ({
+      id: i.id,
+      evolucao: i.evolucao,
+      recebedor: i.avulso && i.recebedor ? i.recebedor : undefined,
+      tipoPagamento: i.avulso && i.tipoPagamento ? i.tipoPagamento : undefined
+    }));
+
+    this.agendamentoService.concluirEmLote({ atendimentos: itens }).subscribe({
+      next: (resultado) => {
+        this.salvandoLote.set(false);
+        if (resultado.falhas.length === 0) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: `${resultado.concluidos} atendimento(s) concluído(s)`
+          });
+          this.fecharModalLote();
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Concluído parcialmente',
+            detail: `${resultado.concluidos} concluído(s), ${resultado.falhas.length} falharam: ${resultado.falhas.map(f => f.motivo).join('; ')}`
+          });
+        }
+        this.carregarEventos();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.salvandoLote.set(false);
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
+  }
 
   calendarOptions = computed<CalendarOptions>(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],

@@ -5,11 +5,11 @@
 }
 
 :root {
-  --primary-gradient: linear-gradient(135deg, #4cc9f0 0%, #90f7ec 100%);
+  --primary-gradient: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-color-light) 100%);
   --surface-soft: #f8fbff;
   --surface-border: #e2e8f0; /* adicionado para consistência */
-  --surface-hover: rgba(76, 201, 240, 0.06); /* adicionado para hover consistente */
-  
+  --surface-hover: color-mix(in srgb, var(--accent-color) 6%, transparent); /* adicionado para hover consistente */
+
   /* Cores do modo claro */
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
@@ -19,6 +19,13 @@
   --text-tertiary: #94a3b8;
   --border-color: #e2e8f0;
   --shadow: rgba(0, 0, 0, 0.1);
+
+  /* Tema personalizado por usuário (spec 09) — defaults, sobrescritos em runtime por AccentThemeService */
+  --accent-color: #4cc9f0;
+  --accent-color-hover: #3ab8d9;
+  --accent-color-light: #90f7ec;
+  --font-display: 'Sora', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'Work Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* Modo escuro */
@@ -34,15 +41,19 @@ html.dark-mode {
 }
 
 body {
-  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
   background: var(--primary-gradient);
   min-height: 100vh;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
 /* Fundo específico para a tela de login */
 body.login-page {
-  background-color: #f5f7f8 !important;
-  background: #f5f7f8 !important;
+  background-color: #f7f3ee !important;
+  background: #f7f3ee !important;
 }
 
 html.dark-mode body.login-page {
@@ -101,8 +112,8 @@ html.dark-mode {
 
   ::ng-deep .p-inputtext:enabled:focus,
   ::ng-deep .p-inputtextarea:enabled:focus {
-    border-color: #4cc9f0 !important;
-    box-shadow: 0 0 0 0.2rem rgba(76, 201, 240, 0.2) !important;
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent-color) 20%, transparent) !important;
   }
 
   /* Selects */
@@ -145,7 +156,7 @@ html.dark-mode {
   }
 
   ::ng-deep .p-datepicker table td > span.p-highlight {
-    background: #4cc9f0 !important;
+    background: var(--accent-color) !important;
     color: #ffffff !important;
   }
 
@@ -389,8 +400,8 @@ html.dark-mode body.login-page {
 }
 
 ::ng-deep .p-datepicker .p-timepicker input:focus {
-  border-color: #4cc9f0 !important;
-  box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.1) !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 10%, transparent) !important;
   outline: none !important;
 }
 
@@ -417,8 +428,8 @@ html.dark-mode body.login-page {
 }
 
 ::ng-deep .p-datepicker .p-timepicker button:hover {
-  background: #4cc9f0 !important;
-  border-color: #4cc9f0 !important;
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
   color: #ffffff !important;
 }
 
@@ -478,7 +489,7 @@ html.dark-mode body.login-page {
 /* Estilos elegantes e modernos para textareas */
 ::ng-deep .p-inputtextarea,
 ::ng-deep textarea.p-inputtextarea {
-  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: var(--font-body) !important;
   font-size: 15px !important;
   line-height: 1.7 !important;
   letter-spacing: 0.01em !important;
@@ -513,10 +524,10 @@ html.dark-mode body.login-page {
 ::ng-deep .p-inputtextarea:focus,
 ::ng-deep textarea.p-inputtextarea:focus {
   outline: none !important;
-  border-color: #4cc9f0 !important;
+  border-color: var(--accent-color) !important;
   box-shadow: 
-    0 0 0 3px rgba(76, 201, 240, 0.12),
-    0 4px 12px rgba(76, 201, 240, 0.15),
+    0 0 0 3px color-mix(in srgb, var(--accent-color) 12%, transparent),
+    0 4px 12px color-mix(in srgb, var(--accent-color) 15%, transparent),
     0 2px 4px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 1) !important;
   background: #ffffff !important;
@@ -549,7 +560,7 @@ textarea.p-inputtextarea.evolution-textarea,
 .p-inputtextarea.evolution-textarea,
 .evolution-textarea.p-inputtextarea,
 .evolution-textarea {
-  font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: var(--font-body) !important;
   font-size: 15px !important;
   line-height: 1.8 !important;
   letter-spacing: 0.015em !important;
@@ -593,7 +604,7 @@ textarea.evolution-textarea.p-inputtextarea[style*="height"] {
   left: 0 !important;
   right: 0 !important;
   height: 3px !important;
-  background: linear-gradient(90deg, #4cc9f0 0%, #90f7ec 100%) !important;
+  background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-color-light) 100%) !important;
   opacity: 0 !important;
   transition: opacity 0.3s ease !important;
   z-index: 1 !important;
@@ -623,10 +634,10 @@ textarea.evolution-textarea.p-inputtextarea[style*="height"] {
 ::ng-deep .evolution-textarea.p-inputtextarea:focus,
 ::ng-deep textarea.evolution-textarea.p-inputtextarea:focus {
   outline: none !important;
-  border-color: #4cc9f0 !important;
+  border-color: var(--accent-color) !important;
   box-shadow: 
-    0 0 0 4px rgba(76, 201, 240, 0.12),
-    0 8px 24px rgba(76, 201, 240, 0.15),
+    0 0 0 4px color-mix(in srgb, var(--accent-color) 12%, transparent),
+    0 8px 24px color-mix(in srgb, var(--accent-color) 15%, transparent),
     0 2px 8px rgba(0, 0, 0, 0.08) !important;
   background: #ffffff !important;
   transform: translateY(-2px) !important;
@@ -666,11 +677,11 @@ html.dark-mode ::ng-deep .evolution-textarea.p-inputtextarea:hover {
 
 html.dark-mode .evolution-textarea:focus,
 html.dark-mode ::ng-deep .evolution-textarea.p-inputtextarea:focus {
-  border-color: #4cc9f0 !important;
+  border-color: var(--accent-color) !important;
   background: #1e293b !important;
   box-shadow: 
-    0 0 0 4px rgba(76, 201, 240, 0.2),
-    0 8px 24px rgba(76, 201, 240, 0.25),
+    0 0 0 4px color-mix(in srgb, var(--accent-color) 20%, transparent),
+    0 8px 24px color-mix(in srgb, var(--accent-color) 25%, transparent),
     0 2px 8px rgba(0, 0, 0, 0.5) !important;
 }
 
@@ -755,32 +766,32 @@ html.dark-mode ::ng-deep .evolution-textarea.p-inputtextarea::placeholder {
 ::ng-deep .p-button.p-button-outlined,
 ::ng-deep .p-button[ng-reflect-outlined="true"] {
   background-color: #ffffff !important;
-  border: 2px solid #4cc9f0 !important;
-  color: #4cc9f0 !important;
+  border: 2px solid var(--accent-color) !important;
+  color: var(--accent-color) !important;
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
 }
 
 ::ng-deep .p-button.p-button-outlined:hover,
 ::ng-deep .p-button[ng-reflect-outlined="true"]:hover {
-  background-color: #4cc9f0 !important;
-  border-color: #4cc9f0 !important;
+  background-color: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
   color: #ffffff !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(76, 201, 240, 0.3) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-color) 30%, transparent) !important;
 }
 
 ::ng-deep .p-button.p-button-outlined:active,
 ::ng-deep .p-button[ng-reflect-outlined="true"]:active {
-  background-color: #3ab8d9 !important;
-  border-color: #3ab8d9 !important;
+  background-color: var(--accent-color-hover) !important;
+  border-color: var(--accent-color-hover) !important;
   transform: translateY(0) !important;
 }
 
 ::ng-deep .p-button.p-button-outlined:focus,
 ::ng-deep .p-button[ng-reflect-outlined="true"]:focus {
   outline: none !important;
-  box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent) !important;
 }
 
 /* Botões outlined com severity danger (vermelho) */
@@ -815,7 +826,7 @@ html.dark-mode ::ng-deep .evolution-textarea.p-inputtextarea::placeholder {
 
 /* Melhorar visibilidade dos botões text */
 ::ng-deep .p-button.p-button-text {
-  color: #4cc9f0 !important;
+  color: var(--accent-color) !important;
   background-color: transparent !important;
   border: none !important;
   font-weight: 500 !important;
@@ -823,13 +834,13 @@ html.dark-mode ::ng-deep .evolution-textarea.p-inputtextarea::placeholder {
 }
 
 ::ng-deep .p-button.p-button-text:hover {
-  background-color: rgba(76, 201, 240, 0.1) !important;
-  color: #3ab8d9 !important;
+  background-color: color-mix(in srgb, var(--accent-color) 10%, transparent) !important;
+  color: var(--accent-color-hover) !important;
 }
 
 ::ng-deep .p-button.p-button-text:focus {
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(76, 201, 240, 0.2) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent) !important;
 }
 
 /* Botões text com severity danger */

@@ -3,7 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { API_CONFIG } from '../config/api.config';
-import { AuthenticationDTO, LoginResponseDTO } from '../interfaces/authentication.interface';
+import {
+  AuthenticationDTO,
+  LoginResponseDTO,
+  EsqueciSenhaRequestDTO,
+  RedefinirSenhaRequestDTO,
+  AlterarSenhaRequestDTO
+} from '../interfaces/authentication.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -32,6 +38,30 @@ export class AuthService {
       catchError(error => {
         return throwError(() => error);
       })
+    );
+  }
+
+  esqueciSenha(loginOuEmail: string): Observable<void> {
+    const body: EsqueciSenhaRequestDTO = { loginOuEmail };
+    return this.http.post<void>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.auth}/esqueci-senha`,
+      body
+    );
+  }
+
+  redefinirSenha(token: string, novaSenha: string): Observable<void> {
+    const body: RedefinirSenhaRequestDTO = { token, novaSenha };
+    return this.http.post<void>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.auth}/redefinir-senha`,
+      body
+    );
+  }
+
+  alterarSenha(senhaAtual: string, novaSenha: string): Observable<void> {
+    const body: AlterarSenhaRequestDTO = { senhaAtual, novaSenha };
+    return this.http.put<void>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.auth}/alterar-senha`,
+      body
     );
   }
 

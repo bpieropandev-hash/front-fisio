@@ -123,18 +123,36 @@
       gap: 10px;
     }
 
+    .filtros-linha {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filtro-campo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filtro-campo label {
+      font-weight: 500;
+    }
+
+    .filtro-select {
+      min-width: 160px;
+    }
+
     .gerar-mes-group {
       display: flex;
       gap: 10px;
       align-items: center;
     }
 
-    .mes-input {
-      width: 100px;
-    }
-
-    .ano-input {
-      width: 120px;
+    .mes-ano-input {
+      width: 140px;
     }
 
     .form-group {
@@ -180,8 +198,7 @@
         width: 100%;
       }
 
-      .mes-input,
-      .ano-input {
+      .mes-ano-input {
         width: 100%;
       }
 

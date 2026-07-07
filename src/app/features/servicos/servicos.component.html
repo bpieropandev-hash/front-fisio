@@ -1,4 +1,5 @@
     <p-toast />
+    <p-confirmdialog />
 
     <div class="page-header">
       <div>
@@ -120,7 +121,8 @@
             mode="currency"
             currency="BRL"
             locale="pt-BR"
-            placeholder="0,00"
+            [min]="0.01"
+            placeholder="R$ 0,00"
           />
         </div>
 
@@ -165,6 +167,79 @@
           icon="pi pi-check"
           [loading]="salvando()"
           (onClick)="salvarServico()"
+        />
+      </ng-template>
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="reajusteDialogVisivel"
+      header="Propagar reajuste de preço?"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '520px' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharReajusteDialog()"
+    >
+      <p>
+        Este serviço tem <strong>{{ assinaturasAtivasCount() }}</strong> assinatura(s) ativa(s).
+        O que fazer com elas?
+      </p>
+
+      <div class="reajuste-opcoes">
+        <div class="reajuste-opcao">
+          <p-radioButton
+            name="reajusteOpcao"
+            value="catalogo"
+            [(ngModel)]="reajusteOpcao"
+            inputId="opcaoCatalogo"
+          />
+          <label for="opcaoCatalogo">Só novas assinaturas (catálogo apenas)</label>
+        </div>
+
+        <div class="reajuste-opcao">
+          <p-radioButton
+            name="reajusteOpcao"
+            value="ativas"
+            [(ngModel)]="reajusteOpcao"
+            inputId="opcaoAtivas"
+          />
+          <label for="opcaoAtivas">Reajustar assinaturas ativas a partir da próxima cobrança</label>
+        </div>
+
+        <div class="reajuste-opcao">
+          <p-radioButton
+            name="reajusteOpcao"
+            value="ativasCobrancas"
+            [(ngModel)]="reajusteOpcao"
+            inputId="opcaoAtivasCobrancas"
+          />
+          <label for="opcaoAtivasCobrancas">Reajustar ativas + cobranças pendentes deste mês</label>
+        </div>
+      </div>
+
+      @if (reajusteOpcao !== 'catalogo') {
+        <div class="reajuste-opcao preservar">
+          <p-checkbox
+            [(ngModel)]="preservarNegociados"
+            [binary]="true"
+            inputId="preservarNegociados"
+          />
+          <label for="preservarNegociados">Preservar valores negociados (diferentes da tabela atual)</label>
+        </div>
+      }
+
+      <ng-template pTemplate="footer">
+        <p-button
+          label="Cancelar"
+          severity="secondary"
+          variant="text"
+          (onClick)="fecharReajusteDialog()"
+        />
+        <p-button
+          label="Confirmar"
+          icon="pi pi-check"
+          [loading]="salvando()"
+          (onClick)="confirmarReajuste()"
         />
       </ng-template>
     </p-dialog>

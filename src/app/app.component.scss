@@ -10,6 +10,38 @@
   padding: 2.5rem;
 }
 
+.avatar-trigger {
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.avatar-foto {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  transition: border-color 0.2s ease;
+}
+
+.avatar-trigger:hover .avatar-foto,
+.avatar-trigger:hover .avatar-placeholder {
+  border-color: var(--accent-color, #4cc9f0);
+}
+
+.avatar-placeholder {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: border-color 0.2s ease;
+}
+
 @media (max-width: 768px) {
   .top-shell {
     padding: 0.75rem 1rem;

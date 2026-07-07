@@ -10,6 +10,34 @@
       />
     </div>
 
+    <div class="filtros-linha">
+      <div class="filtro-campo">
+        <label>Status</label>
+        <p-select
+          [ngModel]="filtroStatus()"
+          (ngModelChange)="aoMudarFiltroStatus($event)"
+          [options]="filtroStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filtro-select"
+        />
+      </div>
+
+      <div class="filtro-campo">
+        <label>Serviço</label>
+        <p-select
+          [ngModel]="filtroServicoId()"
+          (ngModelChange)="aoMudarFiltroServico($event)"
+          [options]="servicos()"
+          optionLabel="nome"
+          optionValue="id"
+          placeholder="Todos"
+          [showClear]="true"
+          styleClass="filtro-select"
+        />
+      </div>
+    </div>
+
     <div class="search-container">
       <div class="search-wrapper">
         <input
@@ -76,15 +104,39 @@
             />
           </td>
           <td>
-            @if (assinatura.ativo) {
-              <p-button
-                icon="pi pi-times"
-                label="Cancelar"
-                severity="danger"
-                (onClick)="confirmarCancelamento(assinatura)"
-                styleClass="p-button-sm"
-              />
-            }
+            <div class="action-buttons">
+              @if (assinatura.ativo) {
+                <p-button
+                  icon="pi pi-pencil"
+                  label="Editar"
+                  severity="secondary"
+                  (onClick)="abrirModalEditar(assinatura)"
+                  styleClass="p-button-sm"
+                />
+                <p-button
+                  icon="pi pi-sync"
+                  label="Trocar plano"
+                  severity="info"
+                  (onClick)="abrirModalTrocarPlano(assinatura)"
+                  styleClass="p-button-sm"
+                />
+                <p-button
+                  icon="pi pi-times"
+                  label="Cancelar"
+                  severity="danger"
+                  (onClick)="confirmarCancelamento(assinatura)"
+                  styleClass="p-button-sm"
+                />
+              } @else {
+                <p-button
+                  icon="pi pi-refresh"
+                  label="Reativar"
+                  severity="success"
+                  (onClick)="confirmarReativacao(assinatura)"
+                  styleClass="p-button-sm"
+                />
+              }
+            </div>
           </td>
         </tr>
       </ng-template>
@@ -92,7 +144,7 @@
 
     <!-- Modal Nova Assinatura -->
     <p-dialog
-      [(visible)]="_modalVisivel"
+      [(visible)]="modalVisivel"
       header="Nova Assinatura"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
@@ -133,6 +185,8 @@
           mode="currency"
           currency="BRL"
           locale="pt-BR"
+          [min]="0.01"
+          placeholder="R$ 0,00"
           styleClass="full-width"
         />
       </div>
@@ -169,6 +223,149 @@
           label="Criar"
           icon="pi pi-check"
           (onClick)="criarAssinatura()"
+          [loading]="salvando()"
+        />
+      </div>
+    </p-dialog>
+
+    <!-- Modal Editar Assinatura -->
+    <p-dialog
+      [(visible)]="modalEditarVisivel"
+      header="Editar Assinatura"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '500px' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModalEditar()"
+    >
+      @if (assinaturaEditando) {
+        <div class="form-group">
+          <label>Paciente</label>
+          <input type="text" pInputText [value]="assinaturaEditando.pacienteNome" disabled styleClass="full-width" />
+        </div>
+
+        <div class="form-group">
+          <label>Serviço</label>
+          <input type="text" pInputText [value]="assinaturaEditando.servicoNome" disabled styleClass="full-width" />
+        </div>
+
+        <div class="form-group">
+          <label>Valor Mensal *</label>
+          <p-inputNumber
+            [(ngModel)]="edicao.valorMensal"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            [min]="0.01"
+            placeholder="R$ 0,00"
+            styleClass="full-width"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Dia de Vencimento *</label>
+          <p-inputNumber
+            [(ngModel)]="edicao.diaVencimento"
+            [min]="1"
+            [max]="28"
+            placeholder="Dia do mês (1-28)"
+            styleClass="full-width"
+          />
+        </div>
+      }
+
+      <div class="dialog-footer">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          (onClick)="fecharModalEditar()"
+          styleClass="p-button-text"
+        />
+        <p-button
+          label="Salvar"
+          icon="pi pi-check"
+          (onClick)="salvarEdicao()"
+          [loading]="salvando()"
+        />
+      </div>
+    </p-dialog>
+
+    <!-- Modal Trocar Plano -->
+    <p-dialog
+      [(visible)]="modalTrocarPlanoVisivel"
+      header="Trocar Plano"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '500px' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModalTrocarPlano()"
+    >
+      @if (assinaturaTrocandoPlano) {
+        <p class="troca-plano-info">
+          Cancela o plano atual de <strong>{{ assinaturaTrocandoPlano.pacienteNome }}</strong>
+          ({{ assinaturaTrocandoPlano.servicoNome }}) e cria uma nova assinatura no serviço escolhido.
+        </p>
+
+        <div class="form-group">
+          <label>Novo Serviço *</label>
+          <p-select
+            [(ngModel)]="trocaPlano.novoServicoId"
+            (onChange)="aoSelecionarNovoServico()"
+            [options]="servicos()"
+            optionLabel="nome"
+            optionValue="id"
+            placeholder="Selecione o novo serviço"
+            styleClass="full-width"
+            [appendTo]="'body'"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Valor Mensal *</label>
+          <p-inputNumber
+            [(ngModel)]="trocaPlano.novoValorMensal"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            [min]="0.01"
+            placeholder="R$ 0,00"
+            styleClass="full-width"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Dia de Vencimento *</label>
+          <p-inputNumber
+            [(ngModel)]="trocaPlano.diaVencimento"
+            [min]="1"
+            [max]="28"
+            placeholder="Dia do mês (1-28)"
+            styleClass="full-width"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Data de Início</label>
+          <input
+            type="date"
+            pInputText
+            [(ngModel)]="trocaPlano.dataInicio"
+            styleClass="full-width"
+          />
+        </div>
+      }
+
+      <div class="dialog-footer">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          (onClick)="fecharModalTrocarPlano()"
+          styleClass="p-button-text"
+        />
+        <p-button
+          label="Trocar"
+          icon="pi pi-sync"
+          (onClick)="confirmarTrocarPlano()"
           [loading]="salvando()"
         />
       </div>

@@ -5,6 +5,34 @@
       margin-bottom: 20px;
     }
 
+    .filtros-linha {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filtro-inativos {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filtro-assinatura {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filtro-assinatura label {
+      font-weight: 500;
+    }
+
+    .filtro-select {
+      min-width: 200px;
+    }
+
     .search-container {
       margin-bottom: 24px;
     }
