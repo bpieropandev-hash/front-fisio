@@ -7,6 +7,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
   {
+    path: 'esqueci-senha',
+    loadComponent: () => import('./features/auth/esqueci-senha/esqueci-senha.component').then(m => m.EsqueciSenhaComponent)
+  },
+  {
+    path: 'redefinir-senha',
+    loadComponent: () => import('./features/auth/redefinir-senha/redefinir-senha.component').then(m => m.RedefinirSenhaComponent)
+  },
+  {
     path: 'dashboard',
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [authGuard]
@@ -44,6 +52,11 @@ export const routes: Routes = [
   {
     path: 'relatorios',
     loadComponent: () => import('./features/relatorios/relatorios.component').then(m => m.RelatoriosComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'perfil',
+    loadComponent: () => import('./features/perfil/perfil.component').then(m => m.PerfilComponent),
     canActivate: [authGuard]
   },
   {

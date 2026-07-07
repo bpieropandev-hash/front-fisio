@@ -1,5 +1,6 @@
     <p-toast />
-    
+    <p-confirmdialog />
+
     <div class="page-header">
       <h2>Pacientes</h2>
       <p-button
@@ -7,6 +8,28 @@
         icon="pi pi-plus"
         (onClick)="abrirModalNovoPaciente()"
       />
+    </div>
+
+    <div class="filtros-linha">
+      <div class="filtro-inativos">
+        <p-toggleswitch
+          [ngModel]="mostrarInativos()"
+          (ngModelChange)="aoMudarMostrarInativos($event)"
+        />
+        <label>Mostrar inativos</label>
+      </div>
+
+      <div class="filtro-assinatura">
+        <label>Assinatura</label>
+        <p-select
+          [ngModel]="filtroAssinatura()"
+          (ngModelChange)="aoMudarFiltroAssinatura($event)"
+          [options]="filtroAssinaturaOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filtro-select"
+        />
+      </div>
     </div>
 
     <div class="search-container">
@@ -86,6 +109,23 @@
                 styleClass="p-button-text p-button-rounded"
                 pTooltip="Editar"
               />
+              @if (paciente.ativo !== false) {
+                <p-button
+                  icon="pi pi-user-minus"
+                  (onClick)="confirmarInativacao(paciente)"
+                  styleClass="p-button-text p-button-rounded"
+                  severity="danger"
+                  pTooltip="Inativar"
+                />
+              } @else {
+                <p-button
+                  icon="pi pi-user-plus"
+                  (onClick)="reativarPaciente(paciente)"
+                  styleClass="p-button-text p-button-rounded"
+                  severity="success"
+                  pTooltip="Reativar"
+                />
+              }
             </div>
           </td>
         </tr>

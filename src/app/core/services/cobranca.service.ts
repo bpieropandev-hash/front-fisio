@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_CONFIG } from '../config/api.config';
 import {
@@ -13,6 +13,17 @@ import {
 })
 export class CobrancaService {
   constructor(private http: HttpClient) {}
+
+  /** Lista todas as cobranças em uma request só (filtro opcional por mês/ano de referência) */
+  listar(mes?: number, ano?: number): Observable<CobrancaMensalResponseDTO[]> {
+    let params = new HttpParams();
+    if (mes != null) params = params.set('mes', mes);
+    if (ano != null) params = params.set('ano', ano);
+    return this.http.get<CobrancaMensalResponseDTO[]>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.cobrancas}`,
+      { params }
+    );
+  }
 
   buscarPorId(id: number): Observable<CobrancaMensalResponseDTO> {
     return this.http.get<CobrancaMensalResponseDTO>(

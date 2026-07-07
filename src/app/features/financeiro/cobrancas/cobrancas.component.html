@@ -4,18 +4,14 @@
       <h2>Cobranças Mensais</h2>
       <div class="header-actions">
         <div class="gerar-mes-group">
-          <p-inputNumber
-            [(ngModel)]="mesGerar"
-            [min]="1"
-            [max]="12"
-            placeholder="Mês"
-            styleClass="mes-input"
-          />
-          <p-inputNumber
-            [(ngModel)]="anoGerar"
-            [min]="2020"
-            placeholder="Ano"
-            styleClass="ano-input"
+          <p-datepicker
+            [(ngModel)]="mesAnoGerar"
+            view="month"
+            dateFormat="mm/yy"
+            [readonlyInput]="true"
+            placeholder="Mês/Ano"
+            styleClass="mes-ano-input"
+            [appendTo]="'body'"
           />
           <p-button
             label="Gerar Mês"
@@ -24,6 +20,35 @@
             [loading]="gerando()"
           />
         </div>
+      </div>
+    </div>
+
+    <div class="filtros-linha">
+      <div class="filtro-campo">
+        <label>Mês/Ano</label>
+        <p-datepicker
+          [ngModel]="filtroMesAno()"
+          (ngModelChange)="aoMudarFiltroMesAno($event)"
+          view="month"
+          dateFormat="mm/yy"
+          [readonlyInput]="true"
+          placeholder="Todos os meses"
+          [showButtonBar]="true"
+          styleClass="mes-ano-input"
+          [appendTo]="'body'"
+        />
+      </div>
+
+      <div class="filtro-campo">
+        <label>Status</label>
+        <p-select
+          [ngModel]="filtroStatus()"
+          (ngModelChange)="aoMudarFiltroStatus($event)"
+          [options]="filtroStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filtro-select"
+        />
       </div>
     </div>
 
@@ -110,7 +135,7 @@
 
     <!-- Modal Dar Baixa -->
     <p-dialog
-      [(visible)]="_modalBaixaVisivel"
+      [(visible)]="modalBaixaVisivel"
       header="Dar Baixa na Cobrança"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"

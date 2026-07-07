@@ -14,16 +14,30 @@ import { Select } from 'primeng/select';
 import { DatePicker } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MultiSelect } from 'primeng/multiselect';
+import { Checkbox } from 'primeng/checkbox';
 import { Card } from 'primeng/card';
 import { Toast } from 'primeng/toast';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicoService } from '../../core/services/servico.service';
-import { AtendimentoResponseDTO, AgendamentoRequestDTO } from '../../core/interfaces/agendamento.interface';
+import { AtendimentoResponseDTO, AgendamentoRequestDTO, ConcluirAtendimentoLoteItemDTO } from '../../core/interfaces/agendamento.interface';
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 import { MessageService } from 'primeng/api';
-import { formatDateTimeForApi } from '../../core/utils/date-format.util';
+import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+import { formatDateTimeForApi, formatDateTimeForApiBody, formatDateForApi } from '../../core/utils/date-format.util';
+import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+
+interface ItemLoteUI {
+  id: number;
+  dataHoraInicio: string;
+  avulso: boolean;
+  selecionado: boolean;
+  evolucao: string;
+  recebedor: 'CLINICA' | 'PROFISSIONAL' | null;
+  tipoPagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | null;
+}
 
 @Component({
   selector: 'app-agenda',
@@ -38,6 +52,7 @@ import { formatDateTimeForApi } from '../../core/utils/date-format.util';
     DatePicker,
     ToggleSwitchModule,
     MultiSelect,
+    Checkbox,
     Card,
     Toast
   ],
@@ -46,8 +61,7 @@ import { formatDateTimeForApi } from '../../core/utils/date-format.util';
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
-  modalVisivel = signal(false);
-  _modalVisivel = false;
+  modalVisivel = false;
   atendimentoSelecionado = signal<AtendimentoResponseDTO & { pacienteNome?: string; servicoNome?: string } | null>(null);
   salvando = signal(false);
   pacientes = signal<PacienteResponseDTO[]>([]);
@@ -68,6 +82,10 @@ export class AgendaComponent implements OnInit {
   dataHoraEdit: Date | null = null;
   dataEdit: Date | null = null;
   horaEdit: string | null = null;
+  /** Data/hora original do atendimento em edição — só enviamos ao backend se o usuário alterar */
+  private dataHoraOriginal: Date | null = null;
+  /** Opções de horário do modal de edição: grade de 30min + o horário exato do atendimento */
+  horariosEdicao: { label: string; value: string }[] = [];
 
   dataNovoAgendamento: Date | null = null;
   horaNovoAgendamento: string | null = null;
@@ -133,6 +151,123 @@ export class AgendaComponent implements OnInit {
     { label: 'PIX', value: 'PIX' }
   ];
 
+  // --- Fechamento em lote (spec 07 F1) ---
+  modalLoteVisivel = false;
+  pacienteLoteId: number | null = null;
+  carregandoLote = signal(false);
+  salvandoLote = signal(false);
+  itensLote = signal<ItemLoteUI[]>([]);
+
+  abrirModalLote(): void {
+    this.pacienteLoteId = null;
+    this.itensLote.set([]);
+    this.modalLoteVisivel = true;
+  }
+
+  fecharModalLote(): void {
+    this.modalLoteVisivel = false;
+  }
+
+  aoSelecionarPacienteLote(): void {
+    if (!this.pacienteLoteId) {
+      this.itensLote.set([]);
+      return;
+    }
+
+    this.carregandoLote.set(true);
+    this.agendamentoService.listar({ pacienteId: this.pacienteLoteId }).subscribe({
+      next: (atendimentos) => {
+        const agora = new Date();
+        const itens: ItemLoteUI[] = atendimentos
+          .filter(a => a.status === 'AGENDADO' && new Date(a.dataHoraInicio) < agora)
+          .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
+          .map(a => ({
+            id: a.id,
+            dataHoraInicio: a.dataHoraInicio,
+            avulso: this.ehAtendimentoAvulso(a),
+            selecionado: true,
+            evolucao: '',
+            recebedor: null,
+            tipoPagamento: null
+          }));
+        this.itensLote.set(itens);
+        this.carregandoLote.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.carregandoLote.set(false);
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
+  }
+
+  copiarEvolucaoParaTodos(): void {
+    const itens = this.itensLote();
+    if (itens.length === 0) return;
+    const primeiraEvolucao = itens[0].evolucao;
+    this.itensLote.set(itens.map(i => ({ ...i, evolucao: primeiraEvolucao })));
+  }
+
+  atualizarItemLote(id: number, campo: 'evolucao' | 'recebedor' | 'tipoPagamento' | 'selecionado', valor: any): void {
+    this.itensLote.set(this.itensLote().map(i => i.id === id ? { ...i, [campo]: valor } : i));
+  }
+
+  confirmarConclusaoLote(): void {
+    const selecionados = this.itensLote().filter(i => i.selecionado);
+    if (selecionados.length === 0) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Selecione ao menos um atendimento' });
+      return;
+    }
+
+    const semEvolucao = selecionados.some(i => !i.evolucao || !i.evolucao.trim());
+    if (semEvolucao) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Evolução é obrigatória para todos os atendimentos selecionados' });
+      return;
+    }
+
+    this.salvandoLote.set(true);
+    const itens: ConcluirAtendimentoLoteItemDTO[] = selecionados.map(i => ({
+      id: i.id,
+      evolucao: i.evolucao,
+      recebedor: i.avulso && i.recebedor ? i.recebedor : undefined,
+      tipoPagamento: i.avulso && i.tipoPagamento ? i.tipoPagamento : undefined
+    }));
+
+    this.agendamentoService.concluirEmLote({ atendimentos: itens }).subscribe({
+      next: (resultado) => {
+        this.salvandoLote.set(false);
+        if (resultado.falhas.length === 0) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: `${resultado.concluidos} atendimento(s) concluído(s)`
+          });
+          this.fecharModalLote();
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Concluído parcialmente',
+            detail: `${resultado.concluidos} concluído(s), ${resultado.falhas.length} falharam: ${resultado.falhas.map(f => f.motivo).join('; ')}`
+          });
+        }
+        this.carregarEventos();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.salvandoLote.set(false);
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
+  }
+
   calendarOptions = computed<CalendarOptions>(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
@@ -156,7 +291,8 @@ export class AgendaComponent implements OnInit {
     },
     eventDidMount: (info) => this.onEventDidMount(info),
     editable: true,
-    eventResize: (info) => this.onEventResize(info),
+    // Duração não é editável: o backend não expõe atualização de dataHoraFim
+    eventDurationEditable: false,
     eventDrop: (info) => this.onEventDrop(info),
     nowIndicator: true,
     slotMinTime: '06:00:00',
@@ -175,30 +311,24 @@ export class AgendaComponent implements OnInit {
   }
 
   carregarDados(): void {
-    this.pacienteService.listar().subscribe({
-      next: (pacientes) => {
+    // Pacientes e serviços em paralelo; eventos só depois — assim os títulos
+    // sempre resolvem os nomes (sem "Paciente #42") e a API é chamada uma vez
+    forkJoin({
+      pacientes: this.pacienteService.listar(),
+      servicos: this.servicoService.listar()
+    }).subscribe({
+      next: ({ pacientes, servicos }) => {
         this.pacientes.set(pacientes.filter(p => p.ativo !== false));
-        // Carrega eventos após pacientes e serviços estarem disponíveis
-        if (this.servicos().length > 0 || pacientes.length > 0) {
-          this.carregarEventos();
-        }
-      },
-      error: (error) => console.error('Erro ao carregar pacientes:', error)
-    });
-
-    this.servicoService.listar().subscribe({
-      next: (servicos) => {
         this.servicos.set(servicos.filter(s => s.ativo !== false));
-        // Carrega eventos após pacientes e serviços estarem disponíveis
-        if (this.pacientes().length > 0 || servicos.length > 0) {
-          this.carregarEventos();
-        }
+        this.carregarEventos();
       },
-      error: (error) => console.error('Erro ao carregar serviços:', error)
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
+        // Mesmo sem nomes, ainda mostra a agenda
+        this.carregarEventos();
+      }
     });
-
-    // Carrega eventos inicialmente
-    this.carregarEventos();
   }
 
   carregarEventos(): void {
@@ -534,10 +664,12 @@ export class AgendaComponent implements OnInit {
     }
 
     const dataSelecionada = new Date(info.date);
-    // Arredonda para o próximo intervalo de 30 minutos
-    const minutos = dataSelecionada.getMinutes();
-    const minutosArredondados = minutos < 30 ? 30 : 0;
-    const horasAjustadas = minutos >= 30 ? dataSelecionada.getHours() + 1 : dataSelecionada.getHours();
+    // Arredonda para o intervalo de 30 minutos MAIS PRÓXIMO
+    // (clicar às 10:00 em ponto sugere 10:00, não 10:30)
+    const totalMinutos = dataSelecionada.getHours() * 60 + dataSelecionada.getMinutes();
+    const arredondado = Math.round(totalMinutos / 30) * 30;
+    const horasAjustadas = Math.floor(arredondado / 60) % 24;
+    const minutosArredondados = arredondado % 60;
 
     // Define a data (sem hora)
     this.dataNovoAgendamento = new Date(dataSelecionada);
@@ -552,12 +684,33 @@ export class AgendaComponent implements OnInit {
     this.abrirModalNovoAgendamento();
   }
 
-  onEventResize(info: any): void {
-    // Implementar atualização de data/hora
-  }
-
+  /** Arrastar evento no calendário = remarcar o atendimento. Persiste ou reverte. */
   onEventDrop(info: any): void {
-    // Implementar atualização de data/hora
+    const atendimento = info?.event?.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+    const novaData: Date | null = info?.event?.start ?? null;
+
+    if (!atendimento || !novaData) {
+      info?.revert?.();
+      return;
+    }
+
+    this.agendamentoService.atualizar(atendimento.id, {
+      dataHoraInicio: formatDateTimeForApiBody(novaData)
+    }).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Remarcado',
+          detail: `Atendimento movido para ${novaData.toLocaleDateString('pt-BR')} às ${this.formatHora(novaData)}`
+        });
+        this.carregarEventos();
+      },
+      error: (error: HttpErrorResponse) => {
+        info?.revert?.();
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
+      }
+    });
   }
 
   abrirModalEdicao(atendimento: AtendimentoResponseDTO): void {
@@ -572,26 +725,19 @@ export class AgendaComponent implements OnInit {
     });
 
     this.dataHoraEdit = new Date(atendimento.dataHoraInicio);
+    this.dataHoraOriginal = new Date(atendimento.dataHoraInicio);
     const { data, hora } = this.separarDataHora(this.dataHoraEdit);
     this.dataEdit = data;
-    // Arredonda a hora para o intervalo de 30 minutos mais próximo
-    if (hora) {
-      const [horas, minutos] = hora.split(':').map(Number);
-      const minutosArredondados = minutos < 15 ? 0 : minutos < 45 ? 30 : 0;
-      const horasAjustadas = minutos >= 45 ? horas + 1 : horas;
-      const horaArredondada = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
-      this.horaEdit = horaArredondada;
-      // Atualiza dataHoraEdit com a hora arredondada
-      this.dataHoraEdit = this.combinarDataHora(this.dataEdit, horaArredondada);
-    } else {
-      this.horaEdit = null;
-    }
+    // Mostra o horário EXATO do atendimento (nunca arredondar: salvar mudaria
+    // o horário real silenciosamente). Se não estiver na grade de 30min,
+    // adiciona como opção extra do select.
+    this.horaEdit = hora;
+    this.horariosEdicao = this.montarHorariosComExtra(hora);
     this.statusEdit = atendimento.status;
     this.evolucaoEdit = atendimento.evolucao || '';
     this.recebedorEdit = atendimento.recebedor || null;
     this.tipoPagamentoEdit = atendimento.tipoPagamento || null;
-    this.modalVisivel.set(true);
-    this._modalVisivel = true;
+    this.modalVisivel = true;
 
     // Se não encontrou os nomes, busca do backend
     if (!paciente || !servico) {
@@ -630,14 +776,23 @@ export class AgendaComponent implements OnInit {
     this.repetirAgendamento = false;
     this.dataFimRecorrencia = null;
     this.diasSemanaSelecionados = [];
-    this.modalVisivel.set(true);
-    this._modalVisivel = true;
+    this.modalVisivel = true;
   }
 
   fecharModal(): void {
-    this.modalVisivel.set(false);
-    this._modalVisivel = false;
+    this.modalVisivel = false;
     this.atendimentoSelecionado.set(null);
+    this.dataHoraOriginal = null;
+  }
+
+  /** Grade padrão de 30min + horário exato do atendimento (se estiver fora da grade) */
+  private montarHorariosComExtra(hora: string | null): { label: string; value: string }[] {
+    const base = [...this.horariosDisponiveis];
+    if (hora && !base.some(h => h.value === hora)) {
+      base.push({ label: hora, value: hora });
+      base.sort((a, b) => a.value.localeCompare(b.value));
+    }
+    return base;
   }
 
   /**
@@ -709,8 +864,12 @@ export class AgendaComponent implements OnInit {
       evolucao: this.evolucaoEdit
     };
 
-    if (this.dataHoraEdit) {
-      updateData.dataHoraInicio = this.dataHoraEdit.toISOString();
+    // Só envia data/hora se o usuário realmente alterou — editar apenas a
+    // evolução não pode mudar o horário do atendimento
+    if (this.dataHoraEdit && this.dataHoraOriginal &&
+        this.dataHoraEdit.getTime() !== this.dataHoraOriginal.getTime()) {
+      // Formato local esperado pelo backend; toISOString() deslocaria o horário para UTC
+      updateData.dataHoraInicio = formatDateTimeForApiBody(this.dataHoraEdit);
     }
 
     if (ehAtendimentoAvulso && isConcluido) {
@@ -729,12 +888,9 @@ export class AgendaComponent implements OnInit {
         this.carregarEventos();
         this.salvando.set(false);
       },
-      error: (error) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: error.error?.message || 'Erro ao atualizar atendimento'
-        });
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
         this.salvando.set(false);
       }
     });
@@ -776,32 +932,20 @@ export class AgendaComponent implements OnInit {
 
     this.salvando.set(true);
 
-    let dataHoraISO: string;
-    if (this.novoAgendamento.dataHora instanceof Date) {
-      dataHoraISO = this.novoAgendamento.dataHora.toISOString();
-    } else if (typeof this.novoAgendamento.dataHora === 'string') {
-      dataHoraISO = new Date(this.novoAgendamento.dataHora).toISOString();
-    } else {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Erro',
-        detail: 'Data/hora inválida'
-      });
-      this.salvando.set(false);
-      return;
-    }
+    // Formato local esperado pelo backend; toISOString() deslocaria o horário para UTC
+    const dataHora = this.novoAgendamento.dataHora instanceof Date
+      ? this.novoAgendamento.dataHora
+      : new Date(this.novoAgendamento.dataHora);
 
     const agendamentoData: AgendamentoRequestDTO = {
       pacienteIds: this.novoAgendamento.pacienteIds,
       servicoId: this.novoAgendamento.servicoId!,
-      dataHora: dataHoraISO
+      dataHora: formatDateTimeForApiBody(dataHora)
     };
 
     // Adiciona campos de recorrência se necessário
     if (this.repetirAgendamento && this.dataFimRecorrencia) {
-      // Formata data fim no formato YYYY-MM-DD
-      const dataFimISO = this.dataFimRecorrencia.toISOString().split('T')[0];
-      agendamentoData.dataFimRecorrencia = dataFimISO;
+      agendamentoData.dataFimRecorrencia = formatDateForApi(this.dataFimRecorrencia);
 
       // Adiciona dias da semana se selecionados
       if (this.diasSemanaSelecionados && this.diasSemanaSelecionados.length > 0) {
@@ -821,23 +965,9 @@ export class AgendaComponent implements OnInit {
         this.carregarEventos();
         this.salvando.set(false);
       },
-      error: (error) => {
-        console.error('Erro ao criar agendamento:', error);
-        let errorMessage = 'Erro ao criar agendamento';
-
-        if (error.status === 403) {
-          errorMessage = 'Acesso negado. Verifique suas permissões ou faça login novamente.';
-        } else if (error.status === 401) {
-          errorMessage = 'Sessão expirada. Faça login novamente.';
-        } else if (error.error?.message) {
-          errorMessage = error.error.message;
-        }
-
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: errorMessage
-        });
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
         this.salvando.set(false);
       }
     });

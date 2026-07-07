@@ -1,0 +1,40 @@
+    <p-toast />
+
+    <div class="login-container">
+      @if (!enviado()) {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form">
+          <h3>Esqueci minha senha</h3>
+
+          <label for="loginOuEmail">Login ou email</label>
+          <input
+            id="loginOuEmail"
+            type="text"
+            formControlName="loginOuEmail"
+            placeholder="Digite seu login ou email"
+            [class.ng-invalid]="form.get('loginOuEmail')?.invalid && form.get('loginOuEmail')?.touched"
+          />
+          @if (form.get('loginOuEmail')?.invalid && form.get('loginOuEmail')?.touched) {
+            <small class="error-text">Login ou email é obrigatório</small>
+          }
+
+          <button type="submit" [disabled]="form.invalid || loading()">
+            @if (loading()) {
+              <span>Enviando...</span>
+            } @else {
+              <span>Enviar link de redefinição</span>
+            }
+          </button>
+
+          <p class="voltar-link" (click)="voltarParaLogin()">Voltar para o login</p>
+        </form>
+      } @else {
+        <div class="login-form">
+          <h3>Verifique seu email</h3>
+          <p class="mensagem-confirmacao">
+            Se o login ou email informado existir, você receberá um link para redefinir
+            sua senha em instantes. O link expira em 30 minutos.
+          </p>
+          <button type="button" (click)="voltarParaLogin()">Voltar para o login</button>
+        </div>
+      }
+    </div>

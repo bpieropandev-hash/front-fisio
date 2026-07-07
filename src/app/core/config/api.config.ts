@@ -12,7 +12,8 @@ export const API_CONFIG = {
     cobrancas: '/api/v1/cobrancas',
     financeiro: '/api/v1/financeiro',
     relatorios: '/api/v1/relatorios',
-    dashboard: '/api/v1/dashboard'
+    dashboard: '/api/v1/dashboard',
+    usuarios: '/api/v1/usuarios'
   }
 };
 
