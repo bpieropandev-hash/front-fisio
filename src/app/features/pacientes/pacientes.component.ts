@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,6 +22,8 @@ import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interf
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 import { formatDateForApi } from '../../core/utils/date-format.util';
 import { HttpErrorResponse } from '@angular/common/http';
+import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
+import { BreakpointService } from '../../core/services/breakpoint.service';
 
 @Component({
     selector: 'app-pacientes',
@@ -40,13 +42,17 @@ import { HttpErrorResponse } from '@angular/common/http';
     ToggleSwitch,
     SelectModule,
     ToastModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    SearchInputComponent
 ],
     providers: [MessageService, ConfirmationService],
     templateUrl: './pacientes.component.html',
     styleUrls: ['./pacientes.component.scss']
 })
 export class PacientesComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isMobile = this.breakpointService.isMobile;
+
   pacientes = signal<PacienteResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
   carregando = signal(false);
@@ -157,10 +163,6 @@ export class PacientesComponent implements OnInit {
         this.carregando.set(false);
       }
     });
-  }
-
-  limparPesquisa(): void {
-    this.termoPesquisa.set('');
   }
 
   aoMudarMostrarInativos(valor: boolean): void {

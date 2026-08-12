@@ -128,47 +128,73 @@
             </div>
           </ng-template>
           
-          <p-table
-            [value]="resumo()!.alertasPendencia"
-            [tableStyle]="{ 'min-width': '50rem' }"
-            styleClass="p-datatable-striped"
-          >
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Paciente</th>
-                <th>Tipo</th>
-                <th>Descrição</th>
-                <th>Ação</th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-alerta>
-              <tr>
-                <td>
-                  <strong>{{ alerta.nomePaciente }}</strong>
-                </td>
-                <td>
-                  <p-tag
-                    [value]="obterLabelTipoPendencia(alerta.tipoPendencia)"
-                    [severity]="alerta.tipoPendencia === 'ATENDIMENTO_AVULSO' ? 'warn' : 'info'"
-                  />
-                </td>
-                <td>{{ alerta.descricao }}</td>
-                <td>
-                  <p-button
-                    label="Resolver"
-                    icon="pi pi-arrow-right"
-                    (onClick)="resolverAlerta(alerta)"
-                    styleClass="p-button-sm"
-                  />
-                </td>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="empty">
-              <tr>
-                <td colspan="4" class="text-center">Nenhum alerta encontrado</td>
-              </tr>
-            </ng-template>
-          </p-table>
+          @if (isMobile()) {
+            <div class="mobile-card-list">
+              @for (alerta of resumo()!.alertasPendencia; track alerta.descricao + alerta.nomePaciente) {
+                <div class="mobile-card">
+                  <div class="mobile-card-header">
+                    <div class="mobile-card-title">{{ alerta.nomePaciente }}</div>
+                    <p-tag
+                      [value]="obterLabelTipoPendencia(alerta.tipoPendencia)"
+                      [severity]="alerta.tipoPendencia === 'ATENDIMENTO_AVULSO' ? 'warn' : 'info'"
+                    />
+                  </div>
+                  <div class="mobile-card-body">
+                    <span>{{ alerta.descricao }}</span>
+                  </div>
+                  <div class="mobile-card-actions">
+                    <p-button
+                      label="Resolver"
+                      icon="pi pi-arrow-right"
+                      (onClick)="resolverAlerta(alerta)"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p-table
+              [value]="resumo()!.alertasPendencia"
+              [tableStyle]="{ 'min-width': '50rem' }"
+              styleClass="p-datatable-striped"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Paciente</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Ação</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-alerta>
+                <tr>
+                  <td>
+                    <strong>{{ alerta.nomePaciente }}</strong>
+                  </td>
+                  <td>
+                    <p-tag
+                      [value]="obterLabelTipoPendencia(alerta.tipoPendencia)"
+                      [severity]="alerta.tipoPendencia === 'ATENDIMENTO_AVULSO' ? 'warn' : 'info'"
+                    />
+                  </td>
+                  <td>{{ alerta.descricao }}</td>
+                  <td>
+                    <p-button
+                      label="Resolver"
+                      icon="pi pi-arrow-right"
+                      (onClick)="resolverAlerta(alerta)"
+                      styleClass="p-button-sm"
+                    />
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="empty">
+                <tr>
+                  <td colspan="4" class="text-center">Nenhum alerta encontrado</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          }
         </p-card>
       } @else {
         <p-card class="no-alerts-card">

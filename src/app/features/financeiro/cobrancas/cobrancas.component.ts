@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -20,6 +20,8 @@ import {
 } from '../../../core/interfaces/cobranca.interface';
 import { formatDateForApi } from '../../../core/utils/date-format.util';
 import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
+import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
+import { BreakpointService } from '../../../core/services/breakpoint.service';
 
 @Component({
     selector: 'app-cobrancas',
@@ -33,13 +35,17 @@ import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
         SelectModule,
         TagModule,
         TooltipModule,
-        ToastModule
+        ToastModule,
+        SearchInputComponent
     ],
     providers: [MessageService],
     templateUrl: './cobrancas.component.html',
     styleUrls: ['./cobrancas.component.scss']
 })
 export class CobrancasComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isMobile = this.breakpointService.isMobile;
+
   cobrancas = signal<CobrancaMensalResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
   modalBaixaVisivel = false;
@@ -304,7 +310,4 @@ export class CobrancasComponent implements OnInit {
     });
   }
 
-  limparPesquisa(): void {
-    this.termoPesquisa.set('');
-  }
 }

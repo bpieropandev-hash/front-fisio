@@ -18,7 +18,7 @@ function senhasIguaisValidator(control: AbstractControl): ValidationErrors | nul
     imports: [ReactiveFormsModule, ButtonModule, ToastModule],
     providers: [MessageService],
     templateUrl: './redefinir-senha.component.html',
-    styleUrls: ['../login/login.component.scss', '../esqueci-senha/esqueci-senha.component.scss']
+    styleUrls: ['./redefinir-senha.component.scss']
 })
 export class RedefinirSenhaComponent implements OnInit, OnDestroy {
   form: FormGroup;

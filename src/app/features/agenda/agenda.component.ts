@@ -1,7 +1,7 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FullCalendarModule } from '@fullcalendar/angular';
+import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
 import { CalendarOptions, EventContentArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -17,6 +17,8 @@ import { MultiSelect } from 'primeng/multiselect';
 import { Checkbox } from 'primeng/checkbox';
 import { Card } from 'primeng/card';
 import { Toast } from 'primeng/toast';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { BreakpointService } from '../../core/services/breakpoint.service';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicoService } from '../../core/services/servico.service';
@@ -54,13 +56,29 @@ interface ItemLoteUI {
     MultiSelect,
     Checkbox,
     Card,
-    Toast
+    Toast,
+    SelectButtonModule
   ],
   providers: [MessageService],
   templateUrl: './agenda.component.html',
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isMobile = this.breakpointService.isMobile;
+
+  @ViewChild(FullCalendarComponent) calendarComponent?: FullCalendarComponent;
+
+  viewOptions = [
+    { label: 'Mês', value: 'dayGridMonth' },
+    { label: 'Semana', value: 'timeGridWeek' },
+    { label: 'Dia', value: 'timeGridDay' }
+  ];
+
+  /** View atual do calendário. FullCalendar só respeita `initialView` na montagem —
+   * mudanças depois disso precisam chamar calendarApi.changeView() (ver effect no constructor). */
+  calendarView = signal<string>(this.breakpointService.isMobile() ? 'timeGridDay' : 'dayGridMonth');
+
   modalVisivel = false;
   atendimentoSelecionado = signal<AtendimentoResponseDTO & { pacienteNome?: string; servicoNome?: string } | null>(null);
   salvando = signal(false);
@@ -268,43 +286,60 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-  calendarOptions = computed<CalendarOptions>(() => ({
-    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-    initialView: 'dayGridMonth',
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay'
-    },
-    locale: ptBrLocale,
-    events: this.eventosFiltrados(),
-    eventDisplay: 'block',
-    eventClick: (info) => this.onEventClick(info),
-    dateClick: (info) => this.onDateClick(info),
-    dayMaxEventRows: 3,
-    moreLinkText: (n) => `+${n} mais`,
-    eventContent: (arg) => this.renderEventContent(arg),
-    eventClassNames: (arg) => {
-      const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
-      const status = this.normalizarStatusClass(atendimento?.status);
-      return status ? [`status-${status}`] : [];
-    },
-    eventDidMount: (info) => this.onEventDidMount(info),
-    editable: true,
-    // Duração não é editável: o backend não expõe atualização de dataHoraFim
-    eventDurationEditable: false,
-    eventDrop: (info) => this.onEventDrop(info),
-    nowIndicator: true,
-    slotMinTime: '06:00:00',
-    slotMaxTime: '22:00:00'
-  }));
+  calendarOptions = computed<CalendarOptions>(() => {
+    const mobile = this.isMobile();
+    return {
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+      initialView: this.calendarView(),
+      headerToolbar: mobile
+        ? { left: 'prev,next', center: 'title', right: 'today' }
+        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+      locale: ptBrLocale,
+      events: this.eventosFiltrados(),
+      eventDisplay: 'block',
+      eventClick: (info) => this.onEventClick(info),
+      dateClick: (info) => this.onDateClick(info),
+      dayMaxEventRows: 3,
+      moreLinkText: (n) => `+${n} mais`,
+      eventContent: (arg) => this.renderEventContent(arg),
+      eventClassNames: (arg) => {
+        const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+        const status = this.normalizarStatusClass(atendimento?.status);
+        return status ? [`status-${status}`] : [];
+      },
+      eventDidMount: (info) => this.onEventDidMount(info),
+      // Drag & drop não é confiável em touch — em mobile, reagendar é feito pelo
+      // modal de edição (clique no evento), que já existe e cobre o mesmo fluxo.
+      editable: !mobile,
+      // Duração não é editável: o backend não expõe atualização de dataHoraFim
+      eventDurationEditable: false,
+      eventDrop: (info) => this.onEventDrop(info),
+      nowIndicator: true,
+      slotMinTime: '06:00:00',
+      slotMaxTime: '22:00:00'
+    };
+  });
 
   constructor(
     private agendamentoService: AgendamentoService,
     private pacienteService: PacienteService,
     private servicoService: ServicoService,
     private messageService: MessageService
-  ) {}
+  ) {
+    // `initialView` só é respeitado pelo wrapper do FullCalendar na montagem —
+    // mudanças de view depois disso (seletor mobile ou troca de breakpoint em
+    // runtime) precisam ser aplicadas via API imperativa.
+    effect(() => {
+      const view = this.calendarView();
+      this.calendarComponent?.getApi()?.changeView(view);
+    });
+
+    // Ao cruzar o breakpoint mobile/desktop, volta para a view padrão de cada modo.
+    // Não interfere em uma escolha manual de view feita sem cruzar o breakpoint.
+    effect(() => {
+      this.calendarView.set(this.isMobile() ? 'timeGridDay' : 'dayGridMonth');
+    });
+  }
 
   ngOnInit(): void {
     this.carregarDados();

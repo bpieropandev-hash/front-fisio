@@ -1,3 +1,5 @@
+    @use '../../../styles/breakpoints' as bp;
+
     .agenda-header {
       display: flex;
       justify-content: space-between;
@@ -155,6 +157,22 @@
       gap: 16px;
       max-height: 400px;
       overflow-y: auto;
+    }
+
+    @include bp.tablet {
+      /* Evita scroll aninhado: o p-dialog (95vh) já é a única região de scroll em mobile */
+      .lote-itens {
+        max-height: none;
+        overflow-y: visible;
+      }
+    }
+
+    .mobile-view-switch {
+      margin-top: 1rem;
+    }
+
+    .mobile-view-switch ::ng-deep .p-togglebutton {
+      min-height: 44px;
     }
 
     .lote-item {

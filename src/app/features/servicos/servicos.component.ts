@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -19,6 +19,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { ServicoService } from '../../core/services/servico.service';
 import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+import { BreakpointService } from '../../core/services/breakpoint.service';
 
 /** Form da tela: valor base começa nulo (nunca 0 — evita o "0,00" chato ao digitar). */
 type ServicoForm = Omit<ServicoCreateRequestDTO, 'valorBase'> & { valorBase: number | null };
@@ -46,6 +47,9 @@ type ServicoForm = Omit<ServicoCreateRequestDTO, 'valorBase'> & { valorBase: num
   styleUrls: ['./servicos.component.scss']
 })
 export class ServicosComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isMobile = this.breakpointService.isMobile;
+
   servicos = signal<ServicoResponseDTO[]>([]);
   carregando = signal(false);
   salvando = signal(false);

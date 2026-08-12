@@ -16,77 +16,137 @@
       />
     </div>
 
-    <p-table
-      [value]="servicos()"
-      [loading]="carregando()"
-      [paginator]="true"
-      [rows]="10"
-      [tableStyle]="{ 'min-width': '60rem' }"
-      sortField="nome"
-      sortMode="single"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th pSortableColumn="nome">Serviço <p-sortIcon field="nome" /></th>
-          <th>Tipo</th>
-          <th>Valor Base</th>
-          <th>Repasse Clínica</th>
-          <th>Repasse Profissional</th>
-          <th>Status</th>
-          <th class="actions-col">Ações</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-servico>
-        <tr>
-          <td>
-            <div class="servico-title">
-              <span class="name">{{ servico.nome }}</span>
-              <small class="id">#{{ servico.id }}</small>
+    @if (isMobile()) {
+      <div class="mobile-card-list">
+        @if (carregando()) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem"></i>
+            <span>Carregando serviços...</span>
+          </div>
+        } @else if (servicos().length === 0) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-briefcase" style="font-size: 1.5rem"></i>
+            <span>Nenhum serviço cadastrado</span>
+          </div>
+        } @else {
+          @for (servico of servicos(); track servico.id) {
+            <div class="mobile-card">
+              <div class="mobile-card-header">
+                <div>
+                  <div class="mobile-card-title">{{ servico.nome }}</div>
+                  <div class="mobile-card-subtitle">#{{ servico.id }}</div>
+                </div>
+                <p-tag
+                  [value]="servico.ativo ? 'Ativo' : 'Inativo'"
+                  [severity]="servico.ativo ? 'success' : 'warn'"
+                  rounded
+                />
+              </div>
+              <div class="mobile-card-body">
+                <span>
+                  <p-tag
+                    [value]="servico.tipo === 'FISIOTERAPIA' ? 'Fisioterapia' : 'Pilates'"
+                    [severity]="servico.tipo === 'FISIOTERAPIA' ? 'info' : 'success'"
+                    rounded
+                  />
+                </span>
+                <span><strong>Valor base:</strong> {{ servico.valorBase | currency:'BRL' }}</span>
+                <span><strong>Repasse clínica:</strong> {{ servico.pctClinica }}%</span>
+                <span><strong>Repasse profissional:</strong> {{ servico.pctProfissional }}%</span>
+              </div>
+              <div class="mobile-card-actions">
+                <p-button
+                  icon="pi pi-pencil"
+                  label="Editar"
+                  (onClick)="editarServico(servico)"
+                  severity="secondary"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  label="Desativar"
+                  severity="danger"
+                  [outlined]="true"
+                  (onClick)="desativarServico(servico)"
+                />
+              </div>
             </div>
-          </td>
-          <td>
-            <p-tag
-              [value]="servico.tipo === 'FISIOTERAPIA' ? 'Fisioterapia' : 'Pilates'"
-              [severity]="servico.tipo === 'FISIOTERAPIA' ? 'info' : 'success'"
-              rounded
-            />
-          </td>
-          <td>{{ servico.valorBase | currency:'BRL' }}</td>
-          <td>{{ servico.pctClinica }}%</td>
-          <td>{{ servico.pctProfissional }}%</td>
-          <td>
-            <p-tag
-              [value]="servico.ativo ? 'Ativo' : 'Inativo'"
-              [severity]="servico.ativo ? 'success' : 'warn'"
-              rounded
-            />
-          </td>
-          <td class="actions-col">
-            <p-button
-              icon="pi pi-pencil"
-              size="small"
-              rounded
-              (onClick)="editarServico(servico)"
-              severity="secondary"
-            />
-            <p-button
-              icon="pi pi-trash"
-              size="small"
-              rounded
-              severity="danger"
-              [outlined]="true"
-              (onClick)="desativarServico(servico)"
-            />
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+          }
+        }
+      </div>
+    } @else {
+      <p-table
+        [value]="servicos()"
+        [loading]="carregando()"
+        [paginator]="true"
+        [rows]="10"
+        [tableStyle]="{ 'min-width': '60rem' }"
+        sortField="nome"
+        sortMode="single"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="nome">Serviço <p-sortIcon field="nome" /></th>
+            <th>Tipo</th>
+            <th>Valor Base</th>
+            <th>Repasse Clínica</th>
+            <th>Repasse Profissional</th>
+            <th>Status</th>
+            <th class="actions-col">Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-servico>
+          <tr>
+            <td>
+              <div class="servico-title">
+                <span class="name">{{ servico.nome }}</span>
+                <small class="id">#{{ servico.id }}</small>
+              </div>
+            </td>
+            <td>
+              <p-tag
+                [value]="servico.tipo === 'FISIOTERAPIA' ? 'Fisioterapia' : 'Pilates'"
+                [severity]="servico.tipo === 'FISIOTERAPIA' ? 'info' : 'success'"
+                rounded
+              />
+            </td>
+            <td>{{ servico.valorBase | currency:'BRL' }}</td>
+            <td>{{ servico.pctClinica }}%</td>
+            <td>{{ servico.pctProfissional }}%</td>
+            <td>
+              <p-tag
+                [value]="servico.ativo ? 'Ativo' : 'Inativo'"
+                [severity]="servico.ativo ? 'success' : 'warn'"
+                rounded
+              />
+            </td>
+            <td class="actions-col">
+              <p-button
+                icon="pi pi-pencil"
+                size="small"
+                rounded
+                (onClick)="editarServico(servico)"
+                severity="secondary"
+              />
+              <p-button
+                icon="pi pi-trash"
+                size="small"
+                rounded
+                severity="danger"
+                [outlined]="true"
+                (onClick)="desativarServico(servico)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
 
     <p-dialog
       [(visible)]="modalVisivel"
       [header]="servicoEmEdicao ? 'Editar serviço' : 'Novo serviço'"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
+      styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
       (onHide)="fecharModal()"
@@ -176,6 +236,7 @@
       header="Propagar reajuste de preço?"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '520px' }"
+      styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
       (onHide)="fecharReajusteDialog()"

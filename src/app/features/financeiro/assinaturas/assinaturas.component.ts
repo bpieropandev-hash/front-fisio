@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -28,6 +28,8 @@ import { ServicoResponseDTO } from '../../../core/interfaces/servico.interface';
 import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
 import { formatDateForApi } from '../../../core/utils/date-format.util';
 import { HttpErrorResponse } from '@angular/common/http';
+import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
+import { BreakpointService } from '../../../core/services/breakpoint.service';
 
 @Component({
     selector: 'app-assinaturas',
@@ -44,13 +46,17 @@ import { HttpErrorResponse } from '@angular/common/http';
         TagModule,
         TooltipModule,
         ToastModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        SearchInputComponent
     ],
     providers: [MessageService, ConfirmationService],
     templateUrl: './assinaturas.component.html',
     styleUrls: ['./assinaturas.component.scss']
 })
 export class AssinaturasComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isMobile = this.breakpointService.isMobile;
+
   assinaturas = signal<AssinaturaResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
   pacientes = signal<PacienteResponseDTO[]>([]);
@@ -299,9 +305,6 @@ export class AssinaturasComponent implements OnInit {
     });
   }
 
-  limparPesquisa(): void {
-    this.termoPesquisa.set('');
-  }
 
   abrirModalEditar(assinatura: AssinaturaResponseDTO): void {
     this.assinaturaEditando = assinatura;

@@ -12,7 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
     imports: [ReactiveFormsModule, ButtonModule, ToastModule],
     providers: [MessageService],
     templateUrl: './esqueci-senha.component.html',
-    styleUrls: ['../login/login.component.scss', './esqueci-senha.component.scss']
+    styleUrls: ['./esqueci-senha.component.scss']
 })
 export class EsqueciSenhaComponent implements OnDestroy {
   form: FormGroup;

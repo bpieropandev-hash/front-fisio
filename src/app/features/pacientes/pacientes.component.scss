@@ -1,3 +1,5 @@
+    @use '../../shared/styles/mobile-card';
+
     .page-header {
       display: flex;
       justify-content: space-between;
@@ -35,62 +37,6 @@
 
     .search-container {
       margin-bottom: 24px;
-    }
-
-    .search-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--bg-primary);
-      padding: 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      border: 1px solid var(--border-color);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .search-wrapper:focus-within {
-      box-shadow: 0 4px 16px rgba(76, 201, 240, 0.15);
-      border-color: #4cc9f0;
-      transform: translateY(-1px);
-    }
-
-    .search-input {
-      flex: 1;
-      width: 100%;
-      font-size: larger;
-      padding: 12px 16px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: #4cc9f0;
-      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.1);
-      background: var(--bg-primary);
-    }
-
-    .search-input::placeholder {
-      color: var(--text-secondary);
-    }
-
-    .clear-button {
-      min-width: 40px;
-      height: 40px;
-      padding: 0;
-      color: var(--text-secondary);
-      transition: all 0.2s ease;
-      border-radius: 50%;
-    }
-
-    .clear-button:hover {
-      background: rgba(76, 201, 240, 0.1);
-      color: #4cc9f0;
-      transform: scale(1.1) rotate(90deg);
     }
 
     .search-results-info {
@@ -227,16 +173,6 @@
 
       .form-group {
         width: 100%;
-      }
-
-      .search-wrapper {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .search-wrapper .clear-button {
-        align-self: flex-end;
-        margin-top: 8px;
       }
 
       .dialog-footer {

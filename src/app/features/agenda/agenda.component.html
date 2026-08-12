@@ -255,6 +255,20 @@
 
     <full-calendar [options]="calendarOptions()" />
 
+    @if (isMobile()) {
+      <div class="mobile-view-switch">
+        <p-selectbutton
+          [options]="viewOptions"
+          [ngModel]="calendarView()"
+          (ngModelChange)="calendarView.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [fluid]="true"
+        />
+      </div>
+    }
+
     <!-- Modal de Edição/Baixa -->
     <p-dialog
       [(visible)]="modalVisivel"

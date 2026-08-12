@@ -50,6 +50,13 @@
   .main-content {
     padding: 1rem;
   }
+
+  /* Alvo de toque mínimo recomendado (44px) */
+  .avatar-foto,
+  .avatar-placeholder {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 @media (max-width: 480px) {

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,6 +15,7 @@ import { DashboardResumoDTO, AlertaPendenciaDTO } from '../../core/interfaces/da
 import { formatDateForApi } from '../../core/utils/date-format.util';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 import { HttpErrorResponse } from '@angular/common/http';
+import { BreakpointService } from '../../core/services/breakpoint.service';
 
 @Component({
     selector: 'app-dashboard',
@@ -34,6 +35,9 @@ import { HttpErrorResponse } from '@angular/common/http';
     styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isMobile = this.breakpointService.isMobile;
+
   carregando = signal(true);
   resumo = signal<DashboardResumoDTO | null>(null);
   filtrosVisiveis = signal(false);
