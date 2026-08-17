@@ -10,26 +10,39 @@
       />
     </div>
 
-    <div class="search-container">
-      <div class="search-wrapper">
-        <input
-          type="text"
-          pInputText
-          placeholder="Pesquisar por paciente, serviço, valor..."
-          [ngModel]="termoPesquisa()"
-          (ngModelChange)="termoPesquisa.set($event)"
-          class="search-input"
+    <div class="filtros-linha">
+      <div class="filtro-campo">
+        <label>Status</label>
+        <p-select
+          [ngModel]="filtroStatus()"
+          (ngModelChange)="aoMudarFiltroStatus($event)"
+          [options]="filtroStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filtro-select"
         />
-        @if (termoPesquisa()) {
-          <p-button
-            icon="pi pi-times"
-            (onClick)="limparPesquisa()"
-            styleClass="p-button-text p-button-rounded p-button-plain clear-button"
-            pTooltip="Limpar pesquisa"
-            [rounded]="true"
-          />
-        }
       </div>
+
+      <div class="filtro-campo">
+        <label>Serviço</label>
+        <p-select
+          [ngModel]="filtroServicoId()"
+          (ngModelChange)="aoMudarFiltroServico($event)"
+          [options]="servicos()"
+          optionLabel="nome"
+          optionValue="id"
+          placeholder="Todos"
+          [showClear]="true"
+          styleClass="filtro-select"
+        />
+      </div>
+    </div>
+
+    <div class="search-container">
+      <app-search-input
+        [(value)]="termoPesquisa"
+        placeholder="Pesquisar por paciente, serviço, valor..."
+      />
       @if (termoPesquisa() && assinaturasFiltradas().length > 0) {
         <div class="search-results-info">
           <i class="pi pi-info-circle"></i>
@@ -44,58 +57,148 @@
       }
     </div>
 
-    <p-table
-      [value]="assinaturasFiltradas()"
-      [paginator]="true"
-      [rows]="10"
-      [loading]="carregando()"
-      [tableStyle]="{ 'min-width': '50rem' }"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th>Paciente</th>
-          <th>Serviço</th>
-          <th>Valor Mensal</th>
-          <th>Dia Vencimento</th>
-          <th>Data Início</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-assinatura>
-        <tr>
-          <td>{{ assinatura.pacienteNome }}</td>
-          <td>{{ assinatura.servicoNome }}</td>
-          <td>{{ assinatura.valorMensal | currency: 'BRL' }}</td>
-          <td>{{ assinatura.diaVencimento }}</td>
-          <td>{{ assinatura.dataInicio | date: 'dd/MM/yyyy' }}</td>
-          <td>
-            <p-tag
-              [value]="assinatura.ativo ? 'Ativa' : 'Inativa'"
-              [severity]="assinatura.ativo ? 'success' : 'danger'"
-            />
-          </td>
-          <td>
-            @if (assinatura.ativo) {
-              <p-button
-                icon="pi pi-times"
-                label="Cancelar"
-                severity="danger"
-                (onClick)="confirmarCancelamento(assinatura)"
-                styleClass="p-button-sm"
+    @if (isMobile()) {
+      <div class="mobile-card-list">
+        @if (carregando()) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem"></i>
+            <span>Carregando assinaturas...</span>
+          </div>
+        } @else if (assinaturasFiltradas().length === 0) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-sync" style="font-size: 1.5rem"></i>
+            <span>Nenhuma assinatura encontrada</span>
+          </div>
+        } @else {
+          @for (assinatura of assinaturasFiltradas(); track assinatura.id) {
+            <div class="mobile-card">
+              <div class="mobile-card-header">
+                <div>
+                  <div class="mobile-card-title">{{ assinatura.pacienteNome }}</div>
+                  <div class="mobile-card-subtitle">{{ assinatura.servicoNome }}</div>
+                </div>
+                <p-tag
+                  [value]="assinatura.ativo ? 'Ativa' : 'Inativa'"
+                  [severity]="assinatura.ativo ? 'success' : 'danger'"
+                />
+              </div>
+              <div class="mobile-card-body">
+                <span><strong>Valor mensal:</strong> {{ assinatura.valorMensal | currency: 'BRL' }}</span>
+                <span><strong>Vencimento:</strong> dia {{ assinatura.diaVencimento }}</span>
+                <span><strong>Início:</strong> {{ assinatura.dataInicio | date: 'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="mobile-card-actions">
+                @if (assinatura.ativo) {
+                  <p-button
+                    icon="pi pi-pencil"
+                    label="Editar"
+                    severity="secondary"
+                    (onClick)="abrirModalEditar(assinatura)"
+                  />
+                  <p-button
+                    icon="pi pi-sync"
+                    label="Trocar plano"
+                    severity="info"
+                    (onClick)="abrirModalTrocarPlano(assinatura)"
+                  />
+                  <p-button
+                    icon="pi pi-times"
+                    label="Cancelar"
+                    severity="danger"
+                    (onClick)="confirmarCancelamento(assinatura)"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-refresh"
+                    label="Reativar"
+                    severity="success"
+                    (onClick)="confirmarReativacao(assinatura)"
+                  />
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+    } @else {
+      <p-table
+        [value]="assinaturasFiltradas()"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="carregando()"
+        [tableStyle]="{ 'min-width': '50rem' }"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Paciente</th>
+            <th>Serviço</th>
+            <th>Valor Mensal</th>
+            <th>Dia Vencimento</th>
+            <th>Data Início</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-assinatura>
+          <tr>
+            <td>{{ assinatura.pacienteNome }}</td>
+            <td>{{ assinatura.servicoNome }}</td>
+            <td>{{ assinatura.valorMensal | currency: 'BRL' }}</td>
+            <td>{{ assinatura.diaVencimento }}</td>
+            <td>{{ assinatura.dataInicio | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              <p-tag
+                [value]="assinatura.ativo ? 'Ativa' : 'Inativa'"
+                [severity]="assinatura.ativo ? 'success' : 'danger'"
               />
-            }
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+            </td>
+            <td>
+              <div class="action-buttons">
+                @if (assinatura.ativo) {
+                  <p-button
+                    icon="pi pi-pencil"
+                    label="Editar"
+                    severity="secondary"
+                    (onClick)="abrirModalEditar(assinatura)"
+                    styleClass="p-button-sm"
+                  />
+                  <p-button
+                    icon="pi pi-sync"
+                    label="Trocar plano"
+                    severity="info"
+                    (onClick)="abrirModalTrocarPlano(assinatura)"
+                    styleClass="p-button-sm"
+                  />
+                  <p-button
+                    icon="pi pi-times"
+                    label="Cancelar"
+                    severity="danger"
+                    (onClick)="confirmarCancelamento(assinatura)"
+                    styleClass="p-button-sm"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-refresh"
+                    label="Reativar"
+                    severity="success"
+                    (onClick)="confirmarReativacao(assinatura)"
+                    styleClass="p-button-sm"
+                  />
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
 
     <!-- Modal Nova Assinatura -->
     <p-dialog
-      [(visible)]="_modalVisivel"
+      [(visible)]="modalVisivel"
       header="Nova Assinatura"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
+      styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
       (onHide)="fecharModal()"
@@ -133,6 +236,8 @@
           mode="currency"
           currency="BRL"
           locale="pt-BR"
+          [min]="0.01"
+          placeholder="R$ 0,00"
           styleClass="full-width"
         />
       </div>
@@ -169,6 +274,151 @@
           label="Criar"
           icon="pi pi-check"
           (onClick)="criarAssinatura()"
+          [loading]="salvando()"
+        />
+      </div>
+    </p-dialog>
+
+    <!-- Modal Editar Assinatura -->
+    <p-dialog
+      [(visible)]="modalEditarVisivel"
+      header="Editar Assinatura"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '500px' }"
+      styleClass="dialog-fullscreen-mobile"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModalEditar()"
+    >
+      @if (assinaturaEditando) {
+        <div class="form-group">
+          <label>Paciente</label>
+          <input type="text" pInputText [value]="assinaturaEditando.pacienteNome" disabled styleClass="full-width" />
+        </div>
+
+        <div class="form-group">
+          <label>Serviço</label>
+          <input type="text" pInputText [value]="assinaturaEditando.servicoNome" disabled styleClass="full-width" />
+        </div>
+
+        <div class="form-group">
+          <label>Valor Mensal *</label>
+          <p-inputNumber
+            [(ngModel)]="edicao.valorMensal"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            [min]="0.01"
+            placeholder="R$ 0,00"
+            styleClass="full-width"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Dia de Vencimento *</label>
+          <p-inputNumber
+            [(ngModel)]="edicao.diaVencimento"
+            [min]="1"
+            [max]="28"
+            placeholder="Dia do mês (1-28)"
+            styleClass="full-width"
+          />
+        </div>
+      }
+
+      <div class="dialog-footer">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          (onClick)="fecharModalEditar()"
+          styleClass="p-button-text"
+        />
+        <p-button
+          label="Salvar"
+          icon="pi pi-check"
+          (onClick)="salvarEdicao()"
+          [loading]="salvando()"
+        />
+      </div>
+    </p-dialog>
+
+    <!-- Modal Trocar Plano -->
+    <p-dialog
+      [(visible)]="modalTrocarPlanoVisivel"
+      header="Trocar Plano"
+      [modal]="true"
+      [style]="{ width: '90vw', maxWidth: '500px' }"
+      styleClass="dialog-fullscreen-mobile"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="fecharModalTrocarPlano()"
+    >
+      @if (assinaturaTrocandoPlano) {
+        <p class="troca-plano-info">
+          Cancela o plano atual de <strong>{{ assinaturaTrocandoPlano.pacienteNome }}</strong>
+          ({{ assinaturaTrocandoPlano.servicoNome }}) e cria uma nova assinatura no serviço escolhido.
+        </p>
+
+        <div class="form-group">
+          <label>Novo Serviço *</label>
+          <p-select
+            [(ngModel)]="trocaPlano.novoServicoId"
+            (onChange)="aoSelecionarNovoServico()"
+            [options]="servicos()"
+            optionLabel="nome"
+            optionValue="id"
+            placeholder="Selecione o novo serviço"
+            styleClass="full-width"
+            [appendTo]="'body'"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Valor Mensal *</label>
+          <p-inputNumber
+            [(ngModel)]="trocaPlano.novoValorMensal"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            [min]="0.01"
+            placeholder="R$ 0,00"
+            styleClass="full-width"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Dia de Vencimento *</label>
+          <p-inputNumber
+            [(ngModel)]="trocaPlano.diaVencimento"
+            [min]="1"
+            [max]="28"
+            placeholder="Dia do mês (1-28)"
+            styleClass="full-width"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Data de Início</label>
+          <input
+            type="date"
+            pInputText
+            [(ngModel)]="trocaPlano.dataInicio"
+            styleClass="full-width"
+          />
+        </div>
+      }
+
+      <div class="dialog-footer">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          (onClick)="fecharModalTrocarPlano()"
+          styleClass="p-button-text"
+        />
+        <p-button
+          label="Trocar"
+          icon="pi pi-sync"
+          (onClick)="confirmarTrocarPlano()"
           [loading]="salvando()"
         />
       </div>

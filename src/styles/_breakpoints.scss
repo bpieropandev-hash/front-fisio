@@ -1,0 +1,29 @@
+// Breakpoints do sistema — usar SEMPRE em px, nunca em em/rem.
+// AccentThemeService altera document.documentElement.style.fontSize (100/112.5/125%)
+// conforme preferência do usuário; media queries em em/rem teriam seu ponto de
+// disparo deslocado por essa preferência. px fica ancorado à largura física do viewport.
+//
+// Mesmos valores usados no BreakpointService (core/services/breakpoint.service.ts) —
+// mudar aqui exige mudar lá também.
+
+$breakpoint-mobile: 480px;   // tabelas viram cards, calendário abre em view diária
+$breakpoint-tablet: 768px;   // formulários empilham em coluna única, dialogs viram full-screen
+$breakpoint-nav-collapse: 960px; // menubar do PrimeNG colapsa (breakpoint nativo do componente)
+
+@mixin mobile {
+  @media (max-width: $breakpoint-mobile) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $breakpoint-tablet) {
+    @content;
+  }
+}
+
+@mixin nav-collapse {
+  @media (max-width: $breakpoint-nav-collapse) {
+    @content;
+  }
+}

@@ -35,6 +35,19 @@ export class PacienteService {
       paciente
     );
   }
+
+  inativar(id: number): Observable<void> {
+    return this.http.delete<void>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.pacientes}/${id}`
+    );
+  }
+
+  reativar(id: number): Observable<PacienteResponseDTO> {
+    return this.http.put<PacienteResponseDTO>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.pacientes}/${id}/reativar`,
+      {}
+    );
+  }
 }
 
 

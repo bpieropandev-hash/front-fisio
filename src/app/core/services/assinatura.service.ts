@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 import { API_CONFIG } from '../config/api.config';
 import {
   AssinaturaCreateRequestDTO,
+  AssinaturaUpdateRequestDTO,
+  AssinaturaTrocarPlanoRequestDTO,
+  AssinaturaTrocaPlanoResponseDTO,
   AssinaturaResponseDTO
 } from '../interfaces/assinatura.interface';
 
@@ -42,6 +45,27 @@ export class AssinaturaService {
     return this.http.put<void>(
       `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}/${id}/cancelar`,
       {}
+    );
+  }
+
+  atualizar(id: number, dados: AssinaturaUpdateRequestDTO): Observable<AssinaturaResponseDTO> {
+    return this.http.put<AssinaturaResponseDTO>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}/${id}`,
+      dados
+    );
+  }
+
+  reativar(id: number): Observable<AssinaturaResponseDTO> {
+    return this.http.put<AssinaturaResponseDTO>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}/${id}/reativar`,
+      {}
+    );
+  }
+
+  trocarPlano(id: number, dados: AssinaturaTrocarPlanoRequestDTO): Observable<AssinaturaTrocaPlanoResponseDTO> {
+    return this.http.post<AssinaturaTrocaPlanoResponseDTO>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}/${id}/trocar-plano`,
+      dados
     );
   }
 }

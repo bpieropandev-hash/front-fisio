@@ -4,18 +4,14 @@
       <h2>Cobranças Mensais</h2>
       <div class="header-actions">
         <div class="gerar-mes-group">
-          <p-inputNumber
-            [(ngModel)]="mesGerar"
-            [min]="1"
-            [max]="12"
-            placeholder="Mês"
-            styleClass="mes-input"
-          />
-          <p-inputNumber
-            [(ngModel)]="anoGerar"
-            [min]="2020"
-            placeholder="Ano"
-            styleClass="ano-input"
+          <p-datepicker
+            [(ngModel)]="mesAnoGerar"
+            view="month"
+            dateFormat="mm/yy"
+            [readonlyInput]="true"
+            placeholder="Mês/Ano"
+            styleClass="mes-ano-input"
+            [appendTo]="'body'"
           />
           <p-button
             label="Gerar Mês"
@@ -27,26 +23,40 @@
       </div>
     </div>
 
-    <div class="search-container">
-      <div class="search-wrapper">
-        <input
-          type="text"
-          pInputText
-          placeholder="Pesquisar por descrição, mês/ano, valor, status..."
-          [ngModel]="termoPesquisa()"
-          (ngModelChange)="termoPesquisa.set($event)"
-          class="search-input"
+    <div class="filtros-linha">
+      <div class="filtro-campo">
+        <label>Mês/Ano</label>
+        <p-datepicker
+          [ngModel]="filtroMesAno()"
+          (ngModelChange)="aoMudarFiltroMesAno($event)"
+          view="month"
+          dateFormat="mm/yy"
+          [readonlyInput]="true"
+          placeholder="Todos os meses"
+          [showButtonBar]="true"
+          styleClass="mes-ano-input"
+          [appendTo]="'body'"
         />
-        @if (termoPesquisa()) {
-          <p-button
-            icon="pi pi-times"
-            (onClick)="limparPesquisa()"
-            styleClass="p-button-text p-button-rounded p-button-plain clear-button"
-            pTooltip="Limpar pesquisa"
-            [rounded]="true"
-          />
-        }
       </div>
+
+      <div class="filtro-campo">
+        <label>Status</label>
+        <p-select
+          [ngModel]="filtroStatus()"
+          (ngModelChange)="aoMudarFiltroStatus($event)"
+          [options]="filtroStatusOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filtro-select"
+        />
+      </div>
+    </div>
+
+    <div class="search-container">
+      <app-search-input
+        [(value)]="termoPesquisa"
+        placeholder="Pesquisar por descrição, mês/ano, valor, status..."
+      />
       @if (termoPesquisa() && cobrancasFiltradas().length > 0) {
         <div class="search-results-info">
           <i class="pi pi-info-circle"></i>
@@ -61,59 +71,107 @@
       }
     </div>
 
-    <p-table
-      [value]="cobrancasFiltradas()"
-      [paginator]="true"
-      [rows]="10"
-      [loading]="carregando()"
-      [tableStyle]="{ 'min-width': '50rem' }"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th>Descrição</th>
-          <th>Mês/Ano</th>
-          <th>Valor</th>
-          <th>Status</th>
-          <th>Data Pagamento</th>
-          <th>Recebedor</th>
-          <th>Tipo Pagamento</th>
-          <th>Ações</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-cobranca>
-        <tr>
-          <td>{{ cobranca.descricao }}</td>
-          <td>{{ cobranca.mesReferencia }}/{{ cobranca.anoReferencia }}</td>
-          <td>{{ cobranca.valor | currency: 'BRL' }}</td>
-          <td>
-              <p-tag
-              [value]="cobranca.status === 'PAGO' ? 'Pago' : 'Pendente'"
-              [severity]="cobranca.status === 'PAGO' ? 'success' : 'warn'"
-            />
-          </td>
-          <td>{{ cobranca.dataPagamento ? (cobranca.dataPagamento | date: 'dd/MM/yyyy') : '-' }}</td>
-          <td>{{ obterLabelRecebedor(cobranca.recebedor) }}</td>
-          <td>{{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</td>
-          <td>
-            @if (cobranca.status === 'PENDENTE') {
-              <p-button
-                label="Dar Baixa"
-                icon="pi pi-check"
-                (onClick)="abrirModalBaixa(cobranca)"
-                styleClass="p-button-sm"
+    @if (isMobile()) {
+      <div class="mobile-card-list">
+        @if (carregando()) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem"></i>
+            <span>Carregando cobranças...</span>
+          </div>
+        } @else if (cobrancasFiltradas().length === 0) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-file" style="font-size: 1.5rem"></i>
+            <span>Nenhuma cobrança encontrada</span>
+          </div>
+        } @else {
+          @for (cobranca of cobrancasFiltradas(); track cobranca.id) {
+            <div class="mobile-card">
+              <div class="mobile-card-header">
+                <div>
+                  <div class="mobile-card-title">{{ cobranca.descricao }}</div>
+                  <div class="mobile-card-subtitle">
+                    {{ cobranca.mesReferencia }}/{{ cobranca.anoReferencia }} · {{ cobranca.valor | currency: 'BRL' }}
+                  </div>
+                </div>
+                <p-tag
+                  [value]="cobranca.status === 'PAGO' ? 'Pago' : 'Pendente'"
+                  [severity]="cobranca.status === 'PAGO' ? 'success' : 'warn'"
+                />
+              </div>
+              <div class="mobile-card-body">
+                <span><strong>Pagamento:</strong> {{ cobranca.dataPagamento ? (cobranca.dataPagamento | date: 'dd/MM/yyyy') : '-' }}</span>
+                <span><strong>Recebedor:</strong> {{ obterLabelRecebedor(cobranca.recebedor) }}</span>
+                <span><strong>Tipo:</strong> {{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</span>
+              </div>
+              @if (cobranca.status === 'PENDENTE') {
+                <div class="mobile-card-actions">
+                  <p-button
+                    label="Dar Baixa"
+                    icon="pi pi-check"
+                    (onClick)="abrirModalBaixa(cobranca)"
+                  />
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    } @else {
+      <p-table
+        [value]="cobrancasFiltradas()"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="carregando()"
+        [tableStyle]="{ 'min-width': '50rem' }"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Descrição</th>
+            <th>Mês/Ano</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Data Pagamento</th>
+            <th>Recebedor</th>
+            <th>Tipo Pagamento</th>
+            <th>Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-cobranca>
+          <tr>
+            <td>{{ cobranca.descricao }}</td>
+            <td>{{ cobranca.mesReferencia }}/{{ cobranca.anoReferencia }}</td>
+            <td>{{ cobranca.valor | currency: 'BRL' }}</td>
+            <td>
+                <p-tag
+                [value]="cobranca.status === 'PAGO' ? 'Pago' : 'Pendente'"
+                [severity]="cobranca.status === 'PAGO' ? 'success' : 'warn'"
               />
-            }
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+            </td>
+            <td>{{ cobranca.dataPagamento ? (cobranca.dataPagamento | date: 'dd/MM/yyyy') : '-' }}</td>
+            <td>{{ obterLabelRecebedor(cobranca.recebedor) }}</td>
+            <td>{{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</td>
+            <td>
+              @if (cobranca.status === 'PENDENTE') {
+                <p-button
+                  label="Dar Baixa"
+                  icon="pi pi-check"
+                  (onClick)="abrirModalBaixa(cobranca)"
+                  styleClass="p-button-sm"
+                />
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
 
     <!-- Modal Dar Baixa -->
     <p-dialog
-      [(visible)]="_modalBaixaVisivel"
+      [(visible)]="modalBaixaVisivel"
       header="Dar Baixa na Cobrança"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
+      styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
       (onHide)="fecharModalBaixa()"

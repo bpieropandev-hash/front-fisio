@@ -1,0 +1,149 @@
+    <p-toast />
+
+    <div class="page-header">
+      <h2>Meu Perfil</h2>
+    </div>
+
+    @if (carregando()) {
+      <div class="loading-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Carregando perfil...</span>
+      </div>
+    } @else {
+      <div class="perfil-grid">
+        <p-card header="Foto">
+          <div class="foto-container">
+            @if (usuario()?.fotoBase64) {
+              <img [src]="usuario()?.fotoBase64" alt="Foto de perfil" class="foto-preview" />
+            } @else {
+              <div class="foto-placeholder">
+                <i class="pi pi-user"></i>
+              </div>
+            }
+            <input #fotoInput type="file" accept="image/*" (change)="aoSelecionarFoto($event)" hidden />
+            <p-button
+              label="Trocar foto"
+              icon="pi pi-camera"
+              styleClass="p-button-sm p-button-secondary"
+              [loading]="salvandoFoto()"
+              (onClick)="fotoInput.click()"
+            />
+          </div>
+        </p-card>
+
+        <p-card header="Dados pessoais">
+          <form [formGroup]="perfilForm" (ngSubmit)="salvarPerfil()">
+            <div class="form-group">
+              <label>Login</label>
+              <input type="text" pInputText formControlName="login" placeholder="Login" class="full-width" />
+              <small class="hint-text">Alterar o login exige logar novamente.</small>
+              @if (perfilForm.get('login')?.invalid && perfilForm.get('login')?.touched) {
+                <small class="error-text">Login é obrigatório</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Nome</label>
+              <input type="text" pInputText formControlName="nome" placeholder="Seu nome" class="full-width" />
+            </div>
+
+            <div class="form-group">
+              <label>Telefone</label>
+              <input type="text" pInputText formControlName="telefone" placeholder="(00) 00000-0000" class="full-width" />
+            </div>
+
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" pInputText formControlName="email" placeholder="seu@email.com" class="full-width" />
+              @if (perfilForm.get('email')?.invalid && perfilForm.get('email')?.touched) {
+                <small class="error-text">Email inválido</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Cor de acento</label>
+              <div class="cor-picker-row">
+                <input
+                  type="color"
+                  class="cor-picker"
+                  [value]="perfilForm.get('corPrimaria')?.value || '#4cc9f0'"
+                  (input)="aoMudarCor($any($event.target).value)"
+                />
+                <span class="cor-picker-hint">Cor de botões e destaques em todo o sistema</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Fonte</label>
+              <p-select
+                [ngModel]="perfilForm.get('fonteTema')?.value"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="aoMudarFonte($event)"
+                [options]="opcoesFonte"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Moderno (Sora + Work Sans)"
+                class="full-width"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Tamanho da fonte</label>
+              <p-select
+                [ngModel]="perfilForm.get('tamanhoFonte')?.value"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="aoMudarTamanhoFonte($event)"
+                [options]="opcoesTamanhoFonte"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Médio (padrão)"
+                class="full-width"
+              />
+            </div>
+
+            <div class="form-actions">
+              <p-button
+                type="submit"
+                label="Salvar"
+                icon="pi pi-check"
+                [loading]="salvandoPerfil()"
+                [disabled]="perfilForm.invalid"
+              />
+            </div>
+          </form>
+        </p-card>
+
+        <p-card header="Alterar senha">
+          <form [formGroup]="senhaForm" (ngSubmit)="alterarSenha()">
+            <div class="form-group">
+              <label>Senha atual</label>
+              <input type="password" pInputText formControlName="senhaAtual" placeholder="Senha atual" class="full-width" />
+            </div>
+
+            <div class="form-group">
+              <label>Nova senha</label>
+              <input type="password" pInputText formControlName="novaSenha" placeholder="Mínimo 6 caracteres" class="full-width" />
+            </div>
+
+            <div class="form-group">
+              <label>Confirmar nova senha</label>
+              <input type="password" pInputText formControlName="confirmarSenha" placeholder="Repita a nova senha" class="full-width" />
+              @if (senhaForm.errors?.['senhasDiferentes'] && senhaForm.get('confirmarSenha')?.touched) {
+                <small class="error-text">As senhas não coincidem</small>
+              }
+            </div>
+
+            <div class="form-actions">
+              <p-button
+                type="submit"
+                label="Alterar senha"
+                icon="pi pi-lock"
+                severity="secondary"
+                [loading]="salvandoSenha()"
+                [disabled]="senhaForm.invalid"
+              />
+            </div>
+          </form>
+        </p-card>
+      </div>
+    }

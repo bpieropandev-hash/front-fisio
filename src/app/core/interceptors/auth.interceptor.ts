@@ -23,7 +23,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       
       // 401 Unauthorized - Token inválido ou expirado, sempre desloga
       if (error.status === 401 && !isLoginEndpoint) {
-        authService.handle401Error();
+        authService.logout();
       }
       // 403 Forbidden - NÃO desloga automaticamente
       // 403 significa que o usuário está autenticado, mas não tem permissão

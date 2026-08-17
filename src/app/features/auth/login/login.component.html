@@ -1,11 +1,6 @@
     <p-toast />
     
     <div class="login-container">
-      <div class="background">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-      </div>
-
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
         <h3>Login</h3>
 
@@ -40,5 +35,7 @@
             <span>Entrar</span>
           }
         </button>
+
+        <p class="esqueci-senha-link" [routerLink]="['/esqueci-senha']">Esqueci minha senha</p>
       </form>
     </div>
