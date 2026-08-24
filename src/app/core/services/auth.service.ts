@@ -93,6 +93,15 @@ export class AuthService {
     localStorage.removeItem(this.TOKEN_KEY);
   }
 
+  /**
+   * Sliding expiration (P3.3): troca o token guardado pelo renovado que o backend
+   * manda no header `X-Renewed-Token` quando o atual está perto de expirar.
+   * Chamado pelo authInterceptor, não pelo fluxo de login.
+   */
+  renovarToken(token: string): void {
+    this.setToken(token);
+  }
+
   private setToken(token: string): void {
     this.tokenSignal.set(token);
     localStorage.setItem(this.TOKEN_KEY, token);
