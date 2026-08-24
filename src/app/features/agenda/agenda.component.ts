@@ -30,6 +30,17 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { formatDateTimeForApi, formatDateTimeForApiBody, formatDateForApi } from '../../core/utils/date-format.util';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+import {
+  obterCoresPorStatus,
+  obterTipoServico,
+  obterLabelStatus,
+  formatHora,
+  obterSiglaTipoServico,
+  normalizarStatusClass,
+  combinarDataHora,
+  separarDataHora,
+  montarHorariosComExtra
+} from './agenda-event.util';
 
 interface ItemLoteUI {
   id: number;
@@ -304,7 +315,7 @@ export class AgendaComponent implements OnInit {
       eventContent: (arg) => this.renderEventContent(arg),
       eventClassNames: (arg) => {
         const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
-        const status = this.normalizarStatusClass(atendimento?.status);
+        const status = normalizarStatusClass(atendimento?.status);
         return status ? [`status-${status}`] : [];
       },
       eventDidMount: (info) => this.onEventDidMount(info),
@@ -397,14 +408,14 @@ export class AgendaComponent implements OnInit {
           const servico = this.servicos().find(s => s.id === atendimento.servicoBaseId);
           const pacienteNome = paciente?.nome || `Paciente #${atendimento.pacienteId}`;
           const servicoNome = servico?.nome || `Serviço #${atendimento.servicoBaseId}`;
-          const servicoTipo = this.obterTipoServico(servicoNome, servico?.tipo);
+          const servicoTipo = obterTipoServico(servicoNome, servico?.tipo);
 
           const title = isMensalista
             ? `📋 ${pacienteNome} - ${servicoNome}`
             : `${pacienteNome} - ${servicoNome}`;
 
           // Cores: manter por STATUS (fundo/borda/texto)
-          const coresStatus = this.obterCoresPorStatus(atendimento.status);
+          const coresStatus = obterCoresPorStatus(atendimento.status);
 
           eventos.push({
             id: atendimento.id.toString(),
@@ -414,7 +425,7 @@ export class AgendaComponent implements OnInit {
             borderColor: coresStatus.borderColor,
             textColor: coresStatus.textColor,
             classNames: (() => {
-              const status = this.normalizarStatusClass(atendimento.status);
+              const status = normalizarStatusClass(atendimento.status);
               return status ? [`status-${status}`] : [];
             })(),
             extendedProps: {
@@ -437,96 +448,6 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-  obterCoresPorStatus(status: string): { backgroundColor: string; borderColor: string; textColor: string } {
-    switch (status) {
-      case 'AGENDADO':
-        return {
-          backgroundColor: '#a5d6a7',
-          borderColor: '#16a34a',
-          textColor: '#1b5e20'
-        };
-      case 'CONCLUIDO':
-        return {
-          backgroundColor: '#90caf9',
-          borderColor: '#2563eb',
-          textColor: '#0d47a1'
-        };
-      case 'CANCELADO':
-        return {
-          backgroundColor: '#ef9a9a',
-          borderColor: '#dc2626',
-          textColor: '#b71c1c'
-        };
-      case 'FALTA':
-        return {
-          backgroundColor: '#fff59d',
-          borderColor: '#ca8a04',
-          textColor: '#f57f17'
-        };
-      default:
-        return {
-          backgroundColor: '#e0e0e0',
-          borderColor: '#64748b',
-          textColor: '#424242'
-        };
-    }
-  }
-
-  private obterTipoServico(servicoNome: string, servicoTipo?: string): 'PILATES' | 'FISIOTERAPIA' | 'AVALIACAO' | 'OUTRO' {
-    const nome = (servicoNome || '').toLowerCase();
-    if (nome.includes('avalia')) return 'AVALIACAO';
-    // Preferir o tipo vindo do backend quando existir
-    if (servicoTipo === 'PILATES') return 'PILATES';
-    if (servicoTipo === 'FISIOTERAPIA') return 'FISIOTERAPIA';
-    // Fallback por nome
-    if (nome.includes('pilates')) return 'PILATES';
-    if (nome.includes('fisio')) return 'FISIOTERAPIA';
-    return 'OUTRO';
-  }
-
-  private obterLabelStatus(status: string | undefined): string {
-    switch (status) {
-      case 'AGENDADO':
-        return 'Agendado';
-      case 'CONCLUIDO':
-        return 'Concluído';
-      case 'CANCELADO':
-        return 'Cancelado';
-      case 'FALTA':
-        return 'Falta';
-      default:
-        return status || '—';
-    }
-  }
-
-  private formatHora(date: Date | null | undefined): string {
-    if (!date) return '';
-    return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
-  }
-
-  private obterSiglaTipoServico(tipo: string | undefined): string {
-    switch (tipo) {
-      case 'PILATES':
-        return 'PIL';
-      case 'FISIOTERAPIA':
-        return 'FIS';
-      case 'AVALIACAO':
-        return 'AVL';
-      default:
-        return 'OUT';
-    }
-  }
-
-  private normalizarStatusClass(status: string | undefined): string {
-    // Ex.: "CONCLUIDO" -> "concluido"
-    return (status || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-  }
-
   private renderEventContent(arg: EventContentArg) {
     // Month: minimalista. Week/Day: render explícito (para não sumir quando eventContent existe)
     if (arg.view.type !== 'dayGridMonth') {
@@ -540,11 +461,11 @@ export class AgendaComponent implements OnInit {
     const pacienteNome = (arg.event.extendedProps?.['pacienteNome'] as string | undefined) || '';
     const servicoNome = (arg.event.extendedProps?.['servicoNome'] as string | undefined) || arg.event.title;
     const servicoTipo = (arg.event.extendedProps?.['servicoTipo'] as string | undefined) || '';
-    const statusLabel = this.obterLabelStatus(atendimento?.status);
+    const statusLabel = obterLabelStatus(atendimento?.status);
 
     const inicio = arg.event.start;
-    const hora = this.formatHora(inicio);
-    const sigla = this.obterSiglaTipoServico(servicoTipo);
+    const hora = formatHora(inicio);
+    const sigla = obterSiglaTipoServico(servicoTipo);
 
     // Tooltip (title nativo) com quebras de linha
     const tooltip = [
@@ -585,7 +506,7 @@ export class AgendaComponent implements OnInit {
     const status = atendimento?.status;
     if (!status || !info?.el) return;
 
-    const cores = this.obterCoresPorStatus(status);
+    const cores = obterCoresPorStatus(status);
     const el = info.el as HTMLElement;
 
     // Elemento principal
@@ -714,7 +635,7 @@ export class AgendaComponent implements OnInit {
     this.horaNovoAgendamento = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
 
     // Combina data e hora
-    this.novoAgendamento.dataHora = this.combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
+    this.novoAgendamento.dataHora = combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
 
     this.abrirModalNovoAgendamento();
   }
@@ -736,7 +657,7 @@ export class AgendaComponent implements OnInit {
         this.messageService.add({
           severity: 'success',
           summary: 'Remarcado',
-          detail: `Atendimento movido para ${novaData.toLocaleDateString('pt-BR')} às ${this.formatHora(novaData)}`
+          detail: `Atendimento movido para ${novaData.toLocaleDateString('pt-BR')} às ${formatHora(novaData)}`
         });
         this.carregarEventos();
       },
@@ -761,13 +682,13 @@ export class AgendaComponent implements OnInit {
 
     this.dataHoraEdit = new Date(atendimento.dataHoraInicio);
     this.dataHoraOriginal = new Date(atendimento.dataHoraInicio);
-    const { data, hora } = this.separarDataHora(this.dataHoraEdit);
+    const { data, hora } = separarDataHora(this.dataHoraEdit);
     this.dataEdit = data;
     // Mostra o horário EXATO do atendimento (nunca arredondar: salvar mudaria
     // o horário real silenciosamente). Se não estiver na grade de 30min,
     // adiciona como opção extra do select.
     this.horaEdit = hora;
-    this.horariosEdicao = this.montarHorariosComExtra(hora);
+    this.horariosEdicao = montarHorariosComExtra(this.horariosDisponiveis, hora);
     this.statusEdit = atendimento.status;
     this.evolucaoEdit = atendimento.evolucao || '';
     this.recebedorEdit = atendimento.recebedor || null;
@@ -820,56 +741,18 @@ export class AgendaComponent implements OnInit {
     this.dataHoraOriginal = null;
   }
 
-  /** Grade padrão de 30min + horário exato do atendimento (se estiver fora da grade) */
-  private montarHorariosComExtra(hora: string | null): { label: string; value: string }[] {
-    const base = [...this.horariosDisponiveis];
-    if (hora && !base.some(h => h.value === hora)) {
-      base.push({ label: hora, value: hora });
-      base.sort((a, b) => a.value.localeCompare(b.value));
-    }
-    return base;
-  }
-
-  /**
-   * Combina data e hora selecionadas em um objeto Date
-   */
-  private combinarDataHora(data: Date | null, hora: string | null): Date | null {
-    if (!data || !hora) return null;
-
-    const [horas, minutos] = hora.split(':').map(Number);
-    const dataCombinada = new Date(data);
-    dataCombinada.setHours(horas, minutos, 0, 0);
-    return dataCombinada;
-  }
-
-  /**
-   * Separa uma data/hora em data e hora
-   */
-  private separarDataHora(dataHora: Date | null): { data: Date | null; hora: string | null } {
-    if (!dataHora) return { data: null, hora: null };
-
-    const data = new Date(dataHora);
-    data.setHours(0, 0, 0, 0);
-
-    const horas = String(dataHora.getHours()).padStart(2, '0');
-    const minutos = String(dataHora.getMinutes()).padStart(2, '0');
-    const hora = `${horas}:${minutos}`;
-
-    return { data, hora };
-  }
-
   /**
    * Atualiza dataHoraEdit quando data ou hora são alterados
    */
   atualizarDataHoraEdit(): void {
-    this.dataHoraEdit = this.combinarDataHora(this.dataEdit, this.horaEdit);
+    this.dataHoraEdit = combinarDataHora(this.dataEdit, this.horaEdit);
   }
 
   /**
    * Atualiza novoAgendamento.dataHora quando data ou hora são alterados
    */
   atualizarDataHoraNovoAgendamento(): void {
-    this.novoAgendamento.dataHora = this.combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
+    this.novoAgendamento.dataHora = combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
   }
 
   salvarAtendimento(): void {
