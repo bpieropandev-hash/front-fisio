@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -10,12 +10,25 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { forkJoin } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardResumoDTO, AlertaPendenciaDTO } from '../../core/interfaces/dashboard.interface';
-import { formatDateForApi } from '../../core/utils/date-format.util';
+import { formatDateForApi, formatDateTimeForApi } from '../../core/utils/date-format.util';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BreakpointService } from '../../core/services/breakpoint.service';
+import { AgendamentoService } from '../../core/services/agendamento.service';
+import { PacienteService } from '../../core/services/paciente.service';
+import { ServicoService } from '../../core/services/servico.service';
+import { UsuarioService } from '../../core/services/usuario.service';
+import { obterPillStatus } from '../../core/utils/status-pill.util';
+
+export interface ProximoAtendimentoUI {
+  hora: string;
+  pacienteNome: string;
+  servicoNome: string;
+  status: string;
+}
 
 @Component({
     selector: 'app-dashboard',
@@ -37,12 +50,24 @@ import { BreakpointService } from '../../core/services/breakpoint.service';
 export class DashboardComponent implements OnInit {
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
+  isTablet = this.breakpointService.isTablet;
 
   carregando = signal(true);
   resumo = signal<DashboardResumoDTO | null>(null);
   filtrosVisiveis = signal(false);
   periodoLabel = signal('Mês atual');
-  
+
+  // --- Shell mobile (spec 10) ---
+  nomeUsuario = signal<string | null>(null);
+  carregandoProximos = signal(true);
+  proximosAtendimentos = signal<ProximoAtendimentoUI[]>([]);
+  saudacaoData = computed(() => {
+    const hoje = new Date();
+    const label = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(hoje);
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  });
+  obterPillStatus = obterPillStatus;
+
   filtros = {
     dataInicio: null as Date | null,
     dataFim: null as Date | null
@@ -51,11 +76,65 @@ export class DashboardComponent implements OnInit {
   constructor(
     private dashboardService: DashboardService,
     private router: Router,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private agendamentoService: AgendamentoService,
+    private pacienteService: PacienteService,
+    private servicoService: ServicoService,
+    private usuarioService: UsuarioService
   ) {}
 
   ngOnInit(): void {
     this.carregarDados();
+    this.carregarProximosAtendimentos();
+    this.usuarioService.buscarMe().subscribe({
+      next: (usuario) => this.nomeUsuario.set(usuario.nome?.split(' ')[0] || null),
+      error: () => {
+        // Sessão inválida - interceptor/guard já cuidam do redirect
+      }
+    });
+  }
+
+  /** Atendimentos de hoje, ordenados por horário — para o card "Próximos atendimentos" do shell mobile */
+  carregarProximosAtendimentos(): void {
+    this.carregandoProximos.set(true);
+    const hoje = new Date();
+    const inicioDia = new Date(hoje);
+    inicioDia.setHours(0, 0, 0, 0);
+
+    forkJoin({
+      atendimentos: this.agendamentoService.listar({
+        dataInicio: formatDateTimeForApi(inicioDia),
+        dataFim: formatDateTimeForApi(hoje, true)
+      }),
+      pacientes: this.pacienteService.listar(),
+      servicos: this.servicoService.listar()
+    }).subscribe({
+      next: ({ atendimentos, pacientes, servicos }) => {
+        const lista: ProximoAtendimentoUI[] = atendimentos
+          .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
+          .slice(0, 4)
+          .map(a => ({
+            hora: new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(a.dataHoraInicio)),
+            pacienteNome: pacientes.find(p => p.id === a.pacienteId)?.nome || `Paciente #${a.pacienteId}`,
+            servicoNome: servicos.find(s => s.id === a.servicoBaseId)?.nome || `Serviço #${a.servicoBaseId}`,
+            status: a.status
+          }));
+        this.proximosAtendimentos.set(lista);
+        this.carregandoProximos.set(false);
+      },
+      error: () => {
+        this.proximosAtendimentos.set([]);
+        this.carregandoProximos.set(false);
+      }
+    });
+  }
+
+  irParaAgenda(): void {
+    this.router.navigate(['/agenda']);
+  }
+
+  irParaNovoPaciente(): void {
+    this.router.navigate(['/pacientes']);
   }
 
   toggleFiltros(): void {

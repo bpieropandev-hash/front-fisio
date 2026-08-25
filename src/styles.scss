@@ -31,6 +31,17 @@
      como texto/ícone sobre fundo claro (contraste AA que o accent puro não tem) */
   --accent-ink: var(--accent-color-hover);
   --accent-soft: color-mix(in srgb, var(--accent-color) 14%, transparent);
+
+  /* Status pill (telas mobile spec 10: Dashboard/Agenda/Pacientes/Financeiro) —
+     pills suaves de status, independentes da paleta forte usada nos eventos do FullCalendar */
+  --status-ok-bg: rgba(31, 169, 113, .12);
+  --status-ok-fg: #12744d;
+  --status-warn-bg: rgba(217, 142, 31, .14);
+  --status-warn-fg: #8a5a0b;
+  --status-err-bg: rgba(229, 72, 77, .12);
+  --status-err-fg: #b22128;
+  --status-neutral-bg: var(--bg-tertiary);
+  --status-neutral-fg: var(--text-secondary);
 }
 
 /* Modo escuro */
@@ -43,6 +54,45 @@ html.dark-mode {
   --text-tertiary: #94a3b8;
   --border-color: #334155;
   --shadow: rgba(0, 0, 0, 0.3);
+
+  --status-ok-bg: rgba(31, 169, 113, .22);
+  --status-ok-fg: #4ade9a;
+  --status-warn-bg: rgba(217, 142, 31, .24);
+  --status-warn-fg: #f5b84f;
+  --status-err-bg: rgba(229, 72, 77, .22);
+  --status-err-fg: #ff8a8f;
+}
+
+/* Status pill reutilizável (spec 10) — telas mobile nativas */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.status-pill--ok {
+  background: var(--status-ok-bg);
+  color: var(--status-ok-fg);
+}
+
+.status-pill--warn {
+  background: var(--status-warn-bg);
+  color: var(--status-warn-fg);
+}
+
+.status-pill--err {
+  background: var(--status-err-bg);
+  color: var(--status-err-fg);
+}
+
+.status-pill--neutral {
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-fg);
 }
 
 body {

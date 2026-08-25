@@ -17,7 +17,6 @@ import { MultiSelect } from 'primeng/multiselect';
 import { Checkbox } from 'primeng/checkbox';
 import { Card } from 'primeng/card';
 import { Toast } from 'primeng/toast';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { BreakpointService } from '../../core/services/breakpoint.service';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import { PacienteService } from '../../core/services/paciente.service';
@@ -41,6 +40,16 @@ import {
   separarDataHora,
   montarHorariosComExtra
 } from './agenda-event.util';
+import { obterPillStatus } from '../../core/utils/status-pill.util';
+
+const DIAS_SEMANA_CURTO = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+export interface EventoDoDiaUI {
+  atendimento: AtendimentoResponseDTO;
+  hora: string;
+  pacienteNome: string;
+  servicoNome: string;
+}
 
 interface ItemLoteUI {
   id: number;
@@ -67,8 +76,7 @@ interface ItemLoteUI {
     MultiSelect,
     Checkbox,
     Card,
-    Toast,
-    SelectButtonModule
+    Toast
   ],
   providers: [MessageService],
   templateUrl: './agenda.component.html',
@@ -77,14 +85,89 @@ interface ItemLoteUI {
 export class AgendaComponent implements OnInit {
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
+  isTablet = this.breakpointService.isTablet;
+  obterPillStatus = obterPillStatus;
 
   @ViewChild(FullCalendarComponent) calendarComponent?: FullCalendarComponent;
 
-  viewOptions = [
-    { label: 'Mês', value: 'dayGridMonth' },
-    { label: 'Semana', value: 'timeGridWeek' },
-    { label: 'Dia', value: 'timeGridDay' }
-  ];
+  // --- Shell mobile (spec 10) — semana + lista do dia, substitui o FullCalendar em telas estreitas ---
+  diaSelecionadoAgenda = signal<Date>(this.iniciarDoDia(new Date()));
+
+  semanaAgendaAtual = computed(() => {
+    const base = this.diaSelecionadoAgenda();
+    const inicioSemana = new Date(base);
+    inicioSemana.setDate(base.getDate() - base.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const dia = new Date(inicioSemana);
+      dia.setDate(inicioSemana.getDate() + i);
+      return dia;
+    });
+  });
+
+  eventosDoDiaSelecionado = computed<EventoDoDiaUI[]>(() => {
+    const dia = this.diaSelecionadoAgenda();
+    return this.eventosFiltrados()
+      .filter(evento => this.mesmoDia(new Date(evento.start as string), dia))
+      .map(evento => {
+        const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO;
+        return {
+          atendimento,
+          hora: formatHora(new Date(evento.start as string)),
+          pacienteNome: (evento.extendedProps?.['pacienteNome'] as string) || '',
+          servicoNome: (evento.extendedProps?.['servicoNome'] as string) || ''
+        };
+      })
+      .sort((a, b) => a.hora.localeCompare(b.hora));
+  });
+
+  private iniciarDoDia(data: Date): Date {
+    const d = new Date(data);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private mesmoDia(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  rotuloDiaSemana(data: Date): string {
+    return DIAS_SEMANA_CURTO[data.getDay()];
+  }
+
+  ehHoje(data: Date): boolean {
+    return this.mesmoDia(data, new Date());
+  }
+
+  ehDiaSelecionadoAgenda(data: Date): boolean {
+    return this.mesmoDia(data, this.diaSelecionadoAgenda());
+  }
+
+  rotuloDiaSelecionadoAgenda(): string {
+    const label = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(this.diaSelecionadoAgenda());
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  selecionarDiaAgenda(data: Date): void {
+    this.diaSelecionadoAgenda.set(this.iniciarDoDia(data));
+  }
+
+  semanaAgendaAnterior(): void {
+    const d = new Date(this.diaSelecionadoAgenda());
+    d.setDate(d.getDate() - 7);
+    this.diaSelecionadoAgenda.set(d);
+  }
+
+  semanaAgendaProxima(): void {
+    const d = new Date(this.diaSelecionadoAgenda());
+    d.setDate(d.getDate() + 7);
+    this.diaSelecionadoAgenda.set(d);
+  }
+
+  abrirNovoAgendamentoDoDia(): void {
+    this.abrirModalNovoAgendamento();
+    // abrirModalNovoAgendamento() zera dataNovoAgendamento — reaplica com o dia selecionado na lista
+    this.dataNovoAgendamento = new Date(this.diaSelecionadoAgenda());
+  }
 
   /** View atual do calendário. FullCalendar só respeita `initialView` na montagem —
    * mudanças depois disso precisam chamar calendarApi.changeView() (ver effect no constructor). */

@@ -1,6 +1,78 @@
     <p-toast />
-    
-    <div class="dashboard-header">
+
+    @if (isTablet()) {
+      <div class="mobile-dashboard">
+        <div class="mobile-dashboard__greeting">
+          <div class="mobile-dashboard__hello">Olá{{ nomeUsuario() ? ', ' + nomeUsuario() : '' }}</div>
+          <div class="mobile-dashboard__date">{{ saudacaoData() }}</div>
+        </div>
+
+        <div class="mobile-dashboard__stats">
+          <div class="mobile-dashboard__stats-label">
+            {{ periodoLabel() === 'Mês atual' ? 'Este mês' : periodoLabel() }}
+          </div>
+          @if (carregando()) {
+            <div class="mobile-dashboard__stats-loading">Carregando…</div>
+          } @else {
+            <div class="mobile-dashboard__stats-row">
+              <div class="mobile-dashboard__stat">
+                <div class="mobile-dashboard__stat-value">{{ resumo()?.totalAtendimentos ?? 0 }}</div>
+                <div class="mobile-dashboard__stat-label">Atendimentos</div>
+              </div>
+              <div class="mobile-dashboard__stat-divider"></div>
+              <div class="mobile-dashboard__stat">
+                <div class="mobile-dashboard__stat-value">{{ resumo()?.atendimentosPagamentoPendente ?? 0 }}</div>
+                <div class="mobile-dashboard__stat-label">Pendentes</div>
+              </div>
+              <div class="mobile-dashboard__stat-divider"></div>
+              <div class="mobile-dashboard__stat mobile-dashboard__stat--wide">
+                <div class="mobile-dashboard__stat-value mobile-dashboard__stat-value--money">{{ (resumo()?.faturamentoProfissional ?? 0) | currency: 'BRL' }}</div>
+                <div class="mobile-dashboard__stat-label">Faturamento</div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="mobile-dashboard__section">
+          <div class="mobile-dashboard__section-header">
+            <span class="mobile-dashboard__section-title">Próximos atendimentos</span>
+            <a class="mobile-dashboard__section-link" (click)="irParaAgenda()">Ver agenda</a>
+          </div>
+          @if (carregandoProximos()) {
+            <div class="mobile-dashboard__proximos-loading">Carregando…</div>
+          } @else if (proximosAtendimentos().length === 0) {
+            <div class="mobile-dashboard__proximos-vazio">Nenhum atendimento hoje.</div>
+          } @else {
+            <div class="mobile-dashboard__proximos-list">
+              @for (item of proximosAtendimentos(); track item.hora + item.pacienteNome) {
+                <div class="mobile-dashboard__proximo">
+                  <div class="mobile-dashboard__proximo-hora">{{ item.hora }}</div>
+                  <div class="mobile-dashboard__proximo-info">
+                    <div class="mobile-dashboard__proximo-nome">{{ item.pacienteNome }}</div>
+                    <div class="mobile-dashboard__proximo-servico">{{ item.servicoNome }}</div>
+                  </div>
+                  <span class="status-pill" [class]="obterPillStatus(item.status).cssClass">{{ obterPillStatus(item.status).label }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mobile-dashboard__section">
+          <div class="mobile-dashboard__section-title">Ações rápidas</div>
+          <div class="mobile-dashboard__acoes">
+            <button type="button" class="mobile-dashboard__acao mobile-dashboard__acao--primaria" (click)="irParaAgenda()">
+              <i class="pi pi-plus"></i> Agendamento
+            </button>
+            <button type="button" class="mobile-dashboard__acao" (click)="irParaNovoPaciente()">
+              <i class="pi pi-user-plus"></i> Paciente
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="dashboard-header" [class.dashboard-header--hidden-mobile]="isTablet()">
       <div>
         <h2>Dashboard</h2>
         <p class="subtitle">Visão geral e alertas do mês atual</p>
@@ -74,8 +146,8 @@
         <p-progressSpinner />
       </div>
     } @else {
-      <!-- Cards de Resumo -->
-      <div class="summary-cards">
+      <!-- Cards de Resumo (escondidos no shell mobile — mesmos números já aparecem no cartão de estatísticas do topo) -->
+      <div class="summary-cards" [class.summary-cards--hidden-mobile]="isTablet()">
         <p-card class="summary-card">
           <div class="card-content">
             <div class="card-icon total">
@@ -128,7 +200,7 @@
             </div>
           </ng-template>
           
-          @if (isMobile()) {
+          @if (isTablet()) {
             <div class="mobile-card-list">
               @for (alerta of resumo()!.alertasPendencia; track alerta.descricao + alerta.nomePaciente) {
                 <div class="mobile-card">
