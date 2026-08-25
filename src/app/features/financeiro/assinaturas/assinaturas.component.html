@@ -201,6 +201,7 @@
       styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
+      [focusOnShow]="false"
       (onHide)="fecharModal()"
     >
       <div class="form-group">
@@ -288,6 +289,7 @@
       styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
+      [focusOnShow]="false"
       (onHide)="fecharModalEditar()"
     >
       @if (assinaturaEditando) {
@@ -351,6 +353,7 @@
       styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
+      [focusOnShow]="false"
       (onHide)="fecharModalTrocarPlano()"
     >
       @if (assinaturaTrocandoPlano) {

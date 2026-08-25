@@ -265,6 +265,7 @@
       styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
+      [focusOnShow]="false"
       (onHide)="fecharModal()"
     >
       <form [formGroup]="pacienteForm" (ngSubmit)="salvarPaciente()">
