@@ -252,7 +252,7 @@
 
     .filters-header h3 {
       margin: 0;
-      color: #1e293b;
+      color: var(--text-primary);
       font-size: 1.25rem;
       font-weight: 600;
       display: flex;
@@ -261,7 +261,7 @@
     }
 
     .filters-header i {
-      color: #64748b;
+      color: var(--text-secondary);
     }
 
     .filters-grid {
@@ -279,7 +279,7 @@
     .filter-group label {
       margin-bottom: 0.5rem;
       font-weight: 500;
-      color: #1e293b;
+      color: var(--text-primary);
       font-size: 0.875rem;
     }
 
@@ -356,7 +356,7 @@
       margin: 0 0 0.5rem 0;
       font-size: 0.875rem;
       font-weight: 500;
-      color: #64748b;
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -365,11 +365,11 @@
       margin: 0 0 0.25rem 0;
       font-size: 2rem;
       font-weight: 700;
-      color: #1e293b;
+      color: var(--text-primary);
     }
 
     .card-label {
-      color: #94a3b8;
+      color: var(--text-secondary);
       font-size: 0.875rem;
     }
 
@@ -384,7 +384,7 @@
 
     .card-header h3 {
       margin: 0;
-      color: #1e293b;
+      color: var(--text-primary);
       font-size: 1.25rem;
       font-weight: 600;
       display: flex;
@@ -393,7 +393,7 @@
     }
 
     .card-header i {
-      color: #f59e0b;
+      color: var(--accent-color);
     }
 
     .no-alerts-card {
@@ -414,21 +414,21 @@
 
     .no-alerts-content h3 {
       margin: 0 0 0.5rem 0;
-      color: #1e293b;
+      color: var(--text-primary);
       font-size: 1.5rem;
       font-weight: 600;
     }
 
     .no-alerts-content p {
       margin: 0;
-      color: #64748b;
+      color: var(--text-secondary);
       font-size: 1rem;
     }
 
     .text-center {
       text-align: center;
       padding: 2rem;
-      color: #64748b;
+      color: var(--text-secondary);
     }
 
     @media (max-width: 768px) {
