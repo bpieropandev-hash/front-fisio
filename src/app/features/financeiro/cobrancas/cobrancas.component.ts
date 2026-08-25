@@ -45,6 +45,7 @@ import { BreakpointService } from '../../../core/services/breakpoint.service';
 export class CobrancasComponent implements OnInit {
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
+  isTablet = this.breakpointService.isTablet;
 
   cobrancas = signal<CobrancaMensalResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
@@ -56,11 +57,37 @@ export class CobrancasComponent implements OnInit {
 
   filtroStatus = signal<'todos' | 'pago' | 'pendente'>('todos');
 
-  filtroStatusOptions = [
+  filtroStatusOptions: { label: string; value: 'todos' | 'pago' | 'pendente' }[] = [
     { label: 'Todos', value: 'todos' },
     { label: 'Pago', value: 'pago' },
     { label: 'Pendente', value: 'pendente' }
   ];
+
+  // --- Shell mobile (spec 10) ---
+  totalRecebidoMes = computed(() => this.cobrancas().filter(c => c.status === 'PAGO').reduce((soma, c) => soma + c.valor, 0));
+  totalPendenteMes = computed(() => this.cobrancas().filter(c => c.status === 'PENDENTE').reduce((soma, c) => soma + c.valor, 0));
+
+  rotuloMesAno = computed(() => {
+    const d = this.filtroMesAno();
+    if (!d) return 'Todos os meses';
+    const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(d);
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  });
+
+  mesAnoAnterior(): void {
+    const base = this.filtroMesAno() ?? new Date();
+    this.aoMudarFiltroMesAno(new Date(base.getFullYear(), base.getMonth() - 1, 1));
+  }
+
+  mesAnoProximo(): void {
+    const base = this.filtroMesAno() ?? new Date();
+    this.aoMudarFiltroMesAno(new Date(base.getFullYear(), base.getMonth() + 1, 1));
+  }
+
+  gerarMesAtualMobile(): void {
+    this.mesAnoGerar = this.filtroMesAno() ?? new Date();
+    this.gerarMensalidades();
+  }
 
   cobrancasFiltradas = computed(() => {
     const termo = this.termoPesquisa().toLowerCase().trim();

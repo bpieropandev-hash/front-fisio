@@ -20,10 +20,11 @@ import { PacienteService } from '../../core/services/paciente.service';
 import { RelatorioService } from '../../core/services/relatorio.service';
 import { PacienteResponseDTO, PacienteCreateRequestDTO } from '../../core/interfaces/paciente.interface';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
-import { formatDateForApi } from '../../core/utils/date-format.util';
+import { formatDateForApi, formatDateTimeForApi } from '../../core/utils/date-format.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { BreakpointService } from '../../core/services/breakpoint.service';
+import { AgendamentoService } from '../../core/services/agendamento.service';
 
 @Component({
     selector: 'app-pacientes',
@@ -52,6 +53,7 @@ import { BreakpointService } from '../../core/services/breakpoint.service';
 export class PacientesComponent implements OnInit {
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
+  isTablet = this.breakpointService.isTablet;
 
   pacientes = signal<PacienteResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
@@ -103,9 +105,103 @@ export class PacientesComponent implements OnInit {
     });
   });
 
+  // --- Shell mobile (spec 10) ---
+  filtroPillMobile = signal<'todos' | 'tratamento' | 'inativos'>('todos');
+  proximosPorPaciente = signal<Map<number, Date>>(new Map());
+
+  totalAtivos = computed(() => this.pacientes().filter(p => p.ativo !== false).length);
+
+  pacientesMobile = computed(() => {
+    const base = this.pacientesFiltrados();
+    if (this.filtroPillMobile() === 'inativos') {
+      return base.filter(p => p.ativo === false);
+    }
+    return base;
+  });
+
+  pacientesAgrupados = computed(() => {
+    const grupos = new Map<string, PacienteResponseDTO[]>();
+    for (const p of this.pacientesMobile()) {
+      const letra = (p.nome?.charAt(0) || '#').toUpperCase();
+      if (!grupos.has(letra)) grupos.set(letra, []);
+      grupos.get(letra)!.push(p);
+    }
+    return Array.from(grupos.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'))
+      .map(([letra, pacientesDoGrupo]) => ({ letra, pacientes: pacientesDoGrupo }));
+  });
+
+  selecionarPillMobile(pill: 'todos' | 'tratamento' | 'inativos'): void {
+    this.filtroPillMobile.set(pill);
+    if (pill === 'inativos') {
+      this.mostrarInativos.set(true);
+      this.filtroAssinatura.set('todos');
+    } else if (pill === 'tratamento') {
+      this.mostrarInativos.set(false);
+      this.filtroAssinatura.set('com');
+    } else {
+      this.mostrarInativos.set(false);
+      this.filtroAssinatura.set('todos');
+    }
+    this.atualizarQueryParams();
+  }
+
+  obterIniciais(nome: string | undefined): string {
+    if (!nome) return '?';
+    const partes = nome.trim().split(/\s+/);
+    const primeira = partes[0]?.charAt(0) || '';
+    const ultima = partes.length > 1 ? partes[partes.length - 1].charAt(0) : '';
+    return (primeira + ultima).toUpperCase();
+  }
+
+  rotuloProximoAtendimento(pacienteId: number): string {
+    const data = this.proximosPorPaciente().get(pacienteId);
+    if (!data) return 'Sem atendimento agendado';
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const amanha = new Date(hoje);
+    amanha.setDate(amanha.getDate() + 1);
+    const alvo = new Date(data);
+    alvo.setHours(0, 0, 0, 0);
+
+    const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(data);
+    if (alvo.getTime() === hoje.getTime()) return `Próximo: hoje, ${hora}`;
+    if (alvo.getTime() === amanha.getTime()) return `Próximo: amanhã, ${hora}`;
+    const dataFmt = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(data);
+    return `Próximo: ${dataFmt}, ${hora}`;
+  }
+
+  private carregarProximosAtendimentos(): void {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const limite = new Date(hoje);
+    limite.setDate(limite.getDate() + 60);
+
+    this.agendamentoService.listar({
+      dataInicio: formatDateTimeForApi(hoje),
+      dataFim: formatDateTimeForApi(limite, true)
+    }).subscribe({
+      next: (atendimentos) => {
+        const mapa = new Map<number, Date>();
+        for (const a of atendimentos) {
+          if (a.status !== 'AGENDADO') continue;
+          const data = new Date(a.dataHoraInicio);
+          const atual = mapa.get(a.pacienteId);
+          if (!atual || data < atual) mapa.set(a.pacienteId, data);
+        }
+        this.proximosPorPaciente.set(mapa);
+      },
+      error: () => {
+        // Não é crítico: lista de pacientes continua funcional sem o rótulo de próximo atendimento
+      }
+    });
+  }
+
   constructor(
     private pacienteService: PacienteService,
     private relatorioService: RelatorioService,
+    private agendamentoService: AgendamentoService,
     private fb: FormBuilder,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
@@ -138,6 +234,7 @@ export class PacientesComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarPacientes();
+    this.carregarProximosAtendimentos();
   }
 
   carregarPacientes(): void {

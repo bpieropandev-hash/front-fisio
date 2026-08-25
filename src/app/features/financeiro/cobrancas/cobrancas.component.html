@@ -1,5 +1,88 @@
     <p-toast />
-    
+
+    @if (isTablet()) {
+      <div class="fin-mobile">
+        <div class="fin-mobile__mes-nav">
+          <button type="button" class="fin-mobile__mes-seta" (click)="mesAnoAnterior()" aria-label="Mês anterior">
+            <i class="pi pi-chevron-left"></i>
+          </button>
+          <div class="fin-mobile__mes-label">{{ rotuloMesAno() }}</div>
+          <button type="button" class="fin-mobile__mes-seta" (click)="mesAnoProximo()" aria-label="Próximo mês">
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="fin-mobile__resumo">
+          <div class="fin-mobile__resumo-label">Neste mês</div>
+          <div class="fin-mobile__resumo-cards">
+            <div class="fin-mobile__resumo-card">
+              <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--ok"><i class="pi pi-arrow-down-left"></i></div>
+              <div class="fin-mobile__resumo-texto">Recebido</div>
+              <div class="fin-mobile__resumo-valor">{{ totalRecebidoMes() | currency: 'BRL' }}</div>
+            </div>
+            <div class="fin-mobile__resumo-card">
+              <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--warn"><i class="pi pi-clock"></i></div>
+              <div class="fin-mobile__resumo-texto">Pendente</div>
+              <div class="fin-mobile__resumo-valor">{{ totalPendenteMes() | currency: 'BRL' }}</div>
+            </div>
+          </div>
+          <button type="button" class="fin-mobile__gerar" (click)="gerarMesAtualMobile()" [disabled]="gerando()">
+            <i class="pi" [class.pi-calendar-plus]="!gerando()" [class.pi-spin]="gerando()" [class.pi-spinner]="gerando()"></i>
+            Gerar mensalidades deste mês
+          </button>
+        </div>
+
+        <div class="fin-mobile__filtros">
+          @for (opcao of filtroStatusOptions; track opcao.value) {
+            <button
+              type="button"
+              class="fin-mobile__filtro-pill"
+              [class.fin-mobile__filtro-pill--ativo]="filtroStatus() === opcao.value"
+              (click)="aoMudarFiltroStatus(opcao.value)"
+            >
+              {{ opcao.label }}
+            </button>
+          }
+        </div>
+
+        <div class="fin-mobile__section">
+          <div class="fin-mobile__section-title">Movimentações</div>
+
+          @if (carregando()) {
+            <div class="fin-mobile__vazio">Carregando…</div>
+          } @else if (cobrancasFiltradas().length === 0) {
+            <div class="fin-mobile__vazio">Nenhuma cobrança encontrada.</div>
+          } @else {
+            <div class="fin-mobile__lista">
+              @for (cobranca of cobrancasFiltradas(); track cobranca.id) {
+                <div
+                  class="fin-mobile__item"
+                  [class.fin-mobile__item--clicavel]="cobranca.status === 'PENDENTE'"
+                  (click)="cobranca.status === 'PENDENTE' && abrirModalBaixa(cobranca)"
+                >
+                  <div class="fin-mobile__item-info">
+                    <div class="fin-mobile__item-nome">{{ cobranca.descricao }}</div>
+                    <div class="fin-mobile__item-meta">
+                      {{ cobranca.mesReferencia }}/{{ cobranca.anoReferencia }}
+                      @if (cobranca.status === 'PAGO') {
+                        · {{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}
+                      } @else {
+                        · Pendente
+                      }
+                    </div>
+                  </div>
+                  <div class="fin-mobile__item-valor" [class.fin-mobile__item-valor--pendente]="cobranca.status === 'PENDENTE'">
+                    {{ cobranca.status === 'PAGO' ? '+ ' : '' }}{{ cobranca.valor | currency: 'BRL' }}
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (!isTablet()) {
     <div class="page-header">
       <h2>Cobranças Mensais</h2>
       <div class="header-actions">
@@ -163,6 +246,7 @@
           </tr>
         </ng-template>
       </p-table>
+    }
     }
 
     <!-- Modal Dar Baixa -->

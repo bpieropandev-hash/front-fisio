@@ -1,6 +1,78 @@
     <p-toast />
     <p-confirmdialog />
 
+    @if (isTablet()) {
+      <div class="pac-mobile">
+        <div class="pac-mobile__busca">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="termoPesquisa"
+            placeholder="Buscar paciente…"
+            class="pac-mobile__busca-input"
+          />
+        </div>
+
+        <div class="pac-mobile__pills">
+          <button
+            type="button"
+            class="pac-mobile__pill"
+            [class.pac-mobile__pill--ativo]="filtroPillMobile() === 'todos'"
+            (click)="selecionarPillMobile('todos')"
+          >
+            Todos · {{ totalAtivos() }}
+          </button>
+          <button
+            type="button"
+            class="pac-mobile__pill"
+            [class.pac-mobile__pill--ativo]="filtroPillMobile() === 'tratamento'"
+            (click)="selecionarPillMobile('tratamento')"
+          >
+            Em tratamento
+          </button>
+          <button
+            type="button"
+            class="pac-mobile__pill"
+            [class.pac-mobile__pill--ativo]="filtroPillMobile() === 'inativos'"
+            (click)="selecionarPillMobile('inativos')"
+          >
+            Inativos
+          </button>
+        </div>
+
+        <div class="pac-mobile__lista-wrap">
+          @if (carregando()) {
+            <div class="pac-mobile__vazio">Carregando…</div>
+          } @else if (pacientesMobile().length === 0) {
+            <div class="pac-mobile__vazio">Nenhum paciente encontrado.</div>
+          } @else {
+            @for (grupo of pacientesAgrupados(); track grupo.letra) {
+              <div class="pac-mobile__grupo-letra">{{ grupo.letra }}</div>
+              <div class="pac-mobile__grupo-lista">
+                @for (paciente of grupo.pacientes; track paciente.id) {
+                  <div class="pac-mobile__item" (click)="abrirModalEdicao(paciente)">
+                    <div class="pac-mobile__avatar" [class.pac-mobile__avatar--destaque]="proximosPorPaciente().has(paciente.id)">
+                      {{ obterIniciais(paciente.nome) }}
+                    </div>
+                    <div class="pac-mobile__item-info">
+                      <div class="pac-mobile__item-nome">{{ paciente.nome }}</div>
+                      <div class="pac-mobile__item-proximo">{{ rotuloProximoAtendimento(paciente.id) }}</div>
+                    </div>
+                    <i class="pi pi-chevron-right pac-mobile__chevron"></i>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <button type="button" class="pac-mobile__fab" (click)="abrirModalNovoPaciente()" aria-label="Novo paciente">
+          <i class="pi pi-plus"></i>
+        </button>
+      </div>
+    }
+
+    @if (!isTablet()) {
     <div class="page-header">
       <h2>Pacientes</h2>
       <p-button
@@ -182,6 +254,7 @@
         </ng-template>
       </p-table>
     }
+    }
 
     <!-- Modal Criar/Editar Paciente -->
     <p-dialog
@@ -361,6 +434,35 @@
             styleClass="full-width"
           ></textarea>
         </div>
+
+        @if (isTablet() && pacienteEmEdicao) {
+          <div class="pac-mobile__modal-acoes">
+            <p-button
+              icon="pi pi-file-pdf"
+              label="Prontuário PDF"
+              (onClick)="baixarProntuario(pacienteEmEdicao.id, pacienteEmEdicao.nome)"
+              severity="secondary"
+              [outlined]="true"
+            />
+            @if (pacienteEmEdicao.ativo !== false) {
+              <p-button
+                icon="pi pi-user-minus"
+                label="Inativar paciente"
+                (onClick)="confirmarInativacao(pacienteEmEdicao)"
+                severity="danger"
+                [outlined]="true"
+              />
+            } @else {
+              <p-button
+                icon="pi pi-user-plus"
+                label="Reativar paciente"
+                (onClick)="reativarPaciente(pacienteEmEdicao)"
+                severity="success"
+                [outlined]="true"
+              />
+            }
+          </div>
+        }
 
         <div class="dialog-footer">
           <p-button
