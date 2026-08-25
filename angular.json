@@ -27,7 +27,8 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/manifest.webmanifest"
             ],
             "styles": [
               "primeicons/primeicons.css",
@@ -46,7 +47,8 @@
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
-              "extractLicenses": true
+              "extractLicenses": true,
+              "serviceWorker": "src/ngsw-config.json"
             },
             "development": {
               "optimization": false,

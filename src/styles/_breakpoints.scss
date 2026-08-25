@@ -27,3 +27,11 @@ $breakpoint-nav-collapse: 960px; // menubar do PrimeNG colapsa (breakpoint nativ
     @content;
   }
 }
+
+// Altura da bottom nav (spec 10) sem contar a faixa do home indicator do iOS —
+// usar como padding-bottom de conteúdo scrollável que termina atrás da nav.
+$bottom-nav-height: 56px;
+
+@mixin safe-area-bottom($extra: 0px) {
+  padding-bottom: calc(#{$extra} + env(safe-area-inset-bottom));
+}

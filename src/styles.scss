@@ -26,6 +26,11 @@
   --accent-color-light: #90f7ec;
   --font-display: 'Sora', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-body: 'Work Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* Shell mobile (spec 10) — --accent-ink é a mesma cor de hover, reaproveitada
+     como texto/ícone sobre fundo claro (contraste AA que o accent puro não tem) */
+  --accent-ink: var(--accent-color-hover);
+  --accent-soft: color-mix(in srgb, var(--accent-color) 14%, transparent);
 }
 
 /* Modo escuro */

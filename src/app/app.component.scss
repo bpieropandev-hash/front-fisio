@@ -1,3 +1,5 @@
+@use '../styles/breakpoints' as bp;
+
 :host {
   display: block;
 }
@@ -8,6 +10,42 @@
 
 .main-content {
   padding: 2.5rem;
+}
+
+// Shell mobile (spec 10) — header enxuto + bottom nav, ativo em isMobileShell() (≤768px)
+.mobile-header {
+  padding: max(env(safe-area-inset-top), 12px) 20px 12px;
+  background: var(--bg-secondary);
+}
+
+.mobile-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-header__title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.mobile-header__avatar {
+  cursor: pointer;
+
+  .avatar-foto,
+  .avatar-placeholder {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.main-content--mobile-shell {
+  padding: 0 20px;
+  @include bp.safe-area-bottom(bp.$bottom-nav-height + 16px);
 }
 
 .avatar-trigger {

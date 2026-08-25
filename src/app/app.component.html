@@ -1,4 +1,4 @@
-@if (authService.isAuthenticated()) {
+@if (authService.isAuthenticated() && !isMobileShell()) {
   <div class="top-shell">
     <p-menubar [model]="menuItems">
       <ng-template pTemplate="end">
@@ -16,6 +16,28 @@
     </p-menubar>
   </div>
 }
-<main class="main-content">
+
+@if (isMobileShell()) {
+  <header class="mobile-header">
+    <div class="mobile-header__row">
+      <div class="mobile-header__title">{{ currentRouteTitle() }}</div>
+      <div class="mobile-header__avatar" (click)="avatarMenu.toggle($event)">
+        @if (usuarioAtual()?.fotoBase64) {
+          <img [src]="usuarioAtual()?.fotoBase64" alt="Foto de perfil" class="avatar-foto" />
+        } @else {
+          <div class="avatar-placeholder">{{ (usuarioAtual()?.nome || '?').charAt(0).toUpperCase() }}</div>
+        }
+      </div>
+    </div>
+    <p-menu #avatarMenu [model]="avatarMenuItems" [popup]="true" [appendTo]="'body'" />
+  </header>
+}
+
+<main class="main-content" [class.main-content--mobile-shell]="isMobileShell()">
   <router-outlet />
 </main>
+
+@if (isMobileShell()) {
+  <app-bottom-nav (abrirMais)="maisSheetAberto.set(true)" />
+  <app-mais-sheet [aberto]="maisSheetAberto()" (fechar)="maisSheetAberto.set(false)" />
+}
