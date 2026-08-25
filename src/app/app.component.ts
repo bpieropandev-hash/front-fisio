@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 
 import { RouterOutlet, NavigationEnd } from '@angular/router';
+import { Location } from '@angular/common';
 import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -28,6 +29,9 @@ const ROUTE_TITLES: { prefix: string; title: string }[] = [
   { prefix: '/perfil', title: 'Perfil' }
 ];
 
+/** Rotas fora da bottom nav (só chegam via "Mais") — header mobile vira "subtela": voltar + título, sem avatar */
+const ROTAS_SECUNDARIAS_MOBILE = ['/servicos', '/relatorios', '/perfil'];
+
 @Component({
     selector: 'app-root',
     imports: [RouterOutlet, MenubarModule, ButtonModule, MenuModule, BottomNavComponent, MaisSheetComponent],
@@ -50,6 +54,15 @@ export class AppComponent {
     const url = this.currentUrl();
     return ROUTE_TITLES.find(r => url.startsWith(r.prefix))?.title ?? 'Physio Manager';
   });
+
+  isRotaSecundariaMobile = computed(() => {
+    const url = this.currentUrl();
+    return ROTAS_SECUNDARIAS_MOBILE.some(prefix => url.startsWith(prefix));
+  });
+
+  voltar(): void {
+    this.location.back();
+  }
 
   avatarMenuItems: MenuItem[] = [
     {
@@ -119,7 +132,8 @@ export class AppComponent {
     public breakpointService: BreakpointService,
     private accentThemeService: AccentThemeService,
     private usuarioService: UsuarioService,
-    private router: Router
+    private router: Router,
+    private location: Location
   ) {
     this.currentUrl = toSignal(
       this.router.events.pipe(

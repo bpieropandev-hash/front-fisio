@@ -24,11 +24,36 @@
   justify-content: space-between;
 }
 
+.mobile-header__row--subtela {
+  justify-content: flex-start;
+  gap: 2px;
+}
+
 .mobile-header__title {
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
+}
+
+.mobile-header__title--subtela {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.mobile-header__voltar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-left: -12px;
+  border: none;
+  background: none;
+  color: var(--accent-ink);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
 }
 
 .mobile-header__avatar {

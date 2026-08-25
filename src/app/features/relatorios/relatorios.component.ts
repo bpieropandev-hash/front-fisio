@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -10,6 +10,7 @@ import { ToastModule } from 'primeng/toast';
 import { RelatorioService } from '../../core/services/relatorio.service';
 import { ServicoService } from '../../core/services/servico.service';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
+import { BreakpointService } from '../../core/services/breakpoint.service';
 
 @Component({
     selector: 'app-relatorios',
@@ -26,15 +27,40 @@ import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
     styleUrls: ['./relatorios.component.scss']
 })
 export class RelatoriosComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isTablet = this.breakpointService.isTablet;
+
   servicos = signal<ServicoResponseDTO[]>([]);
   gerando = signal(false);
   formSubmetido = false;
+  periodoPillAtivo = signal<'mes' | '30dias' | 'ano' | null>(null);
 
   filtros = {
     dataInicio: null as Date | null,
     dataFim: null as Date | null,
     servicoIds: [] as number[]
   };
+
+  /** Atalhos de período (spec 10) — só preenchem as datas, sem inventar métricas que o backend não calcula */
+  selecionarPeriodo(periodo: 'mes' | '30dias' | 'ano'): void {
+    this.periodoPillAtivo.set(periodo);
+    const hoje = new Date();
+    let inicio: Date;
+    if (periodo === 'mes') {
+      inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    } else if (periodo === '30dias') {
+      inicio = new Date(hoje);
+      inicio.setDate(inicio.getDate() - 30);
+    } else {
+      inicio = new Date(hoje.getFullYear(), 0, 1);
+    }
+    this.filtros.dataInicio = inicio;
+    this.filtros.dataFim = hoje;
+  }
+
+  selecionarTodosServicos(): void {
+    this.filtros.servicoIds = this.servicos().map(s => s.id);
+  }
 
   constructor(
     private relatorioService: RelatorioService,

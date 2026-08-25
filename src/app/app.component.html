@@ -19,16 +19,25 @@
 
 @if (isMobileShell()) {
   <header class="mobile-header">
-    <div class="mobile-header__row">
-      <div class="mobile-header__title">{{ currentRouteTitle() }}</div>
-      <div class="mobile-header__avatar" (click)="avatarMenu.toggle($event)">
-        @if (usuarioAtual()?.fotoBase64) {
-          <img [src]="usuarioAtual()?.fotoBase64" alt="Foto de perfil" class="avatar-foto" />
-        } @else {
-          <div class="avatar-placeholder">{{ (usuarioAtual()?.nome || '?').charAt(0).toUpperCase() }}</div>
-        }
+    @if (isRotaSecundariaMobile()) {
+      <div class="mobile-header__row mobile-header__row--subtela">
+        <button type="button" class="mobile-header__voltar" (click)="voltar()" aria-label="Voltar">
+          <i class="pi pi-chevron-left"></i>
+        </button>
+        <div class="mobile-header__title mobile-header__title--subtela">{{ currentRouteTitle() }}</div>
       </div>
-    </div>
+    } @else {
+      <div class="mobile-header__row">
+        <div class="mobile-header__title">{{ currentRouteTitle() }}</div>
+        <div class="mobile-header__avatar" (click)="avatarMenu.toggle($event)">
+          @if (usuarioAtual()?.fotoBase64) {
+            <img [src]="usuarioAtual()?.fotoBase64" alt="Foto de perfil" class="avatar-foto" />
+          } @else {
+            <div class="avatar-placeholder">{{ (usuarioAtual()?.nome || '?').charAt(0).toUpperCase() }}</div>
+          }
+        </div>
+      </div>
+    }
     <p-menu #avatarMenu [model]="avatarMenuItems" [popup]="true" [appendTo]="'body'" />
   </header>
 }

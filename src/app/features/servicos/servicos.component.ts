@@ -49,6 +49,9 @@ type ServicoForm = Omit<ServicoCreateRequestDTO, 'valorBase'> & { valorBase: num
 export class ServicosComponent implements OnInit {
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
+  isTablet = this.breakpointService.isTablet;
+
+  totalAtivosServicos = () => this.servicos().filter(s => s.ativo !== false).length;
 
   servicos = signal<ServicoResponseDTO[]>([]);
   carregando = signal(false);

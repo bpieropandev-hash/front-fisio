@@ -153,11 +153,12 @@
       }
 
       .dialog-footer {
-        flex-direction: column-reverse;
+        flex-direction: row;
+        gap: 10px;
       }
 
       .dialog-footer .p-button {
-        width: 100%;
+        flex: 1;
       }
 
       ::ng-deep .p-datatable {

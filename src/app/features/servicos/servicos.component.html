@@ -1,6 +1,38 @@
     <p-toast />
     <p-confirmdialog />
 
+    @if (isTablet()) {
+      <div class="serv-mobile">
+        <div class="serv-mobile__resumo">{{ servicos().length }} serviço{{ servicos().length === 1 ? '' : 's' }} · {{ totalAtivosServicos() }} ativo{{ totalAtivosServicos() === 1 ? '' : 's' }}</div>
+
+        @if (carregando()) {
+          <div class="serv-mobile__vazio">Carregando…</div>
+        } @else if (servicos().length === 0) {
+          <div class="serv-mobile__vazio">Nenhum serviço cadastrado.</div>
+        } @else {
+          <div class="serv-mobile__lista">
+            @for (servico of servicos(); track servico.id) {
+              <div class="serv-mobile__item" [class.serv-mobile__item--inativo]="!servico.ativo" (click)="editarServico(servico)">
+                <div class="serv-mobile__info">
+                  <div class="serv-mobile__nome">{{ servico.nome }}</div>
+                  <div class="serv-mobile__meta">{{ servico.valorBase | currency: 'BRL' }} · Repasse {{ servico.pctProfissional }}%</div>
+                </div>
+                <span class="status-pill" [class]="servico.ativo ? 'status-pill--ok' : 'status-pill--neutral'">{{ servico.ativo ? 'Ativo' : 'Inativo' }}</span>
+                <button type="button" class="serv-mobile__desativar" (click)="$event.stopPropagation(); desativarServico(servico)" aria-label="Desativar serviço">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <button type="button" class="serv-mobile__fab" (click)="abrirModalNovo()" aria-label="Novo serviço">
+          <i class="pi pi-plus"></i>
+        </button>
+      </div>
+    }
+
+    @if (!isTablet()) {
     <div class="page-header">
       <div>
         <p class="eyebrow">Catálogo</p>
@@ -139,6 +171,7 @@
           </tr>
         </ng-template>
       </p-table>
+    }
     }
 
     <p-dialog
