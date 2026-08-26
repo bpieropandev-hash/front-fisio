@@ -121,7 +121,12 @@
     }
 
     .form-group.full-width {
-      flex: 1 1 100%;
+      flex: 2 1 0%;
+    }
+
+    .form-group.cep-field {
+      flex: 0 0 160px;
+      min-width: 160px;
     }
 
     .form-group label {
@@ -174,6 +179,11 @@
 
       .form-group {
         width: 100%;
+      }
+
+      .form-group.cep-field {
+        flex: 1;
+        min-width: 0;
       }
 
       .dialog-footer {

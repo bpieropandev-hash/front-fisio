@@ -57,7 +57,12 @@
       }
     </div>
 
-    @if (isMobile()) {
+    @if (isTablet()) {
+      <div class="fin-mobile__tabs">
+        <a routerLink="/financeiro/cobrancas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Cobranças</a>
+        <a routerLink="/financeiro/assinaturas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Assinaturas</a>
+      </div>
+
       <div class="mobile-card-list">
         @if (carregando()) {
           <div class="mobile-card-empty">

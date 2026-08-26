@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -28,6 +28,8 @@ import { BreakpointService } from '../../../core/services/breakpoint.service';
     imports: [
         CommonModule,
         FormsModule,
+        RouterLink,
+        RouterLinkActive,
         TableModule,
         ButtonModule,
         DialogModule,
