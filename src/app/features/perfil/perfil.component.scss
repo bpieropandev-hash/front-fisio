@@ -5,6 +5,85 @@
       margin-bottom: 20px;
     }
 
+    /* Shell mobile (spec 10) */
+    .perfil-mobile {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-bottom: 20px;
+    }
+
+    .perfil-mobile__avatar-wrap {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      margin: 4px auto 0;
+    }
+
+    .perfil-mobile__avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--bg-secondary);
+      border: 3px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      font-size: 2.5rem;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .perfil-mobile__avatar-editar {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-secondary);
+      background: var(--accent-color);
+      color: #06222c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: default;
+      }
+    }
+
+    .perfil-mobile__nome {
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .perfil-mobile__section {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px 16px;
+    }
+
+    .perfil-mobile__section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
     .loading-state {
       display: flex;
       align-items: center;

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -13,6 +13,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { AccentThemeService } from '../../core/services/accent-theme.service';
 import { UsuarioMeResponseDTO, FonteTema, TamanhoFonte } from '../../core/interfaces/usuario.interface';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+import { BreakpointService } from '../../core/services/breakpoint.service';
 
 function senhasIguaisValidator(control: AbstractControl): ValidationErrors | null {
   const novaSenha = control.get('novaSenha')?.value;
@@ -28,6 +29,9 @@ function senhasIguaisValidator(control: AbstractControl): ValidationErrors | nul
     styleUrls: ['./perfil.component.scss']
 })
 export class PerfilComponent implements OnInit {
+  private readonly breakpointService = inject(BreakpointService);
+  isTablet = this.breakpointService.isTablet;
+
   carregando = signal(true);
   salvandoPerfil = signal(false);
   salvandoFoto = signal(false);
