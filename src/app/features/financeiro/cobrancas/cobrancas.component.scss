@@ -223,6 +223,7 @@
 .fin-mobile__resumo {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
+  border-radius: 16px;
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -245,6 +246,7 @@
 .fin-mobile__resumo-card {
   flex: 1;
   background: var(--bg-tertiary);
+  border-radius: 14px;
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -285,6 +287,7 @@
 
 .fin-mobile__gerar {
   min-height: 44px;
+  border-radius: 12px;
   border: 1px dashed var(--border-color);
   background: none;
   color: var(--text-secondary);
@@ -347,11 +350,13 @@
   font-size: 14px;
   background: var(--bg-primary);
   border: 1px dashed var(--border-color);
+  border-radius: 14px;
 }
 
 .fin-mobile__lista {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
+  border-radius: 16px;
   overflow: hidden;
 }
 

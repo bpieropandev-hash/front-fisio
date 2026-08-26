@@ -164,11 +164,13 @@
   font-size: 14px;
   background: var(--bg-primary);
   border: 1px dashed var(--border-color);
+  border-radius: 14px;
 }
 
 .serv-mobile__lista {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
+  border-radius: 16px;
   overflow: hidden;
   @include bp.safe-area-bottom(80px);
 }

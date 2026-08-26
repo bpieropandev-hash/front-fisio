@@ -30,6 +30,7 @@
     .mobile-dashboard__stats {
       background: var(--bg-primary);
       border: 1px solid var(--border-color);
+      border-radius: 16px;
       padding: 16px 18px;
       display: flex;
       flex-direction: column;
@@ -124,6 +125,7 @@
     .mobile-dashboard__proximos-list {
       background: var(--bg-primary);
       border: 1px solid var(--border-color);
+      border-radius: 16px;
       overflow: hidden;
     }
 
@@ -179,6 +181,7 @@
     .mobile-dashboard__acao {
       flex: 1;
       min-height: 52px;
+      border-radius: 14px;
       background: var(--bg-primary);
       border: 1px solid var(--border-color);
       color: var(--text-primary);

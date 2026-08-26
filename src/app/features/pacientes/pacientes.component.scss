@@ -223,6 +223,7 @@
 
 .pac-mobile__busca {
   height: 48px;
+  border-radius: 12px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   display: flex;
@@ -285,6 +286,7 @@
   font-size: 14px;
   background: var(--bg-primary);
   border: 1px dashed var(--border-color);
+  border-radius: 14px;
 }
 
 .pac-mobile__grupo-letra {
@@ -298,6 +300,7 @@
 .pac-mobile__grupo-lista {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
+  border-radius: 14px;
   overflow: hidden;
   margin-bottom: 6px;
 }
