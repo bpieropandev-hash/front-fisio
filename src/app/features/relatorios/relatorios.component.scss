@@ -161,6 +161,10 @@
       .form-actions .p-button {
         flex: 1;
       }
+
+      .relatorio-card {
+        border-radius: 0;
+      }
     }
 
     @media (max-width: 480px) {

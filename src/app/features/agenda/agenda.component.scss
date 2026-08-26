@@ -572,7 +572,6 @@
 .agenda-mobile__dia {
   flex: 1;
   min-height: 62px;
-  border-radius: 14px;
   border: none;
   background: none;
   cursor: pointer;
@@ -634,7 +633,6 @@
   font-size: 14px;
   background: var(--bg-primary);
   border: 1px dashed var(--border-color);
-  border-radius: 14px;
 }
 
 .agenda-mobile__lista {
@@ -664,7 +662,6 @@
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--accent-color);
-  border-radius: 14px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
