@@ -1,6 +1,114 @@
     <p-toast />
     <p-confirmDialog />
-    
+
+    @if (isTablet()) {
+      <div class="fin-mobile">
+        <div class="fin-mobile__tabs">
+          <a routerLink="/financeiro/cobrancas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Cobranças</a>
+          <a routerLink="/financeiro/assinaturas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Assinaturas</a>
+        </div>
+
+        <div class="fin-mobile__resumo">
+          <div class="fin-mobile__resumo-label">Resumo</div>
+          <div class="fin-mobile__resumo-cards">
+            <div class="fin-mobile__resumo-card">
+              <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--ok"><i class="pi pi-check-circle"></i></div>
+              <div class="fin-mobile__resumo-texto">Ativas</div>
+              <div class="fin-mobile__resumo-valor">{{ totalAssinaturasAtivas() }}</div>
+            </div>
+            <div class="fin-mobile__resumo-card">
+              <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--ok"><i class="pi pi-wallet"></i></div>
+              <div class="fin-mobile__resumo-texto">Receita mensal</div>
+              <div class="fin-mobile__resumo-valor">{{ receitaMensalAtiva() | currency: 'BRL' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fin-mobile__filtros">
+          @for (opcao of filtroStatusOptions; track opcao.value) {
+            <button
+              type="button"
+              class="fin-mobile__filtro-pill"
+              [class.fin-mobile__filtro-pill--ativo]="filtroStatus() === opcao.value"
+              (click)="aoMudarFiltroStatus(opcao.value)"
+            >
+              {{ opcao.label }}
+            </button>
+          }
+        </div>
+
+        <div class="fin-mobile__section">
+          <div class="fin-mobile__section-title">Assinaturas</div>
+
+          @if (carregando()) {
+            <div class="fin-mobile__vazio">Carregando…</div>
+          } @else if (assinaturasFiltradas().length === 0) {
+            <div class="fin-mobile__vazio">Nenhuma assinatura encontrada.</div>
+          } @else {
+            <div class="fin-mobile__lista">
+              @for (assinatura of assinaturasFiltradas(); track assinatura.id) {
+                <div class="fin-mobile__item">
+                  <div class="fin-mobile__avatar">{{ (assinatura.pacienteNome || '?').charAt(0).toUpperCase() }}</div>
+                  <div class="fin-mobile__item-info">
+                    <div class="fin-mobile__item-nome">{{ assinatura.pacienteNome }}</div>
+                    <div class="fin-mobile__item-meta">{{ assinatura.servicoNome }} · vence dia {{ assinatura.diaVencimento }}</div>
+                  </div>
+                  <div class="fin-mobile__item-end">
+                    <div class="fin-mobile__item-valores">
+                      <div class="fin-mobile__item-valor">{{ assinatura.valorMensal | currency: 'BRL' }}</div>
+                      <span class="status-pill" [class.status-pill--ok]="assinatura.ativo" [class.status-pill--err]="!assinatura.ativo">
+                        {{ assinatura.ativo ? 'Ativa' : 'Inativa' }}
+                      </span>
+                    </div>
+                    <button type="button" class="fin-mobile__kebab" (click)="abrirAcoes(assinatura)" aria-label="Ações">
+                      <i class="pi pi-ellipsis-v"></i>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <button type="button" class="fin-mobile__fab" (click)="abrirModalNovaAssinatura()" aria-label="Nova assinatura">
+          <i class="pi pi-plus"></i>
+        </button>
+
+        @if (assinaturaAcaoAberta(); as acao) {
+          <div class="acao-sheet__backdrop" (click)="fecharAcoes()"></div>
+          <div class="acao-sheet">
+            <div class="acao-sheet__grabber-row"><div class="acao-sheet__grabber"></div></div>
+            <div class="acao-sheet__label">{{ acao.pacienteNome }}</div>
+            <div class="acao-sheet__list">
+              <button type="button" class="acao-sheet__item" (click)="abrirModalEditar(acao); fecharAcoes()">
+                <div class="acao-sheet__item-icone"><i class="pi pi-pencil"></i></div>
+                <div class="acao-sheet__item-label">Editar assinatura</div>
+              </button>
+              @if (acao.ativo) {
+                <button type="button" class="acao-sheet__item" (click)="abrirModalTrocarPlano(acao); fecharAcoes()">
+                  <div class="acao-sheet__item-icone"><i class="pi pi-sync"></i></div>
+                  <div class="acao-sheet__item-label">Trocar plano</div>
+                </button>
+                <button type="button" class="acao-sheet__item acao-sheet__item--perigo" (click)="confirmarCancelamento(acao); fecharAcoes()">
+                  <div class="acao-sheet__item-icone acao-sheet__item-icone--perigo"><i class="pi pi-times-circle"></i></div>
+                  <div class="acao-sheet__item-label">Cancelar assinatura</div>
+                </button>
+              } @else {
+                <button type="button" class="acao-sheet__item" (click)="confirmarReativacao(acao); fecharAcoes()">
+                  <div class="acao-sheet__item-icone"><i class="pi pi-refresh"></i></div>
+                  <div class="acao-sheet__item-label">Reativar assinatura</div>
+                </button>
+              }
+            </div>
+            <div class="acao-sheet__cancelar-row">
+              <button type="button" class="acao-sheet__cancelar" (click)="fecharAcoes()">Fechar</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (!isTablet()) {
     <div class="page-header">
       <h2>Assinaturas</h2>
       <p-button
@@ -57,75 +165,6 @@
       }
     </div>
 
-    @if (isTablet()) {
-      <div class="fin-mobile__tabs">
-        <a routerLink="/financeiro/cobrancas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Cobranças</a>
-        <a routerLink="/financeiro/assinaturas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Assinaturas</a>
-      </div>
-
-      <div class="mobile-card-list">
-        @if (carregando()) {
-          <div class="mobile-card-empty">
-            <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem"></i>
-            <span>Carregando assinaturas...</span>
-          </div>
-        } @else if (assinaturasFiltradas().length === 0) {
-          <div class="mobile-card-empty">
-            <i class="pi pi-sync" style="font-size: 1.5rem"></i>
-            <span>Nenhuma assinatura encontrada</span>
-          </div>
-        } @else {
-          @for (assinatura of assinaturasFiltradas(); track assinatura.id) {
-            <div class="mobile-card">
-              <div class="mobile-card-header">
-                <div>
-                  <div class="mobile-card-title">{{ assinatura.pacienteNome }}</div>
-                  <div class="mobile-card-subtitle">{{ assinatura.servicoNome }}</div>
-                </div>
-                <p-tag
-                  [value]="assinatura.ativo ? 'Ativa' : 'Inativa'"
-                  [severity]="assinatura.ativo ? 'success' : 'danger'"
-                />
-              </div>
-              <div class="mobile-card-body">
-                <span><strong>Valor mensal:</strong> {{ assinatura.valorMensal | currency: 'BRL' }}</span>
-                <span><strong>Vencimento:</strong> dia {{ assinatura.diaVencimento }}</span>
-                <span><strong>Início:</strong> {{ assinatura.dataInicio | date: 'dd/MM/yyyy' }}</span>
-              </div>
-              <div class="mobile-card-actions">
-                @if (assinatura.ativo) {
-                  <p-button
-                    icon="pi pi-pencil"
-                    label="Editar"
-                    severity="secondary"
-                    (onClick)="abrirModalEditar(assinatura)"
-                  />
-                  <p-button
-                    icon="pi pi-sync"
-                    label="Trocar plano"
-                    severity="info"
-                    (onClick)="abrirModalTrocarPlano(assinatura)"
-                  />
-                  <p-button
-                    icon="pi pi-times"
-                    label="Cancelar"
-                    severity="danger"
-                    (onClick)="confirmarCancelamento(assinatura)"
-                  />
-                } @else {
-                  <p-button
-                    icon="pi pi-refresh"
-                    label="Reativar"
-                    severity="success"
-                    (onClick)="confirmarReativacao(assinatura)"
-                  />
-                }
-              </div>
-            </div>
-          }
-        }
-      </div>
-    } @else {
       <p-table
         [value]="assinaturasFiltradas()"
         [paginator]="true"

@@ -79,7 +79,7 @@ export class AssinaturasComponent implements OnInit {
   filtroStatus = signal<'todas' | 'ativas' | 'canceladas'>('todas');
   filtroServicoId = signal<number>(0);
 
-  filtroStatusOptions = [
+  filtroStatusOptions: { label: string; value: 'todas' | 'ativas' | 'canceladas' }[] = [
     { label: 'Todas', value: 'todas' },
     { label: 'Ativas', value: 'ativas' },
     { label: 'Canceladas', value: 'canceladas' }
@@ -118,6 +118,15 @@ export class AssinaturasComponent implements OnInit {
     });
   });
 
+  assinaturaAcaoAberta = signal<AssinaturaResponseDTO | null>(null);
+
+  totalAssinaturasAtivas = computed(() => this.assinaturas().filter(a => a.ativo).length);
+  receitaMensalAtiva = computed(() =>
+    this.assinaturas()
+      .filter(a => a.ativo)
+      .reduce((soma, a) => soma + (a.valorMensal || 0), 0)
+  );
+
   pacienteIdsSelecionados: number[] = [];
   novaAssinatura: Partial<AssinaturaCreateRequestDTO> = {
     servicoId: 0,
@@ -149,6 +158,14 @@ export class AssinaturasComponent implements OnInit {
   aoMudarFiltroStatus(valor: 'todas' | 'ativas' | 'canceladas'): void {
     this.filtroStatus.set(valor);
     this.atualizarQueryParams();
+  }
+
+  abrirAcoes(assinatura: AssinaturaResponseDTO): void {
+    this.assinaturaAcaoAberta.set(assinatura);
+  }
+
+  fecharAcoes(): void {
+    this.assinaturaAcaoAberta.set(null);
   }
 
   aoMudarFiltroServico(valor: number | null): void {
