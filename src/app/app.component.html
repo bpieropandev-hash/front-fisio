@@ -1,24 +1,52 @@
-@if (authService.isAuthenticated()) {
+@if (authService.isAuthenticated() && !isMobileShell()) {
   <div class="top-shell">
     <p-menubar [model]="menuItems">
       <ng-template pTemplate="end">
-        <p-button
-          [icon]="themeService.theme() === 'dark' ? 'pi pi-sun' : 'pi pi-moon'"
-          [label]="themeService.theme() === 'dark' ? 'Claro' : 'Escuro'"
-          (onClick)="themeService.toggleTheme()"
-          styleClass="p-button-text"
-          [title]="themeService.theme() === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'"
-        />
-        <p-button
-          label="Sair"
-          icon="pi pi-sign-out"
-          (onClick)="logout()"
-          styleClass="p-button-text"
-        />
+        <div class="avatar-trigger" (click)="avatarMenu.toggle($event)">
+          @if (usuarioAtual()?.fotoBase64) {
+            <img [src]="usuarioAtual()?.fotoBase64" alt="Foto de perfil" class="avatar-foto" />
+          } @else {
+            <div class="avatar-placeholder">
+              <i class="pi pi-user"></i>
+            </div>
+          }
+        </div>
+        <p-menu #avatarMenu [model]="avatarMenuItems" [popup]="true" [appendTo]="'body'" />
       </ng-template>
     </p-menubar>
   </div>
 }
-<main class="main-content">
+
+@if (isMobileShell()) {
+  <header class="mobile-header">
+    @if (isRotaSecundariaMobile()) {
+      <div class="mobile-header__row mobile-header__row--subtela">
+        <button type="button" class="mobile-header__voltar" (click)="voltar()" aria-label="Voltar">
+          <i class="pi pi-chevron-left"></i>
+        </button>
+        <div class="mobile-header__title mobile-header__title--subtela">{{ currentRouteTitle() }}</div>
+      </div>
+    } @else {
+      <div class="mobile-header__row">
+        <div class="mobile-header__title">{{ currentRouteTitle() }}</div>
+        <div class="mobile-header__avatar" (click)="avatarMenu.toggle($event)">
+          @if (usuarioAtual()?.fotoBase64) {
+            <img [src]="usuarioAtual()?.fotoBase64" alt="Foto de perfil" class="avatar-foto" />
+          } @else {
+            <div class="avatar-placeholder">{{ (usuarioAtual()?.nome || '?').charAt(0).toUpperCase() }}</div>
+          }
+        </div>
+      </div>
+    }
+    <p-menu #avatarMenu [model]="avatarMenuItems" [popup]="true" [appendTo]="'body'" />
+  </header>
+}
+
+<main class="main-content" [class.main-content--mobile-shell]="isMobileShell()">
   <router-outlet />
 </main>
+
+@if (isMobileShell()) {
+  <app-bottom-nav (abrirMais)="maisSheetAberto.set(true)" />
+  <app-mais-sheet [aberto]="maisSheetAberto()" (fechar)="maisSheetAberto.set(false)" />
+}

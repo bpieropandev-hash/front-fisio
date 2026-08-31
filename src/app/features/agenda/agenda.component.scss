@@ -1,3 +1,5 @@
+    @use '../../../styles/breakpoints' as bp;
+
     .agenda-header {
       display: flex;
       justify-content: space-between;
@@ -125,6 +127,86 @@
       justify-content: flex-end;
       gap: 10px;
       margin-top: 20px;
+    }
+
+    .lote-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 24px;
+      justify-content: center;
+      color: var(--text-secondary);
+    }
+
+    .lote-vazio {
+      padding: 24px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .lote-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .lote-itens {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    @include bp.tablet {
+      /* Evita scroll aninhado: o p-dialog (95vh) já é a única região de scroll em mobile */
+      .lote-itens {
+        max-height: none;
+        overflow-y: visible;
+      }
+    }
+
+    .mobile-view-switch {
+      margin-top: 1rem;
+    }
+
+    .mobile-view-switch ::ng-deep .p-togglebutton {
+      min-height: 44px;
+    }
+
+    .lote-item {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lote-item-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lote-tag-mensalista {
+      font-size: 0.75rem;
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .lote-pagamento-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .lote-pagamento-row .p-select {
+      flex: 1;
+      min-width: 160px;
     }
 
     .text-muted {
@@ -423,11 +505,12 @@
       }
 
       .dialog-footer {
-        flex-direction: column-reverse;
+        flex-direction: row;
+        gap: 10px;
       }
 
       .dialog-footer .p-button {
-        width: 100%;
+        flex: 1;
       }
     }
 
@@ -450,3 +533,194 @@
         font-size: 0.75rem !important;
       }
     }
+
+/* Shell mobile (spec 10) — semana + lista do dia, substitui o FullCalendar em telas estreitas */
+.agenda-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+.agenda-mobile__semana-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.agenda-mobile__semana-seta {
+  flex: none;
+  width: 32px;
+  height: 62px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.agenda-mobile__semana-strip {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.agenda-mobile__dia {
+  flex: 1;
+  min-height: 62px;
+  border-radius: 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.agenda-mobile__dia-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.agenda-mobile__dia-numero {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.agenda-mobile__dia--selecionado {
+  background: var(--accent-color);
+
+  .agenda-mobile__dia-label {
+    color: #06222c;
+  }
+
+  .agenda-mobile__dia-numero {
+    color: #06222c;
+    font-weight: 700;
+  }
+}
+
+.agenda-mobile__lista-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agenda-mobile__lista-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.agenda-mobile__lista-titulo {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.agenda-mobile__vazio {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: var(--bg-primary);
+  border: 1px dashed var(--border-color);
+  border-radius: 14px;
+}
+
+.agenda-mobile__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agenda-mobile__item {
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.agenda-mobile__item-hora {
+  width: 46px;
+  flex: none;
+  padding-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.agenda-mobile__item-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-color);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agenda-mobile__item.status-cancelado .agenda-mobile__item-card {
+  border-left-color: var(--status-err-fg);
+}
+
+.agenda-mobile__item.status-falta .agenda-mobile__item-card {
+  border-left-color: var(--status-warn-fg);
+}
+
+.agenda-mobile__item.status-concluido .agenda-mobile__item-card {
+  border-left-color: var(--border-color);
+  background: var(--bg-tertiary);
+  opacity: 0.85;
+}
+
+.agenda-mobile__item-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.agenda-mobile__item-nome {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-mobile__item-servico {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.agenda-mobile__fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(bp.$bottom-nav-height + 20px + env(safe-area-inset-bottom));
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent-color);
+  color: #06222c;
+  box-shadow: 0 8px 20px rgba(11, 127, 163, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 30;
+}

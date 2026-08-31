@@ -1,0 +1,38 @@
+@if (aberto()) {
+  <div class="mais-sheet__backdrop" (click)="fechar.emit()"></div>
+  <div class="mais-sheet">
+    <div class="mais-sheet__grabber-row">
+      <span class="mais-sheet__grabber"></span>
+    </div>
+    <div class="mais-sheet__label">Mais</div>
+    <div class="mais-sheet__list">
+      <a routerLink="/servicos" class="mais-sheet__item" (click)="aoNavegar()">
+        <span class="mais-sheet__item-icon"><i class="pi pi-list"></i></span>
+        <span class="mais-sheet__item-label">Serviços</span>
+        <i class="pi pi-chevron-right mais-sheet__chevron"></i>
+      </a>
+      <a routerLink="/relatorios" class="mais-sheet__item" (click)="aoNavegar()">
+        <span class="mais-sheet__item-icon"><i class="pi pi-chart-bar"></i></span>
+        <span class="mais-sheet__item-label">Relatórios</span>
+        <i class="pi pi-chevron-right mais-sheet__chevron"></i>
+      </a>
+      <a routerLink="/perfil" class="mais-sheet__item" (click)="aoNavegar()">
+        <span class="mais-sheet__item-icon"><i class="pi pi-user"></i></span>
+        <span class="mais-sheet__item-label">Perfil</span>
+        <i class="pi pi-chevron-right mais-sheet__chevron"></i>
+      </a>
+      <button type="button" class="mais-sheet__item mais-sheet__item--button" (click)="alternarTema()">
+        <span class="mais-sheet__item-icon"><i class="pi pi-moon"></i></span>
+        <span class="mais-sheet__item-label">Alternar tema</span>
+        <span class="mais-sheet__item-meta">{{ themeService.theme() === 'dark' ? 'Escuro' : 'Claro' }}</span>
+      </button>
+      <button type="button" class="mais-sheet__item mais-sheet__item--button mais-sheet__item--danger" (click)="sair()">
+        <span class="mais-sheet__item-icon mais-sheet__item-icon--danger"><i class="pi pi-sign-out"></i></span>
+        <span class="mais-sheet__item-label">Sair</span>
+      </button>
+    </div>
+    <div class="mais-sheet__cancelar-row">
+      <button type="button" class="mais-sheet__cancelar" (click)="fechar.emit()">Cancelar</button>
+    </div>
+  </div>
+}

@@ -1,3 +1,6 @@
+    @use '../../shared/styles/mobile-card';
+    @use '../../../styles/breakpoints' as bp;
+
     .page-header {
       display: flex;
       justify-content: space-between;
@@ -86,11 +89,12 @@
       }
 
       .dialog-footer {
-        flex-direction: column-reverse;
+        flex-direction: row;
+        gap: 10px;
       }
 
       .dialog-footer .p-button {
-        width: 100%;
+        flex: 1;
       }
 
       ::ng-deep .p-datatable {
@@ -120,3 +124,123 @@
         gap: 0.25rem;
       }
     }
+
+    .reajuste-opcoes {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .reajuste-opcao {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .reajuste-opcao.preservar {
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #e2e8f0;
+    }
+
+/* Shell mobile (spec 10) */
+.serv-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.serv-mobile__resumo {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.serv-mobile__vazio {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: var(--bg-primary);
+  border: 1px dashed var(--border-color);
+  border-radius: 14px;
+}
+
+.serv-mobile__lista {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  @include bp.safe-area-bottom(80px);
+}
+
+.serv-mobile__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 16px;
+  cursor: pointer;
+
+  & + & {
+    border-top: 1px solid var(--border-color);
+  }
+}
+
+.serv-mobile__item--inativo {
+  opacity: 0.65;
+}
+
+.serv-mobile__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.serv-mobile__nome {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.serv-mobile__meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.serv-mobile__desativar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.serv-mobile__fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(bp.$bottom-nav-height + 20px + env(safe-area-inset-bottom));
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent-color);
+  color: #06222c;
+  box-shadow: 0 8px 20px rgba(11, 127, 163, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 30;
+}

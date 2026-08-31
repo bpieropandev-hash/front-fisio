@@ -1,6 +1,78 @@
     <p-toast />
-    
-    <div class="dashboard-header">
+
+    @if (isTablet()) {
+      <div class="mobile-dashboard">
+        <div class="mobile-dashboard__greeting">
+          <div class="mobile-dashboard__hello">Olá{{ nomeUsuario() ? ', ' + nomeUsuario() : '' }}</div>
+          <div class="mobile-dashboard__date">{{ saudacaoData() }}</div>
+        </div>
+
+        <div class="mobile-dashboard__stats">
+          <div class="mobile-dashboard__stats-label">
+            {{ periodoLabel() === 'Mês atual' ? 'Este mês' : periodoLabel() }}
+          </div>
+          @if (carregando()) {
+            <div class="mobile-dashboard__stats-loading">Carregando…</div>
+          } @else {
+            <div class="mobile-dashboard__stats-row">
+              <div class="mobile-dashboard__stat">
+                <div class="mobile-dashboard__stat-value">{{ resumo()?.totalAtendimentos ?? 0 }}</div>
+                <div class="mobile-dashboard__stat-label">Atendimentos</div>
+              </div>
+              <div class="mobile-dashboard__stat-divider"></div>
+              <div class="mobile-dashboard__stat">
+                <div class="mobile-dashboard__stat-value">{{ resumo()?.atendimentosPagamentoPendente ?? 0 }}</div>
+                <div class="mobile-dashboard__stat-label">Pendentes</div>
+              </div>
+              <div class="mobile-dashboard__stat-divider"></div>
+              <div class="mobile-dashboard__stat mobile-dashboard__stat--wide">
+                <div class="mobile-dashboard__stat-value mobile-dashboard__stat-value--money">{{ (resumo()?.faturamentoProfissional ?? 0) | currency: 'BRL' }}</div>
+                <div class="mobile-dashboard__stat-label">Faturamento</div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="mobile-dashboard__section">
+          <div class="mobile-dashboard__section-header">
+            <span class="mobile-dashboard__section-title">Próximos atendimentos</span>
+            <a class="mobile-dashboard__section-link" (click)="irParaAgenda()">Ver agenda</a>
+          </div>
+          @if (carregandoProximos()) {
+            <div class="mobile-dashboard__proximos-loading">Carregando…</div>
+          } @else if (proximosAtendimentos().length === 0) {
+            <div class="mobile-dashboard__proximos-vazio">Nenhum atendimento hoje.</div>
+          } @else {
+            <div class="mobile-dashboard__proximos-list">
+              @for (item of proximosAtendimentos(); track item.hora + item.pacienteNome) {
+                <div class="mobile-dashboard__proximo">
+                  <div class="mobile-dashboard__proximo-hora">{{ item.hora }}</div>
+                  <div class="mobile-dashboard__proximo-info">
+                    <div class="mobile-dashboard__proximo-nome">{{ item.pacienteNome }}</div>
+                    <div class="mobile-dashboard__proximo-servico">{{ item.servicoNome }}</div>
+                  </div>
+                  <span class="status-pill" [class]="obterPillStatus(item.status).cssClass">{{ obterPillStatus(item.status).label }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mobile-dashboard__section">
+          <div class="mobile-dashboard__section-title">Ações rápidas</div>
+          <div class="mobile-dashboard__acoes">
+            <button type="button" class="mobile-dashboard__acao mobile-dashboard__acao--primaria" (click)="irParaAgenda()">
+              <i class="pi pi-plus"></i> Agendamento
+            </button>
+            <button type="button" class="mobile-dashboard__acao" (click)="irParaNovoPaciente()">
+              <i class="pi pi-user-plus"></i> Paciente
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="dashboard-header" [class.dashboard-header--hidden-mobile]="isTablet()">
       <div>
         <h2>Dashboard</h2>
         <p class="subtitle">Visão geral e alertas do mês atual</p>
@@ -74,8 +146,8 @@
         <p-progressSpinner />
       </div>
     } @else {
-      <!-- Cards de Resumo -->
-      <div class="summary-cards">
+      <!-- Cards de Resumo (escondidos no shell mobile — mesmos números já aparecem no cartão de estatísticas do topo) -->
+      <div class="summary-cards" [class.summary-cards--hidden-mobile]="isTablet()">
         <p-card class="summary-card">
           <div class="card-content">
             <div class="card-icon total">
@@ -84,7 +156,7 @@
             <div class="card-info">
               <h3>Total de Atendimentos Concluídos</h3>
               <p class="card-value">{{ resumo()?.totalAtendimentos || 0 }}</p>
-              <small class="card-label">Mês atual</small>
+              <small class="card-label">{{ periodoLabel() }}</small>
             </div>
           </div>
         </p-card>
@@ -97,7 +169,7 @@
             <div class="card-info">
               <h3>Faturamento Profissional</h3>
               <p class="card-value">{{ (resumo()?.faturamentoProfissional || 0) | currency: 'BRL' }}</p>
-              <small class="card-label">Mês atual</small>
+              <small class="card-label">{{ periodoLabel() }}</small>
             </div>
           </div>
         </p-card>
@@ -128,47 +200,73 @@
             </div>
           </ng-template>
           
-          <p-table
-            [value]="resumo()!.alertasPendencia"
-            [tableStyle]="{ 'min-width': '50rem' }"
-            styleClass="p-datatable-striped"
-          >
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Paciente</th>
-                <th>Tipo</th>
-                <th>Descrição</th>
-                <th>Ação</th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-alerta>
-              <tr>
-                <td>
-                  <strong>{{ alerta.nomePaciente }}</strong>
-                </td>
-                <td>
-                  <p-tag
-                    [value]="obterLabelTipoPendencia(alerta.tipoPendencia)"
-                    [severity]="alerta.tipoPendencia === 'ATENDIMENTO_AVULSO' ? 'warn' : 'info'"
-                  />
-                </td>
-                <td>{{ alerta.descricao }}</td>
-                <td>
-                  <p-button
-                    label="Resolver"
-                    icon="pi pi-arrow-right"
-                    (onClick)="resolverAlerta(alerta)"
-                    styleClass="p-button-sm"
-                  />
-                </td>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="empty">
-              <tr>
-                <td colspan="4" class="text-center">Nenhum alerta encontrado</td>
-              </tr>
-            </ng-template>
-          </p-table>
+          @if (isTablet()) {
+            <div class="mobile-card-list">
+              @for (alerta of resumo()!.alertasPendencia; track alerta.descricao + alerta.nomePaciente) {
+                <div class="mobile-card">
+                  <div class="mobile-card-header">
+                    <div class="mobile-card-title">{{ alerta.nomePaciente }}</div>
+                    <p-tag
+                      [value]="obterLabelTipoPendencia(alerta.tipoPendencia)"
+                      [severity]="alerta.tipoPendencia === 'ATENDIMENTO_AVULSO' ? 'warn' : 'info'"
+                    />
+                  </div>
+                  <div class="mobile-card-body">
+                    <span>{{ alerta.descricao }}</span>
+                  </div>
+                  <div class="mobile-card-actions">
+                    <p-button
+                      label="Resolver"
+                      icon="pi pi-arrow-right"
+                      (onClick)="resolverAlerta(alerta)"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p-table
+              [value]="resumo()!.alertasPendencia"
+              [tableStyle]="{ 'min-width': '50rem' }"
+              styleClass="p-datatable-striped"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Paciente</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Ação</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-alerta>
+                <tr>
+                  <td>
+                    <strong>{{ alerta.nomePaciente }}</strong>
+                  </td>
+                  <td>
+                    <p-tag
+                      [value]="obterLabelTipoPendencia(alerta.tipoPendencia)"
+                      [severity]="alerta.tipoPendencia === 'ATENDIMENTO_AVULSO' ? 'warn' : 'info'"
+                    />
+                  </td>
+                  <td>{{ alerta.descricao }}</td>
+                  <td>
+                    <p-button
+                      label="Resolver"
+                      icon="pi pi-arrow-right"
+                      (onClick)="resolverAlerta(alerta)"
+                      styleClass="p-button-sm"
+                    />
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="empty">
+                <tr>
+                  <td colspan="4" class="text-center">Nenhum alerta encontrado</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          }
         </p-card>
       } @else {
         <p-card class="no-alerts-card">

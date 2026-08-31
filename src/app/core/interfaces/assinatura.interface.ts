@@ -6,6 +6,23 @@ export interface AssinaturaCreateRequestDTO {
   dataInicio?: string;
 }
 
+export interface AssinaturaUpdateRequestDTO {
+  valorMensal?: number;
+  diaVencimento?: number;
+}
+
+export interface AssinaturaTrocarPlanoRequestDTO {
+  novoServicoId: number;
+  novoValorMensal: number;
+  diaVencimento: number;
+  dataInicio?: string;
+}
+
+export interface AssinaturaTrocaPlanoResponseDTO {
+  novaAssinatura: AssinaturaResponseDTO;
+  cobrancaMesAtualMantida: boolean;
+}
+
 export interface AssinaturaResponseDTO {
   id: number;
   pacienteId: number;

@@ -1,8 +1,10 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, throwError } from 'rxjs';
+import { catchError, tap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { API_CONFIG } from '../config/api.config';
+
+const RENEWED_TOKEN_HEADER = 'X-Renewed-Token';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
@@ -17,13 +19,22 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   return next(req).pipe(
+    tap((event) => {
+      // Sliding expiration (P3.3): backend manda token renovado perto do vencimento
+      if (event instanceof HttpResponse) {
+        const renewedToken = event.headers.get(RENEWED_TOKEN_HEADER);
+        if (renewedToken) {
+          authService.renovarToken(renewedToken);
+        }
+      }
+    }),
     catchError((error: HttpErrorResponse) => {
       // Não desloga em erros de login (para não entrar em loop)
       const isLoginEndpoint = req.url.includes(`${API_CONFIG.endpoints.auth}/login`);
       
       // 401 Unauthorized - Token inválido ou expirado, sempre desloga
       if (error.status === 401 && !isLoginEndpoint) {
-        authService.handle401Error();
+        authService.logout();
       }
       // 403 Forbidden - NÃO desloga automaticamente
       // 403 significa que o usuário está autenticado, mas não tem permissão
