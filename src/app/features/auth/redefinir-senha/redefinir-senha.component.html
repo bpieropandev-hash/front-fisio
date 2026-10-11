@@ -1,0 +1,51 @@
+    <p-toast />
+
+    <div class="login-container">
+      @if (!sucesso()) {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form">
+          <h3>Redefinir senha</h3>
+
+          <label for="novaSenha">Nova senha</label>
+          <input
+            id="novaSenha"
+            type="password"
+            formControlName="novaSenha"
+            placeholder="Mínimo 6 caracteres"
+            [class.ng-invalid]="form.get('novaSenha')?.invalid && form.get('novaSenha')?.touched"
+          />
+          @if (form.get('novaSenha')?.invalid && form.get('novaSenha')?.touched) {
+            <small class="error-text">Nova senha deve ter no mínimo 6 caracteres</small>
+          }
+
+          <label for="confirmarSenha">Confirmar nova senha</label>
+          <input
+            id="confirmarSenha"
+            type="password"
+            formControlName="confirmarSenha"
+            placeholder="Repita a nova senha"
+            [class.ng-invalid]="form.errors?.['senhasDiferentes'] && form.get('confirmarSenha')?.touched"
+          />
+          @if (form.errors?.['senhasDiferentes'] && form.get('confirmarSenha')?.touched) {
+            <small class="error-text">As senhas não coincidem</small>
+          }
+
+          <button type="submit" [disabled]="form.invalid || !token || loading()">
+            @if (loading()) {
+              <span>Redefinindo...</span>
+            } @else {
+              <span>Redefinir senha</span>
+            }
+          </button>
+
+          <p class="voltar-link" (click)="irParaLogin()">Voltar para o login</p>
+        </form>
+      } @else {
+        <div class="login-form">
+          <h3>Senha redefinida</h3>
+          <p class="mensagem-confirmacao">
+            Sua senha foi alterada com sucesso. Você já pode fazer login com a nova senha.
+          </p>
+          <button type="button" (click)="irParaLogin()">Ir para o login</button>
+        </div>
+      }
+    </div>

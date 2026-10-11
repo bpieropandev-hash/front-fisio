@@ -5,7 +5,9 @@ import { API_CONFIG } from '../config/api.config';
 import {
   AgendamentoRequestDTO,
   AtendimentoUpdateRequestDTO,
-  AtendimentoResponseDTO
+  AtendimentoResponseDTO,
+  ConcluirAtendimentosLoteRequestDTO,
+  ConcluirAtendimentosLoteResponseDTO
 } from '../interfaces/agendamento.interface';
 
 @Injectable({
@@ -60,6 +62,13 @@ export class AgendamentoService {
   deletar(id: number): Observable<void> {
     return this.http.delete<void>(
       `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.agendamentos}/${id}`
+    );
+  }
+
+  concluirEmLote(request: ConcluirAtendimentosLoteRequestDTO): Observable<ConcluirAtendimentosLoteResponseDTO> {
+    return this.http.post<ConcluirAtendimentosLoteResponseDTO>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.agendamentos}/concluir-lote`,
+      request
     );
   }
 }

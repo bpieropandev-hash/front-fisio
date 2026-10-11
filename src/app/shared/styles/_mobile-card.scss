@@ -1,0 +1,72 @@
+// Classes-base para listas de "card" em mobile, alternativas a <p-table> quando
+// a tabela desktop tem colunas demais para caber em ~360-414px sem scroll horizontal.
+// Uso: @if (breakpointService.isMobile()) { <div class="mobile-card-list">...</div> } @else { <p-table>...</p-table> }
+
+.mobile-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.mobile-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mobile-card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.mobile-card-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: 2px;
+}
+
+.mobile-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.mobile-card-body strong {
+  color: var(--text-primary);
+}
+
+.mobile-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-card-actions .p-button {
+  width: 100%;
+  min-height: 44px;
+}
+
+.mobile-card-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+  text-align: center;
+}

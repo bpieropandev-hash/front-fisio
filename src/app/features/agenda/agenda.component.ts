@@ -1,7 +1,7 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FullCalendarModule } from '@fullcalendar/angular';
+import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
 import { CalendarOptions, EventContentArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -14,16 +14,52 @@ import { Select } from 'primeng/select';
 import { DatePicker } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MultiSelect } from 'primeng/multiselect';
+import { Checkbox } from 'primeng/checkbox';
 import { Card } from 'primeng/card';
 import { Toast } from 'primeng/toast';
+import { BreakpointService } from '../../core/services/breakpoint.service';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import { PacienteService } from '../../core/services/paciente.service';
 import { ServicoService } from '../../core/services/servico.service';
-import { AtendimentoResponseDTO, AgendamentoRequestDTO } from '../../core/interfaces/agendamento.interface';
+import { AtendimentoResponseDTO, AgendamentoRequestDTO, ConcluirAtendimentoLoteItemDTO } from '../../core/interfaces/agendamento.interface';
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
 import { MessageService } from 'primeng/api';
-import { formatDateTimeForApi } from '../../core/utils/date-format.util';
+import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+import { formatDateTimeForApi, formatDateTimeForApiBody, formatDateForApi } from '../../core/utils/date-format.util';
+import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
+import {
+  obterCoresPorStatus,
+  obterTipoServico,
+  obterLabelStatus,
+  formatHora,
+  obterSiglaTipoServico,
+  normalizarStatusClass,
+  combinarDataHora,
+  separarDataHora,
+  montarHorariosComExtra
+} from './agenda-event.util';
+import { obterPillStatus } from '../../core/utils/status-pill.util';
+
+const DIAS_SEMANA_CURTO = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+export interface EventoDoDiaUI {
+  atendimento: AtendimentoResponseDTO;
+  hora: string;
+  pacienteNome: string;
+  servicoNome: string;
+}
+
+interface ItemLoteUI {
+  id: number;
+  dataHoraInicio: string;
+  avulso: boolean;
+  selecionado: boolean;
+  evolucao: string;
+  recebedor: 'CLINICA' | 'PROFISSIONAL' | null;
+  tipoPagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | null;
+}
 
 @Component({
   selector: 'app-agenda',
@@ -38,6 +74,7 @@ import { formatDateTimeForApi } from '../../core/utils/date-format.util';
     DatePicker,
     ToggleSwitchModule,
     MultiSelect,
+    Checkbox,
     Card,
     Toast
   ],
@@ -46,8 +83,97 @@ import { formatDateTimeForApi } from '../../core/utils/date-format.util';
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
-  modalVisivel = signal(false);
-  _modalVisivel = false;
+  private readonly breakpointService = inject(BreakpointService);
+  isMobile = this.breakpointService.isMobile;
+  isTablet = this.breakpointService.isTablet;
+  obterPillStatus = obterPillStatus;
+
+  @ViewChild(FullCalendarComponent) calendarComponent?: FullCalendarComponent;
+
+  // --- Shell mobile (spec 10) — semana + lista do dia, substitui o FullCalendar em telas estreitas ---
+  diaSelecionadoAgenda = signal<Date>(this.iniciarDoDia(new Date()));
+
+  semanaAgendaAtual = computed(() => {
+    const base = this.diaSelecionadoAgenda();
+    const inicioSemana = new Date(base);
+    inicioSemana.setDate(base.getDate() - base.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const dia = new Date(inicioSemana);
+      dia.setDate(inicioSemana.getDate() + i);
+      return dia;
+    });
+  });
+
+  eventosDoDiaSelecionado = computed<EventoDoDiaUI[]>(() => {
+    const dia = this.diaSelecionadoAgenda();
+    return this.eventosFiltrados()
+      .filter(evento => this.mesmoDia(new Date(evento.start as string), dia))
+      .map(evento => {
+        const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO;
+        return {
+          atendimento,
+          hora: formatHora(new Date(evento.start as string)),
+          pacienteNome: (evento.extendedProps?.['pacienteNome'] as string) || '',
+          servicoNome: (evento.extendedProps?.['servicoNome'] as string) || ''
+        };
+      })
+      .sort((a, b) => a.hora.localeCompare(b.hora));
+  });
+
+  private iniciarDoDia(data: Date): Date {
+    const d = new Date(data);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private mesmoDia(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  rotuloDiaSemana(data: Date): string {
+    return DIAS_SEMANA_CURTO[data.getDay()];
+  }
+
+  ehHoje(data: Date): boolean {
+    return this.mesmoDia(data, new Date());
+  }
+
+  ehDiaSelecionadoAgenda(data: Date): boolean {
+    return this.mesmoDia(data, this.diaSelecionadoAgenda());
+  }
+
+  rotuloDiaSelecionadoAgenda(): string {
+    const label = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(this.diaSelecionadoAgenda());
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  selecionarDiaAgenda(data: Date): void {
+    this.diaSelecionadoAgenda.set(this.iniciarDoDia(data));
+  }
+
+  semanaAgendaAnterior(): void {
+    const d = new Date(this.diaSelecionadoAgenda());
+    d.setDate(d.getDate() - 7);
+    this.diaSelecionadoAgenda.set(d);
+  }
+
+  semanaAgendaProxima(): void {
+    const d = new Date(this.diaSelecionadoAgenda());
+    d.setDate(d.getDate() + 7);
+    this.diaSelecionadoAgenda.set(d);
+  }
+
+  abrirNovoAgendamentoDoDia(): void {
+    this.abrirModalNovoAgendamento();
+    // abrirModalNovoAgendamento() zera dataNovoAgendamento — reaplica com o dia selecionado na lista
+    this.dataNovoAgendamento = new Date(this.diaSelecionadoAgenda());
+  }
+
+  /** View atual do calendário. FullCalendar só respeita `initialView` na montagem —
+   * mudanças depois disso precisam chamar calendarApi.changeView() (ver effect no constructor). */
+  calendarView = signal<string>(this.breakpointService.isMobile() ? 'timeGridDay' : 'dayGridMonth');
+
+  modalVisivel = false;
   atendimentoSelecionado = signal<AtendimentoResponseDTO & { pacienteNome?: string; servicoNome?: string } | null>(null);
   salvando = signal(false);
   pacientes = signal<PacienteResponseDTO[]>([]);
@@ -68,6 +194,10 @@ export class AgendaComponent implements OnInit {
   dataHoraEdit: Date | null = null;
   dataEdit: Date | null = null;
   horaEdit: string | null = null;
+  /** Data/hora original do atendimento em edição — só enviamos ao backend se o usuário alterar */
+  private dataHoraOriginal: Date | null = null;
+  /** Opções de horário do modal de edição: grade de 30min + o horário exato do atendimento */
+  horariosEdicao: { label: string; value: string }[] = [];
 
   dataNovoAgendamento: Date | null = null;
   horaNovoAgendamento: string | null = null;
@@ -133,72 +263,201 @@ export class AgendaComponent implements OnInit {
     { label: 'PIX', value: 'PIX' }
   ];
 
-  calendarOptions = computed<CalendarOptions>(() => ({
-    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-    initialView: 'dayGridMonth',
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay'
-    },
-    locale: ptBrLocale,
-    events: this.eventosFiltrados(),
-    eventDisplay: 'block',
-    eventClick: (info) => this.onEventClick(info),
-    dateClick: (info) => this.onDateClick(info),
-    dayMaxEventRows: 3,
-    moreLinkText: (n) => `+${n} mais`,
-    eventContent: (arg) => this.renderEventContent(arg),
-    eventClassNames: (arg) => {
-      const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
-      const status = this.normalizarStatusClass(atendimento?.status);
-      return status ? [`status-${status}`] : [];
-    },
-    eventDidMount: (info) => this.onEventDidMount(info),
-    editable: true,
-    eventResize: (info) => this.onEventResize(info),
-    eventDrop: (info) => this.onEventDrop(info),
-    nowIndicator: true,
-    slotMinTime: '06:00:00',
-    slotMaxTime: '22:00:00'
-  }));
+  // --- Fechamento em lote (spec 07 F1) ---
+  modalLoteVisivel = false;
+  pacienteLoteId: number | null = null;
+  carregandoLote = signal(false);
+  salvandoLote = signal(false);
+  itensLote = signal<ItemLoteUI[]>([]);
+
+  abrirModalLote(): void {
+    this.pacienteLoteId = null;
+    this.itensLote.set([]);
+    this.modalLoteVisivel = true;
+  }
+
+  fecharModalLote(): void {
+    this.modalLoteVisivel = false;
+  }
+
+  aoSelecionarPacienteLote(): void {
+    if (!this.pacienteLoteId) {
+      this.itensLote.set([]);
+      return;
+    }
+
+    this.carregandoLote.set(true);
+    this.agendamentoService.listar({ pacienteId: this.pacienteLoteId }).subscribe({
+      next: (atendimentos) => {
+        const agora = new Date();
+        const itens: ItemLoteUI[] = atendimentos
+          .filter(a => a.status === 'AGENDADO' && new Date(a.dataHoraInicio) < agora)
+          .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
+          .map(a => ({
+            id: a.id,
+            dataHoraInicio: a.dataHoraInicio,
+            avulso: this.ehAtendimentoAvulso(a),
+            selecionado: true,
+            evolucao: '',
+            recebedor: null,
+            tipoPagamento: null
+          }));
+        this.itensLote.set(itens);
+        this.carregandoLote.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.carregandoLote.set(false);
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
+  }
+
+  copiarEvolucaoParaTodos(): void {
+    const itens = this.itensLote();
+    if (itens.length === 0) return;
+    const primeiraEvolucao = itens[0].evolucao;
+    this.itensLote.set(itens.map(i => ({ ...i, evolucao: primeiraEvolucao })));
+  }
+
+  atualizarItemLote(id: number, campo: 'evolucao' | 'recebedor' | 'tipoPagamento' | 'selecionado', valor: any): void {
+    this.itensLote.set(this.itensLote().map(i => i.id === id ? { ...i, [campo]: valor } : i));
+  }
+
+  confirmarConclusaoLote(): void {
+    const selecionados = this.itensLote().filter(i => i.selecionado);
+    if (selecionados.length === 0) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Selecione ao menos um atendimento' });
+      return;
+    }
+
+    const semEvolucao = selecionados.some(i => !i.evolucao || !i.evolucao.trim());
+    if (semEvolucao) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Evolução é obrigatória para todos os atendimentos selecionados' });
+      return;
+    }
+
+    this.salvandoLote.set(true);
+    const itens: ConcluirAtendimentoLoteItemDTO[] = selecionados.map(i => ({
+      id: i.id,
+      evolucao: i.evolucao,
+      recebedor: i.avulso && i.recebedor ? i.recebedor : undefined,
+      tipoPagamento: i.avulso && i.tipoPagamento ? i.tipoPagamento : undefined
+    }));
+
+    this.agendamentoService.concluirEmLote({ atendimentos: itens }).subscribe({
+      next: (resultado) => {
+        this.salvandoLote.set(false);
+        if (resultado.falhas.length === 0) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Sucesso',
+            detail: `${resultado.concluidos} atendimento(s) concluído(s)`
+          });
+          this.fecharModalLote();
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Concluído parcialmente',
+            detail: `${resultado.concluidos} concluído(s), ${resultado.falhas.length} falharam: ${resultado.falhas.map(f => f.motivo).join('; ')}`
+          });
+        }
+        this.carregarEventos();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.salvandoLote.set(false);
+        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({
+          severity: errorMessage.severity,
+          summary: errorMessage.summary,
+          detail: errorMessage.detail
+        });
+      }
+    });
+  }
+
+  calendarOptions = computed<CalendarOptions>(() => {
+    const mobile = this.isMobile();
+    return {
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+      initialView: this.calendarView(),
+      headerToolbar: mobile
+        ? { left: 'prev,next', center: 'title', right: 'today' }
+        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+      locale: ptBrLocale,
+      events: this.eventosFiltrados(),
+      eventDisplay: 'block',
+      eventClick: (info) => this.onEventClick(info),
+      dateClick: (info) => this.onDateClick(info),
+      dayMaxEventRows: 3,
+      moreLinkText: (n) => `+${n} mais`,
+      eventContent: (arg) => this.renderEventContent(arg),
+      eventClassNames: (arg) => {
+        const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+        const status = normalizarStatusClass(atendimento?.status);
+        return status ? [`status-${status}`] : [];
+      },
+      eventDidMount: (info) => this.onEventDidMount(info),
+      // Drag & drop não é confiável em touch — em mobile, reagendar é feito pelo
+      // modal de edição (clique no evento), que já existe e cobre o mesmo fluxo.
+      editable: !mobile,
+      // Duração não é editável: o backend não expõe atualização de dataHoraFim
+      eventDurationEditable: false,
+      eventDrop: (info) => this.onEventDrop(info),
+      nowIndicator: true,
+      slotMinTime: '06:00:00',
+      slotMaxTime: '22:00:00'
+    };
+  });
 
   constructor(
     private agendamentoService: AgendamentoService,
     private pacienteService: PacienteService,
     private servicoService: ServicoService,
     private messageService: MessageService
-  ) {}
+  ) {
+    // `initialView` só é respeitado pelo wrapper do FullCalendar na montagem —
+    // mudanças de view depois disso (seletor mobile ou troca de breakpoint em
+    // runtime) precisam ser aplicadas via API imperativa.
+    effect(() => {
+      const view = this.calendarView();
+      this.calendarComponent?.getApi()?.changeView(view);
+    });
+
+    // Ao cruzar o breakpoint mobile/desktop, volta para a view padrão de cada modo.
+    // Não interfere em uma escolha manual de view feita sem cruzar o breakpoint.
+    effect(() => {
+      this.calendarView.set(this.isMobile() ? 'timeGridDay' : 'dayGridMonth');
+    });
+  }
 
   ngOnInit(): void {
     this.carregarDados();
   }
 
   carregarDados(): void {
-    this.pacienteService.listar().subscribe({
-      next: (pacientes) => {
+    // Pacientes e serviços em paralelo; eventos só depois — assim os títulos
+    // sempre resolvem os nomes (sem "Paciente #42") e a API é chamada uma vez
+    forkJoin({
+      pacientes: this.pacienteService.listar(),
+      servicos: this.servicoService.listar()
+    }).subscribe({
+      next: ({ pacientes, servicos }) => {
         this.pacientes.set(pacientes.filter(p => p.ativo !== false));
-        // Carrega eventos após pacientes e serviços estarem disponíveis
-        if (this.servicos().length > 0 || pacientes.length > 0) {
-          this.carregarEventos();
-        }
-      },
-      error: (error) => console.error('Erro ao carregar pacientes:', error)
-    });
-
-    this.servicoService.listar().subscribe({
-      next: (servicos) => {
         this.servicos.set(servicos.filter(s => s.ativo !== false));
-        // Carrega eventos após pacientes e serviços estarem disponíveis
-        if (this.pacientes().length > 0 || servicos.length > 0) {
-          this.carregarEventos();
-        }
+        this.carregarEventos();
       },
-      error: (error) => console.error('Erro ao carregar serviços:', error)
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
+        // Mesmo sem nomes, ainda mostra a agenda
+        this.carregarEventos();
+      }
     });
-
-    // Carrega eventos inicialmente
-    this.carregarEventos();
   }
 
   carregarEventos(): void {
@@ -232,14 +491,14 @@ export class AgendaComponent implements OnInit {
           const servico = this.servicos().find(s => s.id === atendimento.servicoBaseId);
           const pacienteNome = paciente?.nome || `Paciente #${atendimento.pacienteId}`;
           const servicoNome = servico?.nome || `Serviço #${atendimento.servicoBaseId}`;
-          const servicoTipo = this.obterTipoServico(servicoNome, servico?.tipo);
+          const servicoTipo = obterTipoServico(servicoNome, servico?.tipo);
 
           const title = isMensalista
             ? `📋 ${pacienteNome} - ${servicoNome}`
             : `${pacienteNome} - ${servicoNome}`;
 
           // Cores: manter por STATUS (fundo/borda/texto)
-          const coresStatus = this.obterCoresPorStatus(atendimento.status);
+          const coresStatus = obterCoresPorStatus(atendimento.status);
 
           eventos.push({
             id: atendimento.id.toString(),
@@ -249,7 +508,7 @@ export class AgendaComponent implements OnInit {
             borderColor: coresStatus.borderColor,
             textColor: coresStatus.textColor,
             classNames: (() => {
-              const status = this.normalizarStatusClass(atendimento.status);
+              const status = normalizarStatusClass(atendimento.status);
               return status ? [`status-${status}`] : [];
             })(),
             extendedProps: {
@@ -272,96 +531,6 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-  obterCoresPorStatus(status: string): { backgroundColor: string; borderColor: string; textColor: string } {
-    switch (status) {
-      case 'AGENDADO':
-        return {
-          backgroundColor: '#a5d6a7',
-          borderColor: '#16a34a',
-          textColor: '#1b5e20'
-        };
-      case 'CONCLUIDO':
-        return {
-          backgroundColor: '#90caf9',
-          borderColor: '#2563eb',
-          textColor: '#0d47a1'
-        };
-      case 'CANCELADO':
-        return {
-          backgroundColor: '#ef9a9a',
-          borderColor: '#dc2626',
-          textColor: '#b71c1c'
-        };
-      case 'FALTA':
-        return {
-          backgroundColor: '#fff59d',
-          borderColor: '#ca8a04',
-          textColor: '#f57f17'
-        };
-      default:
-        return {
-          backgroundColor: '#e0e0e0',
-          borderColor: '#64748b',
-          textColor: '#424242'
-        };
-    }
-  }
-
-  private obterTipoServico(servicoNome: string, servicoTipo?: string): 'PILATES' | 'FISIOTERAPIA' | 'AVALIACAO' | 'OUTRO' {
-    const nome = (servicoNome || '').toLowerCase();
-    if (nome.includes('avalia')) return 'AVALIACAO';
-    // Preferir o tipo vindo do backend quando existir
-    if (servicoTipo === 'PILATES') return 'PILATES';
-    if (servicoTipo === 'FISIOTERAPIA') return 'FISIOTERAPIA';
-    // Fallback por nome
-    if (nome.includes('pilates')) return 'PILATES';
-    if (nome.includes('fisio')) return 'FISIOTERAPIA';
-    return 'OUTRO';
-  }
-
-  private obterLabelStatus(status: string | undefined): string {
-    switch (status) {
-      case 'AGENDADO':
-        return 'Agendado';
-      case 'CONCLUIDO':
-        return 'Concluído';
-      case 'CANCELADO':
-        return 'Cancelado';
-      case 'FALTA':
-        return 'Falta';
-      default:
-        return status || '—';
-    }
-  }
-
-  private formatHora(date: Date | null | undefined): string {
-    if (!date) return '';
-    return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(date);
-  }
-
-  private obterSiglaTipoServico(tipo: string | undefined): string {
-    switch (tipo) {
-      case 'PILATES':
-        return 'PIL';
-      case 'FISIOTERAPIA':
-        return 'FIS';
-      case 'AVALIACAO':
-        return 'AVL';
-      default:
-        return 'OUT';
-    }
-  }
-
-  private normalizarStatusClass(status: string | undefined): string {
-    // Ex.: "CONCLUIDO" -> "concluido"
-    return (status || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-  }
-
   private renderEventContent(arg: EventContentArg) {
     // Month: minimalista. Week/Day: render explícito (para não sumir quando eventContent existe)
     if (arg.view.type !== 'dayGridMonth') {
@@ -375,11 +544,11 @@ export class AgendaComponent implements OnInit {
     const pacienteNome = (arg.event.extendedProps?.['pacienteNome'] as string | undefined) || '';
     const servicoNome = (arg.event.extendedProps?.['servicoNome'] as string | undefined) || arg.event.title;
     const servicoTipo = (arg.event.extendedProps?.['servicoTipo'] as string | undefined) || '';
-    const statusLabel = this.obterLabelStatus(atendimento?.status);
+    const statusLabel = obterLabelStatus(atendimento?.status);
 
     const inicio = arg.event.start;
-    const hora = this.formatHora(inicio);
-    const sigla = this.obterSiglaTipoServico(servicoTipo);
+    const hora = formatHora(inicio);
+    const sigla = obterSiglaTipoServico(servicoTipo);
 
     // Tooltip (title nativo) com quebras de linha
     const tooltip = [
@@ -420,7 +589,7 @@ export class AgendaComponent implements OnInit {
     const status = atendimento?.status;
     if (!status || !info?.el) return;
 
-    const cores = this.obterCoresPorStatus(status);
+    const cores = obterCoresPorStatus(status);
     const el = info.el as HTMLElement;
 
     // Elemento principal
@@ -534,10 +703,12 @@ export class AgendaComponent implements OnInit {
     }
 
     const dataSelecionada = new Date(info.date);
-    // Arredonda para o próximo intervalo de 30 minutos
-    const minutos = dataSelecionada.getMinutes();
-    const minutosArredondados = minutos < 30 ? 30 : 0;
-    const horasAjustadas = minutos >= 30 ? dataSelecionada.getHours() + 1 : dataSelecionada.getHours();
+    // Arredonda para o intervalo de 30 minutos MAIS PRÓXIMO
+    // (clicar às 10:00 em ponto sugere 10:00, não 10:30)
+    const totalMinutos = dataSelecionada.getHours() * 60 + dataSelecionada.getMinutes();
+    const arredondado = Math.round(totalMinutos / 30) * 30;
+    const horasAjustadas = Math.floor(arredondado / 60) % 24;
+    const minutosArredondados = arredondado % 60;
 
     // Define a data (sem hora)
     this.dataNovoAgendamento = new Date(dataSelecionada);
@@ -547,17 +718,38 @@ export class AgendaComponent implements OnInit {
     this.horaNovoAgendamento = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
 
     // Combina data e hora
-    this.novoAgendamento.dataHora = this.combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
+    this.novoAgendamento.dataHora = combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
 
     this.abrirModalNovoAgendamento();
   }
 
-  onEventResize(info: any): void {
-    // Implementar atualização de data/hora
-  }
-
+  /** Arrastar evento no calendário = remarcar o atendimento. Persiste ou reverte. */
   onEventDrop(info: any): void {
-    // Implementar atualização de data/hora
+    const atendimento = info?.event?.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+    const novaData: Date | null = info?.event?.start ?? null;
+
+    if (!atendimento || !novaData) {
+      info?.revert?.();
+      return;
+    }
+
+    this.agendamentoService.atualizar(atendimento.id, {
+      dataHoraInicio: formatDateTimeForApiBody(novaData)
+    }).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Remarcado',
+          detail: `Atendimento movido para ${novaData.toLocaleDateString('pt-BR')} às ${formatHora(novaData)}`
+        });
+        this.carregarEventos();
+      },
+      error: (error: HttpErrorResponse) => {
+        info?.revert?.();
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
+      }
+    });
   }
 
   abrirModalEdicao(atendimento: AtendimentoResponseDTO): void {
@@ -572,26 +764,19 @@ export class AgendaComponent implements OnInit {
     });
 
     this.dataHoraEdit = new Date(atendimento.dataHoraInicio);
-    const { data, hora } = this.separarDataHora(this.dataHoraEdit);
+    this.dataHoraOriginal = new Date(atendimento.dataHoraInicio);
+    const { data, hora } = separarDataHora(this.dataHoraEdit);
     this.dataEdit = data;
-    // Arredonda a hora para o intervalo de 30 minutos mais próximo
-    if (hora) {
-      const [horas, minutos] = hora.split(':').map(Number);
-      const minutosArredondados = minutos < 15 ? 0 : minutos < 45 ? 30 : 0;
-      const horasAjustadas = minutos >= 45 ? horas + 1 : horas;
-      const horaArredondada = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
-      this.horaEdit = horaArredondada;
-      // Atualiza dataHoraEdit com a hora arredondada
-      this.dataHoraEdit = this.combinarDataHora(this.dataEdit, horaArredondada);
-    } else {
-      this.horaEdit = null;
-    }
+    // Mostra o horário EXATO do atendimento (nunca arredondar: salvar mudaria
+    // o horário real silenciosamente). Se não estiver na grade de 30min,
+    // adiciona como opção extra do select.
+    this.horaEdit = hora;
+    this.horariosEdicao = montarHorariosComExtra(this.horariosDisponiveis, hora);
     this.statusEdit = atendimento.status;
     this.evolucaoEdit = atendimento.evolucao || '';
     this.recebedorEdit = atendimento.recebedor || null;
     this.tipoPagamentoEdit = atendimento.tipoPagamento || null;
-    this.modalVisivel.set(true);
-    this._modalVisivel = true;
+    this.modalVisivel = true;
 
     // Se não encontrou os nomes, busca do backend
     if (!paciente || !servico) {
@@ -630,56 +815,27 @@ export class AgendaComponent implements OnInit {
     this.repetirAgendamento = false;
     this.dataFimRecorrencia = null;
     this.diasSemanaSelecionados = [];
-    this.modalVisivel.set(true);
-    this._modalVisivel = true;
+    this.modalVisivel = true;
   }
 
   fecharModal(): void {
-    this.modalVisivel.set(false);
-    this._modalVisivel = false;
+    this.modalVisivel = false;
     this.atendimentoSelecionado.set(null);
-  }
-
-  /**
-   * Combina data e hora selecionadas em um objeto Date
-   */
-  private combinarDataHora(data: Date | null, hora: string | null): Date | null {
-    if (!data || !hora) return null;
-
-    const [horas, minutos] = hora.split(':').map(Number);
-    const dataCombinada = new Date(data);
-    dataCombinada.setHours(horas, minutos, 0, 0);
-    return dataCombinada;
-  }
-
-  /**
-   * Separa uma data/hora em data e hora
-   */
-  private separarDataHora(dataHora: Date | null): { data: Date | null; hora: string | null } {
-    if (!dataHora) return { data: null, hora: null };
-
-    const data = new Date(dataHora);
-    data.setHours(0, 0, 0, 0);
-
-    const horas = String(dataHora.getHours()).padStart(2, '0');
-    const minutos = String(dataHora.getMinutes()).padStart(2, '0');
-    const hora = `${horas}:${minutos}`;
-
-    return { data, hora };
+    this.dataHoraOriginal = null;
   }
 
   /**
    * Atualiza dataHoraEdit quando data ou hora são alterados
    */
   atualizarDataHoraEdit(): void {
-    this.dataHoraEdit = this.combinarDataHora(this.dataEdit, this.horaEdit);
+    this.dataHoraEdit = combinarDataHora(this.dataEdit, this.horaEdit);
   }
 
   /**
    * Atualiza novoAgendamento.dataHora quando data ou hora são alterados
    */
   atualizarDataHoraNovoAgendamento(): void {
-    this.novoAgendamento.dataHora = this.combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
+    this.novoAgendamento.dataHora = combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
   }
 
   salvarAtendimento(): void {
@@ -709,8 +865,12 @@ export class AgendaComponent implements OnInit {
       evolucao: this.evolucaoEdit
     };
 
-    if (this.dataHoraEdit) {
-      updateData.dataHoraInicio = this.dataHoraEdit.toISOString();
+    // Só envia data/hora se o usuário realmente alterou — editar apenas a
+    // evolução não pode mudar o horário do atendimento
+    if (this.dataHoraEdit && this.dataHoraOriginal &&
+        this.dataHoraEdit.getTime() !== this.dataHoraOriginal.getTime()) {
+      // Formato local esperado pelo backend; toISOString() deslocaria o horário para UTC
+      updateData.dataHoraInicio = formatDateTimeForApiBody(this.dataHoraEdit);
     }
 
     if (ehAtendimentoAvulso && isConcluido) {
@@ -729,12 +889,9 @@ export class AgendaComponent implements OnInit {
         this.carregarEventos();
         this.salvando.set(false);
       },
-      error: (error) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: error.error?.message || 'Erro ao atualizar atendimento'
-        });
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
         this.salvando.set(false);
       }
     });
@@ -776,32 +933,20 @@ export class AgendaComponent implements OnInit {
 
     this.salvando.set(true);
 
-    let dataHoraISO: string;
-    if (this.novoAgendamento.dataHora instanceof Date) {
-      dataHoraISO = this.novoAgendamento.dataHora.toISOString();
-    } else if (typeof this.novoAgendamento.dataHora === 'string') {
-      dataHoraISO = new Date(this.novoAgendamento.dataHora).toISOString();
-    } else {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Erro',
-        detail: 'Data/hora inválida'
-      });
-      this.salvando.set(false);
-      return;
-    }
+    // Formato local esperado pelo backend; toISOString() deslocaria o horário para UTC
+    const dataHora = this.novoAgendamento.dataHora instanceof Date
+      ? this.novoAgendamento.dataHora
+      : new Date(this.novoAgendamento.dataHora);
 
     const agendamentoData: AgendamentoRequestDTO = {
       pacienteIds: this.novoAgendamento.pacienteIds,
       servicoId: this.novoAgendamento.servicoId!,
-      dataHora: dataHoraISO
+      dataHora: formatDateTimeForApiBody(dataHora)
     };
 
     // Adiciona campos de recorrência se necessário
     if (this.repetirAgendamento && this.dataFimRecorrencia) {
-      // Formata data fim no formato YYYY-MM-DD
-      const dataFimISO = this.dataFimRecorrencia.toISOString().split('T')[0];
-      agendamentoData.dataFimRecorrencia = dataFimISO;
+      agendamentoData.dataFimRecorrencia = formatDateForApi(this.dataFimRecorrencia);
 
       // Adiciona dias da semana se selecionados
       if (this.diasSemanaSelecionados && this.diasSemanaSelecionados.length > 0) {
@@ -821,23 +966,9 @@ export class AgendaComponent implements OnInit {
         this.carregarEventos();
         this.salvando.set(false);
       },
-      error: (error) => {
-        console.error('Erro ao criar agendamento:', error);
-        let errorMessage = 'Erro ao criar agendamento';
-
-        if (error.status === 403) {
-          errorMessage = 'Acesso negado. Verifique suas permissões ou faça login novamente.';
-        } else if (error.status === 401) {
-          errorMessage = 'Sessão expirada. Faça login novamente.';
-        } else if (error.error?.message) {
-          errorMessage = error.error.message;
-        }
-
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: errorMessage
-        });
+      error: (error: HttpErrorResponse) => {
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
         this.salvando.set(false);
       }
     });

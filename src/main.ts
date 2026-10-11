@@ -1,8 +1,9 @@
-import { provideZoneChangeDetection } from "@angular/core";
+import { isDevMode, provideZoneChangeDetection } from "@angular/core";
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideServiceWorker } from '@angular/service-worker';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
 import { AppComponent } from './app/app.component';
@@ -23,6 +24,10 @@ bootstrapApplication(AppComponent, {
           darkModeSelector: '.dark-mode'
         }
       }
+    }),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
     }),
   ]
 }).catch(err => console.error(err));

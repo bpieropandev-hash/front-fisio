@@ -19,4 +19,17 @@ export interface ServicoResponseDTO {
   ativo?: boolean;
 }
 
+export interface ServicoReajusteRequestDTO {
+  novoValorBase: number;
+  aplicarEmAssinaturasAtivas?: boolean;
+  somenteAssinaturasNoValorAntigo?: boolean;
+  atualizarCobrancasPendentes?: boolean;
+}
+
+export interface ServicoReajusteResponseDTO {
+  assinaturasAtualizadas: number;
+  cobrancasAtualizadas: number;
+  assinaturasIgnoradasIds: number[];
+}
+
 

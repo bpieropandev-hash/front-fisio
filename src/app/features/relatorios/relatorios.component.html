@@ -1,15 +1,25 @@
     <p-toast />
-    
-    <div class="relatorios-header">
-      <h2>Relatórios</h2>
-      <p class="subtitle">Gere relatórios financeiros em PDF</p>
-    </div>
+
+    @if (!isTablet()) {
+      <div class="relatorios-header">
+        <h2>Relatórios</h2>
+        <p class="subtitle">Gere relatórios financeiros em PDF</p>
+      </div>
+    }
+
+    @if (isTablet()) {
+      <div class="rel-mobile__pills">
+        <button type="button" class="rel-mobile__pill" [class.rel-mobile__pill--ativo]="periodoPillAtivo() === 'mes'" (click)="selecionarPeriodo('mes')">Este mês</button>
+        <button type="button" class="rel-mobile__pill" [class.rel-mobile__pill--ativo]="periodoPillAtivo() === '30dias'" (click)="selecionarPeriodo('30dias')">30 dias</button>
+        <button type="button" class="rel-mobile__pill" [class.rel-mobile__pill--ativo]="periodoPillAtivo() === 'ano'" (click)="selecionarPeriodo('ano')">Ano</button>
+      </div>
+    }
 
     <p-card class="relatorio-card">
       <ng-template pTemplate="header">
         <div class="card-header">
           <h3>
-            <i class="pi pi-file-pdf"></i>
+            <span class="card-header-icon"><i class="pi pi-file-pdf"></i></span>
             Relatório de Acerto Financeiro
           </h3>
         </div>
@@ -29,6 +39,7 @@
               placeholder="Selecione a data inicial"
               [appendTo]="'body'"
               [showButtonBar]="true"
+              (onSelect)="periodoPillAtivo.set(null)"
             />
             @if (!filtros.dataInicio && formSubmetido) {
               <small class="error-text">Data início é obrigatória</small>
@@ -47,6 +58,7 @@
               placeholder="Selecione a data final"
               [appendTo]="'body'"
               [showButtonBar]="true"
+              (onSelect)="periodoPillAtivo.set(null)"
             />
             @if (!filtros.dataFim && formSubmetido) {
               <small class="error-text">Data fim é obrigatória</small>
@@ -55,7 +67,10 @@
         </div>
 
         <div class="form-group">
-          <label for="servicos">Serviços *</label>
+          <div class="rel-servicos-label">
+            <label for="servicos">Serviços *</label>
+            <a class="rel-servicos-todos" (click)="selecionarTodosServicos()">Selecionar todos</a>
+          </div>
           <p-multiSelect
             id="servicos"
             [(ngModel)]="filtros.servicoIds"

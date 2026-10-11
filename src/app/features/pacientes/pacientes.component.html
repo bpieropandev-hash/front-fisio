@@ -1,5 +1,78 @@
     <p-toast />
-    
+    <p-confirmdialog />
+
+    @if (isTablet()) {
+      <div class="pac-mobile">
+        <div class="pac-mobile__busca">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="termoPesquisa"
+            placeholder="Buscar paciente…"
+            class="pac-mobile__busca-input"
+          />
+        </div>
+
+        <div class="pac-mobile__pills">
+          <button
+            type="button"
+            class="pac-mobile__pill"
+            [class.pac-mobile__pill--ativo]="filtroPillMobile() === 'todos'"
+            (click)="selecionarPillMobile('todos')"
+          >
+            Todos · {{ totalAtivos() }}
+          </button>
+          <button
+            type="button"
+            class="pac-mobile__pill"
+            [class.pac-mobile__pill--ativo]="filtroPillMobile() === 'tratamento'"
+            (click)="selecionarPillMobile('tratamento')"
+          >
+            Em tratamento
+          </button>
+          <button
+            type="button"
+            class="pac-mobile__pill"
+            [class.pac-mobile__pill--ativo]="filtroPillMobile() === 'inativos'"
+            (click)="selecionarPillMobile('inativos')"
+          >
+            Inativos
+          </button>
+        </div>
+
+        <div class="pac-mobile__lista-wrap">
+          @if (carregando()) {
+            <div class="pac-mobile__vazio">Carregando…</div>
+          } @else if (pacientesMobile().length === 0) {
+            <div class="pac-mobile__vazio">Nenhum paciente encontrado.</div>
+          } @else {
+            @for (grupo of pacientesAgrupados(); track grupo.letra) {
+              <div class="pac-mobile__grupo-letra">{{ grupo.letra }}</div>
+              <div class="pac-mobile__grupo-lista">
+                @for (paciente of grupo.pacientes; track paciente.id) {
+                  <div class="pac-mobile__item" (click)="abrirModalEdicao(paciente)">
+                    <div class="pac-mobile__avatar" [class.pac-mobile__avatar--destaque]="proximosPorPaciente().has(paciente.id)">
+                      {{ obterIniciais(paciente.nome) }}
+                    </div>
+                    <div class="pac-mobile__item-info">
+                      <div class="pac-mobile__item-nome">{{ paciente.nome }}</div>
+                      <div class="pac-mobile__item-proximo">{{ rotuloProximoAtendimento(paciente.id) }}</div>
+                    </div>
+                    <i class="pi pi-chevron-right pac-mobile__chevron"></i>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <button type="button" class="pac-mobile__fab" (click)="abrirModalNovoPaciente()" aria-label="Novo paciente">
+          <i class="pi pi-plus"></i>
+        </button>
+      </div>
+    }
+
+    @if (!isTablet()) {
     <div class="page-header">
       <h2>Pacientes</h2>
       <p-button
@@ -9,26 +82,33 @@
       />
     </div>
 
-    <div class="search-container">
-      <div class="search-wrapper">
-        <input
-          type="text"
-          pInputText
-          placeholder="Pesquisar pacientes por nome, CPF, email ou telefone..."
-          [ngModel]="termoPesquisa()"
-          (ngModelChange)="termoPesquisa.set($event)"
-          class="search-input"
+    <div class="filtros-linha">
+      <div class="filtro-inativos">
+        <p-toggleswitch
+          [ngModel]="mostrarInativos()"
+          (ngModelChange)="aoMudarMostrarInativos($event)"
         />
-        @if (termoPesquisa()) {
-          <p-button
-            icon="pi pi-times"
-            (onClick)="limparPesquisa()"
-            styleClass="p-button-text p-button-rounded p-button-plain clear-button"
-            pTooltip="Limpar pesquisa"
-            [rounded]="true"
-          />
-        }
+        <label>Mostrar inativos</label>
       </div>
+
+      <div class="filtro-assinatura">
+        <label>Assinatura</label>
+        <p-select
+          [ngModel]="filtroAssinatura()"
+          (ngModelChange)="aoMudarFiltroAssinatura($event)"
+          [options]="filtroAssinaturaOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="filtro-select"
+        />
+      </div>
+    </div>
+
+    <div class="search-container">
+      <app-search-input
+        [(value)]="termoPesquisa"
+        placeholder="Pesquisar pacientes por nome, CPF, email ou telefone..."
+      />
       @if (termoPesquisa() && pacientesFiltrados().length > 0) {
         <div class="search-results-info">
           <i class="pi pi-info-circle"></i>
@@ -43,54 +123,138 @@
       }
     </div>
 
-    <p-table
-      [value]="pacientesFiltrados()"
-      [paginator]="true"
-      [rows]="10"
-      [loading]="carregando()"
-      [tableStyle]="{ 'min-width': '40rem' }"
-      styleClass="compact-table"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th>Nome</th>
-          <th>CPF</th>
-          <th>Telefone</th>
-          <th>Status</th>
-          <th>Ações</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-paciente>
-        <tr>
-          <td>{{ paciente.nome }}</td>
-          <td>{{ formatarCPF(paciente.cpf) }}</td>
-          <td>{{ paciente.telefone || '-' }}</td>
-          <td>
-            <p-tag
-              [value]="paciente.ativo !== false ? 'Ativo' : 'Inativo'"
-              [severity]="paciente.ativo !== false ? 'success' : 'danger'"
-            />
-          </td>
-          <td style="display: flex; justify-content: center;">
-            <div class="action-buttons">
-              <p-button
-                icon="pi pi-file-pdf"
-                label="Prontuário PDF"
-                (onClick)="baixarProntuario(paciente.id, paciente.nome)"
-                styleClass="p-button-sm"
-                severity="secondary"
-              />
-              <p-button
-                icon="pi pi-pencil"
-                (onClick)="abrirModalEdicao(paciente)"
-                styleClass="p-button-text p-button-rounded"
-                pTooltip="Editar"
-              />
+    @if (isMobile()) {
+      <!-- Lista sem paginação em mobile (paginação do PrimeNG só existe dentro de p-table) -->
+      <div class="mobile-card-list">
+        @if (carregando()) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem"></i>
+            <span>Carregando pacientes...</span>
+          </div>
+        } @else if (pacientesFiltrados().length === 0) {
+          <div class="mobile-card-empty">
+            <i class="pi pi-users" style="font-size: 1.5rem"></i>
+            <span>Nenhum paciente encontrado</span>
+          </div>
+        } @else {
+          @for (paciente of pacientesFiltrados(); track paciente.id) {
+            <div class="mobile-card">
+              <div class="mobile-card-header">
+                <div>
+                  <div class="mobile-card-title">{{ paciente.nome }}</div>
+                  <div class="mobile-card-subtitle">{{ formatarCPF(paciente.cpf) }}</div>
+                </div>
+                <p-tag
+                  [value]="paciente.ativo !== false ? 'Ativo' : 'Inativo'"
+                  [severity]="paciente.ativo !== false ? 'success' : 'danger'"
+                />
+              </div>
+              <div class="mobile-card-body">
+                <span><strong>Telefone:</strong> {{ paciente.telefone || '-' }}</span>
+              </div>
+              <div class="mobile-card-actions">
+                <p-button
+                  icon="pi pi-file-pdf"
+                  label="Prontuário PDF"
+                  (onClick)="baixarProntuario(paciente.id, paciente.nome)"
+                  severity="secondary"
+                  [outlined]="true"
+                />
+                <p-button
+                  icon="pi pi-pencil"
+                  label="Editar"
+                  (onClick)="abrirModalEdicao(paciente)"
+                />
+                @if (paciente.ativo !== false) {
+                  <p-button
+                    icon="pi pi-user-minus"
+                    label="Inativar"
+                    (onClick)="confirmarInativacao(paciente)"
+                    severity="danger"
+                    [outlined]="true"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-user-plus"
+                    label="Reativar"
+                    (onClick)="reativarPaciente(paciente)"
+                    severity="success"
+                    [outlined]="true"
+                  />
+                }
+              </div>
             </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+          }
+        }
+      </div>
+    } @else {
+      <p-table
+        [value]="pacientesFiltrados()"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="carregando()"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        styleClass="compact-table"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Telefone</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-paciente>
+          <tr>
+            <td>{{ paciente.nome }}</td>
+            <td>{{ formatarCPF(paciente.cpf) }}</td>
+            <td>{{ paciente.telefone || '-' }}</td>
+            <td>
+              <p-tag
+                [value]="paciente.ativo !== false ? 'Ativo' : 'Inativo'"
+                [severity]="paciente.ativo !== false ? 'success' : 'danger'"
+              />
+            </td>
+            <td style="display: flex; justify-content: center;">
+              <div class="action-buttons">
+                <p-button
+                  icon="pi pi-file-pdf"
+                  label="Prontuário PDF"
+                  (onClick)="baixarProntuario(paciente.id, paciente.nome)"
+                  styleClass="p-button-sm"
+                  severity="secondary"
+                />
+                <p-button
+                  icon="pi pi-pencil"
+                  (onClick)="abrirModalEdicao(paciente)"
+                  styleClass="p-button-text p-button-rounded"
+                  pTooltip="Editar"
+                />
+                @if (paciente.ativo !== false) {
+                  <p-button
+                    icon="pi pi-user-minus"
+                    (onClick)="confirmarInativacao(paciente)"
+                    styleClass="p-button-text p-button-rounded"
+                    severity="danger"
+                    pTooltip="Inativar"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-user-plus"
+                    (onClick)="reativarPaciente(paciente)"
+                    styleClass="p-button-text p-button-rounded"
+                    severity="success"
+                    pTooltip="Reativar"
+                  />
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+    }
 
     <!-- Modal Criar/Editar Paciente -->
     <p-dialog
@@ -98,8 +262,10 @@
       [header]="pacienteEmEdicao ? 'Editar Paciente' : 'Novo Paciente'"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '1000px', maxHeight: '90vh' }"
+      styleClass="dialog-fullscreen-mobile"
       [draggable]="false"
       [resizable]="false"
+      [focusOnShow]="false"
       (onHide)="fecharModal()"
     >
       <form [formGroup]="pacienteForm" (ngSubmit)="salvarPaciente()">
@@ -175,7 +341,7 @@
         </div>
 
         <div class="form-row">
-          <div class="form-group">
+          <div class="form-group cep-field">
             <label for="cep">CEP</label>
             <input
               id="cep"
@@ -269,6 +435,35 @@
             styleClass="full-width"
           ></textarea>
         </div>
+
+        @if (isTablet() && pacienteEmEdicao) {
+          <div class="pac-mobile__modal-acoes">
+            <p-button
+              icon="pi pi-file-pdf"
+              label="Prontuário PDF"
+              (onClick)="baixarProntuario(pacienteEmEdicao.id, pacienteEmEdicao.nome)"
+              severity="secondary"
+              [outlined]="true"
+            />
+            @if (pacienteEmEdicao.ativo !== false) {
+              <p-button
+                icon="pi pi-user-minus"
+                label="Inativar paciente"
+                (onClick)="confirmarInativacao(pacienteEmEdicao)"
+                severity="danger"
+                [outlined]="true"
+              />
+            } @else {
+              <p-button
+                icon="pi pi-user-plus"
+                label="Reativar paciente"
+                (onClick)="reativarPaciente(pacienteEmEdicao)"
+                severity="success"
+                [outlined]="true"
+              />
+            }
+          </div>
+        }
 
         <div class="dialog-footer">
           <p-button

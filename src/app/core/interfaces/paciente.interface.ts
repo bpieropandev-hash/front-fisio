@@ -31,6 +31,7 @@ export interface PacienteResponseDTO {
   anamnese?: string;
   dataCadastro?: string;
   ativo?: boolean;
+  possuiAssinaturaAtiva?: boolean;
 }
 
 

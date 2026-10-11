@@ -1,7 +1,7 @@
 import { Component, signal, OnDestroy } from '@angular/core';
 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -14,6 +14,7 @@ import { AuthService } from '../../../core/services/auth.service';
     selector: 'app-login',
     imports: [
     ReactiveFormsModule,
+    RouterLink,
     ButtonModule,
     InputTextModule,
     PasswordModule,
@@ -61,14 +62,9 @@ export class LoginComponent implements OnDestroy {
         },
         error: (error) => {
           this.loading.set(false);
-          console.log('Erro de login:', error);
-          console.log('Erro completo:', JSON.stringify(error, null, 2));
-          
           // Prioriza "mensagem" (português) e depois "message" (inglês)
           const errorDetail = error.error?.mensagem || error.error?.message || 'Credenciais inválidas';
-          
-          console.log('Mensagem de erro extraída:', errorDetail);
-          
+
           this.messageService.add({
             severity: 'error',
             summary: 'Erro',

@@ -28,4 +28,25 @@ export interface AtendimentoResponseDTO {
   tipoPagamento?: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX';
 }
 
+export interface ConcluirAtendimentoLoteItemDTO {
+  id: number;
+  evolucao: string;
+  recebedor?: 'CLINICA' | 'PROFISSIONAL';
+  tipoPagamento?: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX';
+}
+
+export interface ConcluirAtendimentosLoteRequestDTO {
+  atendimentos: ConcluirAtendimentoLoteItemDTO[];
+}
+
+export interface FalhaLoteDTO {
+  atendimentoId: number;
+  motivo: string;
+}
+
+export interface ConcluirAtendimentosLoteResponseDTO {
+  concluidos: number;
+  falhas: FalhaLoteDTO[];
+}
+
 

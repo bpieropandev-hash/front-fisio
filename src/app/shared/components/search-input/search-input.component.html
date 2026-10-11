@@ -1,0 +1,19 @@
+<div class="search-wrapper">
+  <input
+    type="text"
+    pInputText
+    [placeholder]="placeholder()"
+    [ngModel]="value()"
+    (ngModelChange)="value.set($event)"
+    class="search-input"
+  />
+  @if (value()) {
+    <p-button
+      icon="pi pi-times"
+      (onClick)="limpar()"
+      styleClass="p-button-text p-button-rounded p-button-plain clear-button"
+      pTooltip="Limpar pesquisa"
+      [rounded]="true"
+    />
+  }
+</div>
