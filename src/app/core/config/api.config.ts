@@ -4,6 +4,7 @@ export const API_CONFIG = {
   production: environment.production,
   baseUrl: environment.apiUrl,
   endpoints: {
+    remarcacoes: '/api/v1/remarcacoes',
     auth: '/api/auth',
     pacientes: '/api/v1/pacientes',
     servicos: '/api/v1/servicos',
