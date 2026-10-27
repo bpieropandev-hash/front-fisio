@@ -263,7 +263,8 @@
     }
     @if (carregandoAgenda() || erroAgenda()) {
       <app-page-state [loading]="carregandoAgenda()" [error]="erroAgenda()" loadingLabel="Carregando agenda…" (retry)="carregarEventos()" />
-    } @else if (isTablet()) {
+    }
+    @if (isTablet() && !carregandoAgenda() && !erroAgenda()) {
       <!-- Shell mobile (spec 10): semana + lista do dia, sem FullCalendar -->
       <div class="agenda-mobile">
         <div class="agenda-mobile__semana-nav">
@@ -332,7 +333,8 @@
           <i class="pi pi-plus"></i>
         </button>
       </div>
-    } @else {
+    } @else if (!isTablet()) {
+      <div data-agenda-calendar [hidden]="carregandoAgenda() || !!erroAgenda()">
       <!-- Legenda de Status -->
       <div class="status-legend">
         <div class="legend-item">
@@ -354,6 +356,7 @@
       </div>
 
       <full-calendar [options]="calendarOptions()" />
+      </div>
     }
 
     <!-- Modal de Edição/Baixa -->
@@ -376,6 +379,11 @@
         <p role="alert">{{ erroAtendimento() }}</p>
         <p-button label="Fechar" (onClick)="fecharModal()" />
       } @else if (atendimentoSelecionado()) {
+        <div class="form-group">
+          <p>As alterações abaixo afetam somente este atendimento.</p>
+          <p-button label="Alterar próximos atendimentos" icon="pi pi-calendar" [outlined]="true"
+            [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="abrirRemarcacaoRecorrente()" />
+        </div>
         <div class="form-group">
           <label>Paciente</label>
           <p>{{ atendimentoSelecionado()?.pacienteNome || 'Carregando...' }}</p>
@@ -486,7 +494,7 @@
             styleClass="p-button-text"
           />
           <p-button
-            label="Salvar"
+            label="Salvar somente este atendimento"
             icon="pi pi-check"
             (onClick)="salvarAtendimento()"
             [loading]="salvando()"
@@ -607,6 +615,15 @@
         </div>
       }
     </p-dialog>
+
+    @if (atendimentoRemarcacao(); as origem) {
+      <p-dialog [visible]="true" header="Remarcação de programação" [modal]="true"
+        [style]="{ width: '96vw', maxWidth: '960px', maxHeight: '95dvh' }"
+        [draggable]="false" [resizable]="false" [closable]="false" [closeOnEscape]="false" [dismissableMask]="false">
+        <app-remarcacao-recorrente [atendimento]="origem" [pacienteNome]="origem.pacienteNome || ''"
+          [servicoNome]="origem.servicoNome || ''" (concluido)="remarcacaoConcluida()" (fechar)="atendimentoRemarcacao.set(null)" />
+      </p-dialog>
+    }
 
 <p-dialog [(visible)]="modalTurmaVisivel" header="Participantes da turma" [modal]="true" [style]="{width:'90vw',maxWidth:'650px'}" [draggable]="false">
  <p>Abra um participante para evoluir, remarcar ou alterar seu status individualmente.</p>

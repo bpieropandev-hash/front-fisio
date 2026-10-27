@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { FullCalendarModule } from '@fullcalendar/angular';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MessageService } from 'primeng/api';
@@ -12,10 +15,19 @@ import { PacienteService } from '../../core/services/paciente.service';
 import { ServicoService } from '../../core/services/servico.service';
 import { AtendimentoResponseDTO } from '../../core/interfaces/agendamento.interface';
 const atendimento: AtendimentoResponseDTO = {id:1,pacienteId:1,servicoBaseId:1,dataHoraInicio:'2026-10-26T09:15:00',dataHoraFim:'2026-10-26T10:15:00',valorCobrado:80,pctClinicaSnapshot:20,pctProfissionalSnapshot:80,status:'AGENDADO',modalidadeCobranca:'AVULSO',statusPagamento:'PAYMENT_PENDING'};
+@Component({ selector: 'full-calendar', standalone: true, template: '' })
+class CalendarStubComponent {
+ readonly options = input<unknown>();
+ readonly navigationState = { date: '2026-12-15', view: 'timeGridWeek' };
+}
+
 describe('integração agenda e recebimento', () => {
  let component: AgendaComponent; let http: HttpTestingController;
  beforeEach(() => {
-  TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting(),MessageService,{provide:BreakpointService,useValue:{isMobile:signal(false),isTablet:signal(false)}}]});
+  TestBed.configureTestingModule({providers:[provideRouter([]),provideHttpClient(),provideHttpClientTesting(),MessageService,{provide:BreakpointService,useValue:{isMobile:signal(false),isTablet:signal(false)}}]});
+  TestBed.overrideComponent(AgendaComponent, {
+   remove: { imports: [FullCalendarModule] }, add: { imports: [CalendarStubComponent] }
+  });
   http=TestBed.inject(HttpTestingController);
   component=TestBed.runInInjectionContext(()=>new AgendaComponent(TestBed.inject(AgendamentoService),TestBed.inject(PacienteService),TestBed.inject(ServicoService),TestBed.inject(MessageService)));
   component.pacientes.set([{id:1,nome:'Ana',cpf:'123'}]); component.servicos.set([{id:1,nome:'Pilates',tipo:'PILATES',valorBase:80,pctClinica:20,pctProfissional:80,capacidade:15}]);
@@ -25,6 +37,30 @@ describe('integração agenda e recebimento', () => {
   http.expectOne(r=>r.method==='GET' && r.url.endsWith(`/agendamentos/${atual.id}`)).flush(atual);
   component.estadoFichaMudou({dirty:false,carregando:false,salvando:false,conflito:false,carregado:true,versao:0,resumo:atual.evolucao || ''});
  }
+ it('mantém instância e navegação do calendário ao carregar e falhar', () => {
+  const fixture = TestBed.createComponent(AgendaComponent);
+  fixture.detectChanges();
+  http.expectOne(r => r.url.endsWith('/pacientes')).flush([]);
+  http.expectOne(r => r.url.endsWith('/servicos')).flush([]);
+  http.expectOne(r => r.url.endsWith('/agendamentos')).flush([]);
+  fixture.detectChanges();
+  const calendar = fixture.debugElement.query(By.directive(CalendarStubComponent)).componentInstance;
+  fixture.componentInstance.carregarEventos();
+  fixture.detectChanges();
+  expect(fixture.debugElement.query(By.directive(CalendarStubComponent))?.componentInstance).toBe(calendar);
+  expect(fixture.nativeElement.querySelector('[data-agenda-calendar]').hidden).toBe(true);
+  http.expectOne(r => r.url.endsWith('/agendamentos')).flush({}, {status:500,statusText:'Falha'});
+  fixture.detectChanges();
+  expect(fixture.debugElement.query(By.directive(CalendarStubComponent))?.componentInstance).toBe(calendar);
+  expect(calendar.navigationState).toEqual({date:'2026-12-15',view:'timeGridWeek'});
+  expect(fixture.nativeElement.textContent).not.toContain('Nenhum atendimento neste dia');
+  fixture.componentInstance.carregarEventos();
+  http.expectOne(r => r.url.endsWith('/agendamentos')).flush([]);
+  fixture.detectChanges();
+  expect(fixture.nativeElement.querySelector('[data-agenda-calendar]').hidden).toBe(false);
+  expect(fixture.debugElement.query(By.directive(CalendarStubComponent)).componentInstance).toBe(calendar);
+  http.verify();
+ });
  it('limpa erro de edição ao iniciar criação', () => {
   component.erroAtendimento.set('Falhou');component.carregandoAtendimento.set(true);
   component.abrirModalNovoAgendamento();
@@ -184,6 +220,14 @@ describe('integração agenda e recebimento', () => {
   http.expectOne(r=>r.url.endsWith('/agendamentos')).flush([{...atendimento,status:'CONCLUIDO'}]);
   expect(component.eventos()[0].extendedProps?.['pacienteNome']).toBe('Ana histórica');
   expect(component.eventos()[0].extendedProps?.['servicoNome']).toBe('Pilates histórico');http.verify();
+ });
+ it('abre remarcação separada sem aplicar edição pontual ou perder rascunho da ficha', () => {
+  abrir(atendimento);
+  component.estadoFichaMudou({dirty:true,carregando:false,salvando:false,conflito:false,carregado:true,versao:1,resumo:'Salvo'});
+  component.abrirRemarcacaoRecorrente();expect(component.atendimentoRemarcacao()).toBeNull();expect(component.modalVisivel).toBe(true);
+  component.estadoFichaMudou({dirty:false,carregando:false,salvando:false,conflito:false,carregado:true,versao:1,resumo:'Salvo'});
+  component.abrirRemarcacaoRecorrente();expect(component.atendimentoRemarcacao()?.id).toBe(1);expect(component.modalVisivel).toBe(false);
+  http.expectNone(r=>r.method==='PUT'||r.method==='POST');http.verify();
  });
 
 });

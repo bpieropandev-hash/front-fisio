@@ -1,4 +1,5 @@
 import { PageStateComponent } from '../../shared/components/page-state/page-state.component';
+import { RemarcacaoRecorrenteComponent } from './remarcacao-recorrente.component';
 import { untracked } from '@angular/core';
 import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
 import { Component, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
@@ -74,7 +75,7 @@ interface ItemLoteUI {
 
 @Component({
   selector: 'app-agenda',
-  imports: [PageStateComponent,
+  imports: [PageStateComponent, RemarcacaoRecorrenteComponent,
     CommonModule,
     FormsModule,
     FullCalendarModule,
@@ -94,6 +95,20 @@ interface ItemLoteUI {
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
+  atendimentoRemarcacao = signal<(AtendimentoResponseDTO & { pacienteNome?: string; servicoNome?: string }) | null>(null);
+
+  abrirRemarcacaoRecorrente(): void {
+    const atendimento = this.atendimentoSelecionado();
+    if (!atendimento || this.salvando()) return;
+    if (this.motivoBloqueioFicha() || this.temAlteracoesPendentes()) {
+      this.avisarFichaPendente();
+      return;
+    }
+    this.descartarEFechar();
+    this.atendimentoRemarcacao.set(atendimento);
+  }
+
+  remarcacaoConcluida(): void { this.carregarEventos(); }
   carregandoAgenda = signal(false);
   erroAgenda = signal('');
   erroCatalogoAgenda = signal('');
@@ -636,6 +651,8 @@ export class AgendaComponent implements OnInit {
       next: (atendimentos) => {
         if (consulta !== this.consultaAgenda) return;
         this.carregandoAgenda.set(false);
+        // Ao revelar a instância já montada, recalcular medidas após o DOM atualizar.
+        setTimeout(() => this.calendarComponent?.getApi()?.updateSize());
         const eventos: EventInput[] = [];
         atendimentos.forEach(atendimento => {
           const isMensalista = ehMensalidade(atendimento);
