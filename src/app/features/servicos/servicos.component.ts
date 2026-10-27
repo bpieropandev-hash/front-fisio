@@ -1,3 +1,4 @@
+import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -47,6 +48,7 @@ type ServicoForm = Omit<ServicoCreateRequestDTO, 'valorBase'> & { valorBase: num
   styleUrls: ['./servicos.component.scss']
 })
 export class ServicosComponent implements OnInit {
+  readonly configuracoes = inject(ConfiguracaoClinicaService);
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
@@ -88,6 +90,7 @@ export class ServicosComponent implements OnInit {
       nome: '',
       tipo: 'FISIOTERAPIA',
       valorBase: null,
+      capacidade: this.configuracoes.atual().capacidadeFisioterapia,
       pctClinica: 20,
       pctProfissional: 80,
       ativo: true
@@ -124,6 +127,7 @@ export class ServicosComponent implements OnInit {
       nome: servico.nome,
       tipo: servico.tipo,
       valorBase: servico.valorBase,
+      capacidade: servico.capacidade ?? (servico.tipo === 'PILATES' ? 15 : 1),
       pctClinica: servico.pctClinica,
       pctProfissional: servico.pctProfissional,
       ativo: servico.ativo ?? true
@@ -146,6 +150,9 @@ export class ServicosComponent implements OnInit {
       return;
     }
 
+    if (!Number.isInteger(this.formServico.capacidade) || this.formServico.capacidade! < 1 || this.formServico.capacidade! > 100) {
+      this.messageService.add({severity:'warn',summary:'Capacidade inválida',detail:'Informe uma capacidade inteira entre 1 e 100.'}); return;
+    }
     if ((this.formServico.pctClinica ?? 0) + (this.formServico.pctProfissional ?? 0) !== 100) {
       this.messageService.add({
         severity: 'warn',

@@ -118,7 +118,7 @@
         <ng-template pTemplate="header">
           <tr>
             <th pSortableColumn="nome">Serviço <p-sortIcon field="nome" /></th>
-            <th>Tipo</th>
+            <th>Tipo</th><th>Capacidade</th>
             <th>Valor Base</th>
             <th>Repasse Clínica</th>
             <th>Repasse Profissional</th>
@@ -141,6 +141,7 @@
                 rounded
               />
             </td>
+            <td>{{ servico.capacidade ?? (servico.tipo === 'PILATES' ? 15 : 1) }}</td>
             <td>{{ servico.valorBase | currency:'BRL' }}</td>
             <td>{{ servico.pctClinica }}%</td>
             <td>{{ servico.pctProfissional }}%</td>
@@ -198,7 +199,7 @@
         <div class="full">
           <label>Tipo *</label>
           <p-select
-            [(ngModel)]="formServico.tipo"
+            [(ngModel)]="formServico.tipo" (ngModelChange)="!servicoEmEdicao && (formServico.capacidade = $event === 'PILATES' ? configuracoes.atual().capacidadePilates : configuracoes.atual().capacidadeFisioterapia)"
             [options]="tipoServicoOptions"
             optionLabel="label"
             optionValue="value"
@@ -208,6 +209,11 @@
           />
         </div>
 
+        <div>
+          <label for="servico-capacidade">Capacidade por horário *</label>
+          <p-inputNumber inputId="servico-capacidade" [(ngModel)]="formServico.capacidade" [min]="1" [max]="100" [maxFractionDigits]="0" />
+          <small class="helper">Máximo de pacientes simultâneos neste serviço (1 a 100).</small>
+        </div>
         <div>
           <label>Valor base (R$) *</label>
           <p-inputNumber

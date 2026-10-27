@@ -1,3 +1,4 @@
+@if(authService.isAuthenticated() && configuracoes.indisponivel()) {<div role="alert" style="padding:1rem">Não foi possível carregar as configurações da clínica. <button type="button" (click)="configuracoes.carregar()">Tentar novamente</button></div>}
 @if (authService.isAuthenticated() && !isMobileShell()) {
   <div class="top-shell">
     <p-menubar [model]="menuItems">

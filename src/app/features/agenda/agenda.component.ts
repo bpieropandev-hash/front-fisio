@@ -1,3 +1,5 @@
+import { untracked } from '@angular/core';
+import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
 import { Component, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -40,12 +42,19 @@ import {
   separarDataHora,
   montarHorariosComExtra
 } from './agenda-event.util';
+import { EvolucaoFichaComponent, EvolucaoFichaEstado } from '../../shared/components/evolucao-ficha/evolucao-ficha.component';
+import { ReciboDialogComponent } from '../../shared/components/recibo-dialog/recibo-dialog.component';
+import { OrigemRecibo } from '../../core/interfaces/recibo.interface';
+import { agruparAtendimentos, ehMensalidade, podeEmitirReciboAtendimento } from './agenda-group.util';
+import { RouterLink } from '@angular/router';
 import { obterPillStatus } from '../../core/utils/status-pill.util';
 
 const DIAS_SEMANA_CURTO = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
 export interface EventoDoDiaUI {
   atendimento: AtendimentoResponseDTO;
+  participantes: AtendimentoResponseDTO[];
+  chave: string;
   hora: string;
   pacienteNome: string;
   servicoNome: string;
@@ -57,6 +66,7 @@ interface ItemLoteUI {
   avulso: boolean;
   selecionado: boolean;
   evolucao: string;
+  evolucaoPreservada?: boolean;
   recebedor: 'CLINICA' | 'PROFISSIONAL' | null;
   tipoPagamento: 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | null;
 }
@@ -76,18 +86,21 @@ interface ItemLoteUI {
     MultiSelect,
     Checkbox,
     Card,
-    Toast
+    Toast, EvolucaoFichaComponent, ReciboDialogComponent, RouterLink
   ],
   providers: [MessageService],
   templateUrl: './agenda.component.html',
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
+  readonly configuracoes = inject(ConfiguracaoClinicaService);
+  private readonly atualizarAgrupamento = effect(() => { this.configuracoes.atual(); untracked(() => this.aplicarFiltros()); });
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
   obterPillStatus = obterPillStatus;
 
+  @ViewChild(EvolucaoFichaComponent) fichaComponent?: EvolucaoFichaComponent;
   @ViewChild(FullCalendarComponent) calendarComponent?: FullCalendarComponent;
 
   // --- Shell mobile (spec 10) — semana + lista do dia, substitui o FullCalendar em telas estreitas ---
@@ -109,9 +122,10 @@ export class AgendaComponent implements OnInit {
     return this.eventosFiltrados()
       .filter(evento => this.mesmoDia(new Date(evento.start as string), dia))
       .map(evento => {
-        const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO;
+        const participantes = evento.extendedProps?.['participantes'] as AtendimentoResponseDTO[];
+        const atendimento = participantes[0];
         return {
-          atendimento,
+          atendimento, participantes, chave: String(evento.id),
           hora: formatHora(new Date(evento.start as string)),
           pacienteNome: (evento.extendedProps?.['pacienteNome'] as string) || '',
           servicoNome: (evento.extendedProps?.['servicoNome'] as string) || ''
@@ -202,6 +216,79 @@ export class AgendaComponent implements OnInit {
   dataNovoAgendamento: Date | null = null;
   horaNovoAgendamento: string | null = null;
 
+  turmaSelecionada = signal<AtendimentoResponseDTO[]>([]);
+  modalTurmaVisivel = false;
+  reciboVisivel = false;
+  reciboOrigem: OrigemRecibo | null = null;
+  dataPagamentoEdit: Date | null = null;
+  readonly carregandoAtendimento = signal(false);
+  readonly erroAtendimento = signal('');
+  readonly estadoFicha = signal<EvolucaoFichaEstado>({dirty:false,carregando:true,salvando:false,conflito:false,carregado:false,versao:0,resumo:''});
+  readonly modalDescartarVisivel = signal(false);
+  complementoEdit = '';
+  resumoFichaSalvo = '';
+  private aberturaAtendimento = 0;
+  private temFichaEstruturada = false;
+  private evolucaoOriginal = '';
+
+  estadoFichaMudou(estado: EvolucaoFichaEstado): void {
+    const anterior = this.estadoFicha();
+    this.estadoFicha.set(estado);
+    if (estado.carregado && (!anterior.carregado || anterior.versao !== estado.versao)) {
+      this.resumoFichaSalvo = estado.resumo;
+      this.temFichaEstruturada = estado.versao > 0;
+      if (estado.versao > 0) this.atualizarResumoNaAgenda(estado.resumo);
+    }
+  }
+
+  motivoBloqueioFicha(): string {
+    const estado = this.estadoFicha();
+    if (this.carregandoAtendimento() || estado.carregando) return 'Aguarde carregar a evolução antes de salvar o atendimento.';
+    if (estado.salvando) return 'Aguarde o salvamento da ficha antes de salvar ou concluir o atendimento.';
+    if (estado.conflito) return 'Resolva o conflito e salve a ficha antes de salvar ou concluir o atendimento.';
+    if (!estado.carregado) return 'Carregue a ficha com sucesso antes de salvar ou concluir o atendimento.';
+    if (estado.dirty) return 'Salve a evolução da ficha antes de salvar ou concluir o atendimento.';
+    if (this.complementoEdit.trim()) return 'Leve o complemento para Observações e salve a ficha antes de concluir, ou descarte o complemento explicitamente.';
+    return '';
+  }
+
+  levarComplementoParaFicha(): void {
+    const complemento = this.complementoEdit.trim();
+    if (!complemento || !this.fichaComponent || this.estadoFicha().salvando || this.estadoFicha().conflito || !this.estadoFicha().carregado) return;
+    const observacoes = this.fichaComponent.form.controls.observacoes;
+    const texto = [observacoes.value.trim(), complemento].filter(Boolean).join('\n');
+    if (texto.length > 5000) {
+      this.messageService.add({severity:'warn',summary:'Complemento preservado',detail:'As observações ficariam com mais de 5.000 caracteres. Reduza o texto antes de transferir.'});
+      return;
+    }
+    observacoes.setValue(texto);
+    observacoes.markAsDirty();
+    this.complementoEdit = '';
+  }
+
+  descartarComplemento(): void { this.complementoEdit = ''; }
+
+  private atualizarResumoNaAgenda(resumo: string): void {
+    const id = this.atendimentoSelecionado()?.id;
+    if (!id) return;
+    this.atendimentoSelecionado.update(a => a ? {...a, evolucao: resumo} : a);
+    this.eventos.update(eventos => eventos.map(evento => {
+      const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+      return atendimento?.id === id ? {...evento, extendedProps: {...evento.extendedProps, atendimento: {...atendimento, evolucao: resumo}}} : evento;
+    }));
+    this.aplicarFiltros();
+  }
+  ehMensalidade = ehMensalidade;
+  podeEmitirRecibo = podeEmitirReciboAtendimento;
+
+  nomePaciente(atendimento: AtendimentoResponseDTO): string { return this.pacientes().find(p => p.id === atendimento.pacienteId)?.nome ?? `Paciente #${atendimento.pacienteId}`; }
+  abrirRecibo(): void { const atendimento = this.atendimentoSelecionado(); if (!atendimento || !this.podeEmitirRecibo(atendimento)) return; this.reciboOrigem = { atendimentoId: atendimento.id }; this.reciboVisivel = true; }
+  evolucaoSalva(resumo: string): void {
+    this.resumoFichaSalvo = resumo;
+    this.temFichaEstruturada = true;
+    this.atualizarResumoNaAgenda(resumo);
+  }
+
   statusEdit: string = 'AGENDADO';
   evolucaoEdit: string = '';
   recebedorEdit: 'CLINICA' | 'PROFISSIONAL' | null = null;
@@ -251,9 +338,9 @@ export class AgendaComponent implements OnInit {
     { label: 'Profissional', value: 'PROFISSIONAL' }
   ];
 
-  /** Retorna true se o atendimento é avulso (tem valor cobrado). Mensalistas têm valorCobrado = 0. */
-  ehAtendimentoAvulso(atendimento: { valorCobrado?: number } | null | undefined): boolean {
-    return Number(atendimento?.valorCobrado ?? 0) > 0;
+  /** Somente cobertura explícita identifica mensalidade. */
+  ehAtendimentoAvulso(atendimento: Partial<AtendimentoResponseDTO> | null | undefined): boolean {
+    return !ehMensalidade(atendimento) && Number(atendimento?.valorCobrado ?? 0) > 0;
   }
 
   tipoPagamentoOptions = [
@@ -298,7 +385,8 @@ export class AgendaComponent implements OnInit {
             dataHoraInicio: a.dataHoraInicio,
             avulso: this.ehAtendimentoAvulso(a),
             selecionado: true,
-            evolucao: '',
+            evolucao: a.evolucao || '',
+            evolucaoPreservada: !!a.evolucao?.trim(),
             recebedor: null,
             tipoPagamento: null
           }));
@@ -321,11 +409,11 @@ export class AgendaComponent implements OnInit {
     const itens = this.itensLote();
     if (itens.length === 0) return;
     const primeiraEvolucao = itens[0].evolucao;
-    this.itensLote.set(itens.map(i => ({ ...i, evolucao: primeiraEvolucao })));
+    this.itensLote.set(itens.map(i => i.evolucaoPreservada ? i : ({ ...i, evolucao: primeiraEvolucao })));
   }
 
   atualizarItemLote(id: number, campo: 'evolucao' | 'recebedor' | 'tipoPagamento' | 'selecionado', valor: any): void {
-    this.itensLote.set(this.itensLote().map(i => i.id === id ? { ...i, [campo]: valor } : i));
+    this.itensLote.set(this.itensLote().map(i => i.id === id && !(campo === 'evolucao' && i.evolucaoPreservada) ? { ...i, [campo]: valor } : i));
   }
 
   confirmarConclusaoLote(): void {
@@ -346,7 +434,8 @@ export class AgendaComponent implements OnInit {
       id: i.id,
       evolucao: i.evolucao,
       recebedor: i.avulso && i.recebedor ? i.recebedor : undefined,
-      tipoPagamento: i.avulso && i.tipoPagamento ? i.tipoPagamento : undefined
+      tipoPagamento: i.avulso && i.tipoPagamento ? i.tipoPagamento : undefined,
+      dataPagamento: i.avulso && i.recebedor && i.tipoPagamento ? formatDateForApi(new Date()) : undefined
     }));
 
     this.agendamentoService.concluirEmLote({ atendimentos: itens }).subscribe({
@@ -484,7 +573,7 @@ export class AgendaComponent implements OnInit {
       next: (atendimentos) => {
         const eventos: EventInput[] = [];
         atendimentos.forEach(atendimento => {
-          const isMensalista = atendimento.valorCobrado === 0;
+          const isMensalista = ehMensalidade(atendimento);
 
           // Busca o nome do paciente e serviço para exibir no título
           const paciente = this.pacientes().find(p => p.id === atendimento.pacienteId);
@@ -504,6 +593,7 @@ export class AgendaComponent implements OnInit {
             id: atendimento.id.toString(),
             title: title,
             start: atendimento.dataHoraInicio,
+            end: atendimento.dataHoraFim,
             backgroundColor: coresStatus.backgroundColor,
             borderColor: coresStatus.borderColor,
             textColor: coresStatus.textColor,
@@ -613,54 +703,17 @@ export class AgendaComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
-    // Aplica filtros nos eventos já carregados
-    let eventosFiltrados = [...this.eventos()];
-
-    // Filtro por status
-    if (this.filtros.status.length > 0) {
-      eventosFiltrados = eventosFiltrados.filter(evento => {
-        const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO;
-        return atendimento && this.filtros.status.includes(atendimento.status);
-      });
-    }
-
-    // Filtro por paciente
-    if (this.filtros.pacienteId) {
-      eventosFiltrados = eventosFiltrados.filter(evento => {
-        const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO;
-        return atendimento && atendimento.pacienteId === this.filtros.pacienteId;
-      });
-    }
-
-    // Filtro por serviço
-    if (this.filtros.servicoId) {
-      eventosFiltrados = eventosFiltrados.filter(evento => {
-        const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO;
-        return atendimento && atendimento.servicoBaseId === this.filtros.servicoId;
-      });
-    }
-
-    // Filtro por data início
-    if (this.filtros.dataInicio) {
-      const dataInicio = new Date(this.filtros.dataInicio);
-      dataInicio.setHours(0, 0, 0, 0);
-      eventosFiltrados = eventosFiltrados.filter(evento => {
-        const eventoDate = new Date(evento.start as string);
-        return eventoDate >= dataInicio;
-      });
-    }
-
-    // Filtro por data fim
-    if (this.filtros.dataFim) {
-      const dataFim = new Date(this.filtros.dataFim);
-      dataFim.setHours(23, 59, 59, 999);
-      eventosFiltrados = eventosFiltrados.filter(evento => {
-        const eventoDate = new Date(evento.start as string);
-        return eventoDate <= dataFim;
-      });
-    }
-
-    this.eventosFiltrados.set(eventosFiltrados);
+    const fontes = new Map(this.eventos().map(evento => [(evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO).id, evento]));
+    let grupos = agruparAtendimentos([...fontes.values()].map(evento => evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO), this.filtros);
+    if (!this.configuracoes.atual().agruparAgenda) grupos = grupos.flatMap(g => g.participantes.map(p => ({chave:`individual-${p.id}`,participantes:[p]})));
+    this.eventosFiltrados.set(grupos.map(grupo => {
+      const primeiro = fontes.get(grupo.participantes[0].id)!;
+      if (grupo.participantes.length === 1) return {...primeiro, extendedProps: {...primeiro.extendedProps, participantes: grupo.participantes}};
+      const status = new Set(grupo.participantes.map(p => p.status));
+      const cores = obterCoresPorStatus(status.size === 1 ? grupo.participantes[0].status : 'MISTO');
+      return {...primeiro, ...cores, id: grupo.chave, title: `${primeiro.extendedProps?.['servicoNome']} · ${grupo.participantes.length} participantes`,
+        editable: false, startEditable: false, classNames: [], extendedProps: {...primeiro.extendedProps, atendimento: undefined, pacienteNome: `${grupo.participantes.length} participantes`, participantes: grupo.participantes}};
+    }));
   }
 
   toggleFiltros(): void {
@@ -688,6 +741,8 @@ export class AgendaComponent implements OnInit {
     // Camada extra: alguns cliques disparam dateClick programaticamente (especialmente no mês)
     this.ignoreNextDateClick = true;
     setTimeout(() => (this.ignoreNextDateClick = false), 0);
+    const participantes = info.event.extendedProps['participantes'] as AtendimentoResponseDTO[] | undefined;
+    if (participantes && participantes.length > 1) { this.turmaSelecionada.set(participantes); this.modalTurmaVisivel = true; return; }
     const atendimento = info.event.extendedProps['atendimento'] as AtendimentoResponseDTO;
     this.abrirModalEdicao(atendimento);
   }
@@ -728,7 +783,7 @@ export class AgendaComponent implements OnInit {
     const atendimento = info?.event?.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
     const novaData: Date | null = info?.event?.start ?? null;
 
-    if (!atendimento || !novaData) {
+    if (info?.event?.extendedProps?.['participantes']?.length > 1 || !atendimento || !novaData) {
       info?.revert?.();
       return;
     }
@@ -753,6 +808,32 @@ export class AgendaComponent implements OnInit {
   }
 
   abrirModalEdicao(atendimento: AtendimentoResponseDTO): void {
+    if (this.modalVisivel && this.temAlteracoesPendentes()) { this.avisarFichaPendente(); return; }
+    const abertura = ++this.aberturaAtendimento;
+    this.complementoEdit = '';
+    this.resumoFichaSalvo = '';
+    this.temFichaEstruturada = false;
+    this.estadoFicha.set({dirty:false,carregando:true,salvando:false,conflito:false,carregado:false,versao:0,resumo:''});
+    this.atendimentoSelecionado.set({...atendimento});
+    this.modalVisivel = true;
+    this.modalTurmaVisivel = false;
+    this.erroAtendimento.set('');
+    this.carregandoAtendimento.set(true);
+    this.agendamentoService.buscarPorId(atendimento.id).subscribe({
+      next: atual => {
+        if (abertura !== this.aberturaAtendimento) return;
+        this.preencherEdicao(atual);
+        this.carregandoAtendimento.set(false);
+      },
+      error: () => {
+        if (abertura !== this.aberturaAtendimento) return;
+        this.erroAtendimento.set('Não foi possível carregar o atendimento atualizado. Feche e tente novamente.');
+        this.carregandoAtendimento.set(false);
+      }
+    });
+  }
+
+  private preencherEdicao(atendimento: AtendimentoResponseDTO): void {
     // Usa os dados que já vêm do backend
     const paciente = this.pacientes().find(p => p.id === atendimento.pacienteId);
     const servico = this.servicos().find(s => s.id === atendimento.servicoBaseId);
@@ -763,6 +844,8 @@ export class AgendaComponent implements OnInit {
       servicoNome: servico?.nome || 'Carregando...'
     });
 
+    this.modalTurmaVisivel = false;
+    this.dataPagamentoEdit = atendimento.dataPagamento ? new Date(`${atendimento.dataPagamento}T12:00:00`) : null;
     this.dataHoraEdit = new Date(atendimento.dataHoraInicio);
     this.dataHoraOriginal = new Date(atendimento.dataHoraInicio);
     const { data, hora } = separarDataHora(this.dataHoraEdit);
@@ -773,7 +856,8 @@ export class AgendaComponent implements OnInit {
     this.horaEdit = hora;
     this.horariosEdicao = montarHorariosComExtra(this.horariosDisponiveis, hora);
     this.statusEdit = atendimento.status;
-    this.evolucaoEdit = atendimento.evolucao || '';
+    this.evolucaoOriginal = atendimento.evolucao || '';
+    this.evolucaoEdit = this.evolucaoOriginal;
     this.recebedorEdit = atendimento.recebedor || null;
     this.tipoPagamentoEdit = atendimento.tipoPagamento || null;
     this.modalVisivel = true;
@@ -783,6 +867,7 @@ export class AgendaComponent implements OnInit {
       if (!paciente) {
         this.pacienteService.buscarPorId(atendimento.pacienteId).subscribe({
           next: (p) => {
+            if (this.atendimentoSelecionado()?.id !== atendimento.id) return;
             this.atendimentoSelecionado.set({
               ...this.atendimentoSelecionado()!,
               pacienteNome: p.nome
@@ -793,6 +878,7 @@ export class AgendaComponent implements OnInit {
       if (!servico) {
         this.servicoService.buscarPorId(atendimento.servicoBaseId).subscribe({
           next: (s) => {
+            if (this.atendimentoSelecionado()?.id !== atendimento.id) return;
             this.atendimentoSelecionado.set({
               ...this.atendimentoSelecionado()!,
               servicoNome: s.nome
@@ -804,6 +890,10 @@ export class AgendaComponent implements OnInit {
   }
 
   abrirModalNovoAgendamento(): void {
+    if (this.modalVisivel && this.temAlteracoesPendentes()) { this.avisarFichaPendente(); return; }
+    ++this.aberturaAtendimento;
+    this.erroAtendimento.set('');
+    this.carregandoAtendimento.set(false);
     this.atendimentoSelecionado.set(null);
     this.novoAgendamento = {
       pacienteIds: [],
@@ -818,10 +908,33 @@ export class AgendaComponent implements OnInit {
     this.modalVisivel = true;
   }
 
+  private temAlteracoesPendentes(): boolean {
+    const estado = this.estadoFicha();
+    return !!this.atendimentoSelecionado() && (estado.dirty || estado.conflito || estado.salvando || !!this.complementoEdit.trim());
+  }
+
+  private avisarFichaPendente(): void {
+    this.messageService.add({severity:'warn',summary:'Evolução pendente',detail:this.motivoBloqueioFicha() || 'Salve ou descarte as alterações antes de trocar de atendimento.'});
+  }
+
   fecharModal(): void {
+    if (this.salvando() || (this.atendimentoSelecionado() && this.estadoFicha().salvando)) {
+      this.messageService.add({severity:'warn',summary:'Salvamento em andamento',detail:'Aguarde terminar o salvamento antes de fechar.'});
+      return;
+    }
+    if (this.temAlteracoesPendentes()) { this.modalDescartarVisivel.set(true); return; }
+    this.descartarEFechar();
+  }
+
+  descartarEFechar(): void {
+    if (this.salvando() || (this.atendimentoSelecionado() && this.estadoFicha().salvando)) return;
+    ++this.aberturaAtendimento;
+    this.modalDescartarVisivel.set(false);
     this.modalVisivel = false;
     this.atendimentoSelecionado.set(null);
     this.dataHoraOriginal = null;
+    this.complementoEdit = '';
+    this.carregandoAtendimento.set(false);
   }
 
   /**
@@ -841,15 +954,19 @@ export class AgendaComponent implements OnInit {
   salvarAtendimento(): void {
     const atendimento = this.atendimentoSelecionado();
     if (!atendimento) return;
+    if (this.motivoBloqueioFicha()) { this.avisarFichaPendente(); return; }
 
     const isConcluido = this.statusEdit === 'CONCLUIDO';
-    const valorCobrado = Number(atendimento.valorCobrado ?? 0);
-    const ehAtendimentoAvulso = valorCobrado > 0;
+    const ehAtendimentoAvulso = this.ehAtendimentoAvulso(atendimento);
+    if (isConcluido && ehAtendimentoAvulso && (this.recebedorEdit || this.tipoPagamentoEdit) && (!this.recebedorEdit || !this.tipoPagamentoEdit || !this.dataPagamentoEdit)) {
+      this.messageService.add({severity: 'warn', summary: 'Recebimento incompleto', detail: 'Informe recebedor, forma e data do recebimento para confirmar o pagamento.'});
+      return;
+    }
 
     // Não exige recebedor/tipoPagamento. Mensalistas pagam via cobrança mensal.
     // Avulsos podem concluir sem preencher (ficam PAYMENT_PENDING) ou preencher (ficam PAID).
 
-    if (isConcluido && !this.evolucaoEdit) {
+    if (isConcluido && !(this.temFichaEstruturada ? this.resumoFichaSalvo : this.evolucaoEdit).trim()) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Atenção',
@@ -860,10 +977,9 @@ export class AgendaComponent implements OnInit {
 
     this.salvando.set(true);
 
-    const updateData: any = {
-      status: this.statusEdit,
-      evolucao: this.evolucaoEdit
-    };
+    const updateData: any = { status: this.statusEdit };
+    // A ficha possui seu próprio versionamento. PUT de status/horário nunca regrava seu resumo.
+    if (!this.temFichaEstruturada && this.estadoFicha().versao === 0 && this.evolucaoEdit !== this.evolucaoOriginal) updateData.evolucao = this.evolucaoEdit;
 
     // Só envia data/hora se o usuário realmente alterou — editar apenas a
     // evolução não pode mudar o horário do atendimento
@@ -876,6 +992,7 @@ export class AgendaComponent implements OnInit {
     if (ehAtendimentoAvulso && isConcluido) {
       updateData.recebedor = this.recebedorEdit;
       updateData.tipoPagamento = this.tipoPagamentoEdit;
+      if (this.dataPagamentoEdit && this.recebedorEdit && this.tipoPagamentoEdit) updateData.dataPagamento = formatDateForApi(this.dataPagamentoEdit);
     }
 
     this.agendamentoService.atualizar(atendimento.id, updateData).subscribe({
@@ -885,9 +1002,9 @@ export class AgendaComponent implements OnInit {
           summary: 'Sucesso',
           detail: 'Atendimento atualizado com sucesso'
         });
+        this.salvando.set(false);
         this.fecharModal();
         this.carregarEventos();
-        this.salvando.set(false);
       },
       error: (error: HttpErrorResponse) => {
         const msg = ErrorHandlerUtil.getErrorMessage(error);
@@ -962,9 +1079,9 @@ export class AgendaComponent implements OnInit {
           summary: 'Sucesso',
           detail: `${quantidade} agendamento(s) criado(s) com sucesso!`
         });
+        this.salvando.set(false);
         this.fecharModal();
         this.carregarEventos();
-        this.salvando.set(false);
       },
       error: (error: HttpErrorResponse) => {
         const msg = ErrorHandlerUtil.getErrorMessage(error);

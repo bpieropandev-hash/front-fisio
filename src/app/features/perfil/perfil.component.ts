@@ -1,3 +1,4 @@
+import { ConfiguracoesClinicaComponent } from './configuracoes-clinica/configuracoes-clinica.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -23,7 +24,7 @@ function senhasIguaisValidator(control: AbstractControl): ValidationErrors | nul
 
 @Component({
     selector: 'app-perfil',
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule, CardModule, ToastModule],
+    imports: [ConfiguracoesClinicaComponent, CommonModule, FormsModule, ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule, CardModule, ToastModule],
     providers: [MessageService],
     templateUrl: './perfil.component.html',
     styleUrls: ['./perfil.component.scss']

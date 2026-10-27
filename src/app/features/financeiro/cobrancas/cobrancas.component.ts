@@ -21,6 +21,8 @@ import {
 import { formatDateForApi } from '../../../core/utils/date-format.util';
 import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
+import { ReciboDialogComponent } from '../../../shared/components/recibo-dialog/recibo-dialog.component';
+import { OrigemRecibo } from '../../../core/interfaces/recibo.interface';
 import { BreakpointService } from '../../../core/services/breakpoint.service';
 
 @Component({
@@ -38,7 +40,7 @@ import { BreakpointService } from '../../../core/services/breakpoint.service';
         TagModule,
         TooltipModule,
         ToastModule,
-        SearchInputComponent
+        SearchInputComponent, ReciboDialogComponent
     ],
     providers: [MessageService],
     templateUrl: './cobrancas.component.html',
@@ -51,6 +53,13 @@ export class CobrancasComponent implements OnInit {
 
   cobrancas = signal<CobrancaMensalResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
+  reciboVisivel = false;
+  reciboOrigem: OrigemRecibo | null = null;
+  cobrancaRecibo: CobrancaMensalResponseDTO | null = null;
+  abrirRecibo(cobranca: CobrancaMensalResponseDTO): void {
+    if(cobranca.status !== 'PAGO' || cobranca.valor <= 0)return;
+    this.cobrancaRecibo=cobranca;this.reciboOrigem={cobrancaId:cobranca.id};this.reciboVisivel=true;
+  }
   modalBaixaVisivel = false;
   carregando = signal(false);
   salvando = signal(false);

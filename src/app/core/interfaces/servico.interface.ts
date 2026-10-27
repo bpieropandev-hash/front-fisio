@@ -4,6 +4,7 @@ export interface ServicoCreateRequestDTO {
   nome: string;
   tipo: TipoServico;
   valorBase: number;
+  capacidade?: number;
   pctClinica: number;
   pctProfissional: number;
   ativo?: boolean;
@@ -14,6 +15,7 @@ export interface ServicoResponseDTO {
   nome: string;
   tipo: TipoServico;
   valorBase: number;
+  capacidade?: number;
   pctClinica: number;
   pctProfissional: number;
   ativo?: boolean;

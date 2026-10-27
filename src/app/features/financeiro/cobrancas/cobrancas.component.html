@@ -76,6 +76,7 @@
                       }
                     </div>
                   </div>
+                  @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="$event.stopPropagation(); abrirRecibo(cobranca)" /> }
                   <div class="fin-mobile__item-valor" [class.fin-mobile__item-valor--pendente]="cobranca.status === 'PENDENTE'">
                     {{ cobranca.status === 'PAGO' ? '+ ' : '' }}{{ cobranca.valor | currency: 'BRL' }}
                   </div>
@@ -191,6 +192,7 @@
                 <span><strong>Recebedor:</strong> {{ obterLabelRecebedor(cobranca.recebedor) }}</span>
                 <span><strong>Tipo:</strong> {{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</span>
               </div>
+              @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo(cobranca)" /> }
               @if (cobranca.status === 'PENDENTE') {
                 <div class="mobile-card-actions">
                   <p-button
@@ -239,6 +241,7 @@
             <td>{{ obterLabelRecebedor(cobranca.recebedor) }}</td>
             <td>{{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</td>
             <td>
+              @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo(cobranca)" /> }
               @if (cobranca.status === 'PENDENTE') {
                 <p-button
                   label="Dar Baixa"
@@ -319,3 +322,5 @@
         />
       </div>
     </p-dialog>
+
+<app-recibo-dialog [(visible)]="reciboVisivel" [origem]="reciboOrigem" [dataPagamento]="cobrancaRecibo?.dataPagamento || ''" />

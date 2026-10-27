@@ -1,0 +1,40 @@
+<section class="configuracoes" aria-label="Configurações da clínica">
+ <h2>Configurações da clínica</h2>
+ <p>Preferências de atendimento e financeiro usadas pela fisioterapeuta e pela equipe desta clínica.</p>
+ @if(carregando()){<p role="status">Carregando configurações…</p>}
+ @if(erro()){<p role="alert" class="erro">{{erro()}}</p><button type="button" (click)="carregar()" [disabled]="salvando()">Recarregar configurações</button>}
+ @if(sucesso()){<p role="status">{{sucesso()}}</p>}
+ @if(dados();as c){
+ <form #form="ngForm" (ngSubmit)="salvar()">
+ <fieldset [disabled]="salvando() || carregando()"><legend>Recibos</legend>
+ <label>Nome do emitente<input name="emitenteNome" [(ngModel)]="c.emitenteNome" maxlength="255" /></label>
+ <label>CPF ou CNPJ do emitente<input name="emitenteDocumento" [(ngModel)]="c.emitenteDocumento" maxlength="30" /></label>
+ <small>Informe quem recebe os pagamentos. Recibos já emitidos conservam seus dados originais. O recibo interno não substitui o Receita Saúde quando obrigatório.</small></fieldset>
+ <fieldset [disabled]="salvando() || carregando()"><legend>Novas mensalidades</legend>
+ <label>Valor sugerido (R$)<input type="number" name="valor" [(ngModel)]="c.mensalidadeValorPadrao" min="0" max="99999999.99" step="0.01" required /></label>
+ <label>Dia de vencimento sugerido<input type="number" name="vencimento" [(ngModel)]="c.mensalidadeDiaVencimento" min="1" max="28" step="1" required /></label>
+ <small>Preenchimento inicial para novos contratos, editável em cada assinatura. As mensalidades atuais continuam sem franquia de sessões.</small></fieldset>
+ <fieldset [disabled]="salvando() || carregando()"><legend>Agenda e turmas</legend>
+ <label class="check"><input type="checkbox" name="agrupar" [(ngModel)]="c.agruparAgenda" />Agrupar pacientes com o mesmo serviço e intervalo na agenda</label>
+ <label>Capacidade inicial de novos serviços de fisioterapia<input type="number" name="capacidadeFisio" [(ngModel)]="c.capacidadeFisioterapia" min="1" max="100" step="1" required /></label>
+ <label>Capacidade inicial de novos serviços de Pilates<input type="number" name="capacidadePilates" [(ngModel)]="c.capacidadePilates" min="1" max="100" step="1" required /></label>
+ <small>Os serviços existentes podem ser ajustados individualmente abaixo.</small></fieldset>
+ <fieldset [disabled]="salvando() || carregando()"><legend>Evolução por marcação</legend>
+ <label class="check"><input type="checkbox" name="dor" [(ngModel)]="c.exibirDor" />Oferecer registro da escala de dor</label>
+ <h3>Procedimentos</h3>
+ @for(item of c.procedimentos;track item.codigo){<div class="item"><input type="checkbox" [name]="'pAtivo'+item.codigo" [(ngModel)]="item.ativo" [attr.aria-label]="'Disponibilizar procedimento '+item.nome" /><input [name]="'pNome'+item.codigo" [(ngModel)]="item.nome" maxlength="100" required aria-label="Nome do procedimento" /></div>}
+ <div class="adicionar"><input name="novoProcedimento" [(ngModel)]="novoProcedimento" maxlength="100" aria-label="Novo procedimento" placeholder="Novo procedimento" /><button type="button" (click)="adicionar('procedimentos')">Adicionar procedimento</button></div>
+ <h3>Equipamentos de Pilates</h3>
+ @for(item of c.equipamentos;track item.codigo){<div class="item"><input type="checkbox" [name]="'eAtivo'+item.codigo" [(ngModel)]="item.ativo" [attr.aria-label]="'Disponibilizar equipamento '+item.nome" /><input [name]="'eNome'+item.codigo" [(ngModel)]="item.nome" maxlength="100" required aria-label="Nome do equipamento" /></div>}
+ <div class="adicionar"><input name="novoEquipamento" [(ngModel)]="novoEquipamento" maxlength="100" aria-label="Novo equipamento" placeholder="Novo equipamento" /><button type="button" (click)="adicionar('equipamentos')">Adicionar equipamento</button></div>
+ <small>Desmarque para desativar. Registros anteriores continuam disponíveis no prontuário.</small></fieldset>
+ <fieldset [disabled]="salvando() || carregando()"><legend>Fotos clínicas</legend>
+ <label>Tamanho máximo de cada nova foto (MiB)<input type="number" name="fotoLimite" [(ngModel)]="c.fotoLimiteMiB" min="1" max="5" step="1" required /></label>
+ <small>JPEG ou PNG, de 1 a 5 MiB. A alteração não exclui imagens já cadastradas.</small></fieldset>
+ <button type="submit" class="primario" [disabled]="form.invalid || salvando() || carregando()">{{salvando()?'Salvando…':'Salvar configurações da clínica'}}</button>
+ </form>}
+ <fieldset><legend>Capacidade dos serviços existentes</legend>
+ @if(erroServicos()){<p role="alert" class="erro">{{erroServicos()}}</p><button type="button" (click)="carregarServicos()">Recarregar serviços</button>}
+ @for(s of servicos();track s.id){<div class="servico"><label>{{s.nome}}<input type="number" [(ngModel)]="s.capacidade" min="1" max="100" step="1" [attr.aria-label]="'Capacidade de '+s.nome" /></label><button type="button" [disabled]="salvandoServico()!==null" (click)="salvarCapacidade(s)">Salvar capacidade</button></div>}
+ </fieldset>
+</section>

@@ -1,0 +1,66 @@
+<section class="fotos" aria-label="Fotos clínicas do paciente" [attr.aria-busy]="carregando() || enviando() || excluindo()">
+  <p>Registro fotográfico de {{ pacienteNome }}. Selecione duas fotos para comparar lado a lado.</p>
+  @if (erro()) { <p class="erro" role="alert">{{ erro() }}</p> }
+  @if (sucesso()) { <p role="status">{{ sucesso() }}</p> }
+  @if (carregando()) { <p role="status">Carregando fotos…</p> }
+  @if (!carregado() && !carregando()) { <button type="button" (click)="carregar()">Tentar novamente</button> }
+  @if (carregado()) {
+    <form [formGroup]="form" (ngSubmit)="enviar()" class="upload">
+      <h3>Adicionar foto clínica</h3>
+      <fieldset [disabled]="enviando() || excluindo()">
+        <legend class="sr-only">Dados da nova foto</legend>
+        <label>Imagem JPEG ou PNG (até {{configuracoes.atual().fotoLimiteMiB}} MiB)<input #arquivoInput type="file" accept="image/jpeg,image/png" (change)="selecionarArquivo($event)" aria-describedby="foto-privacidade" /></label>
+        @if (nomeArquivo()) { <small>{{ nomeArquivo() }}</small> }
+        <div class="campos">
+          <label>Data da captura<input type="date" name="dataCaptura" formControlName="dataCaptura" required /></label>
+          <label>Região corporal / posição<input type="text" name="regiao" formControlName="regiao" maxlength="100" required placeholder="Ex.: coluna, vista lateral" /></label>
+        </div>
+        <label>Observação (opcional)<textarea formControlName="observacao" rows="2" maxlength="2000"></textarea></label>
+        <small id="foto-privacidade">Imagens privadas do prontuário. Utilize conforme a autorização clínica aplicável.</small>
+        <button type="submit" class="primario" [disabled]="enviando()">{{ enviando() ? 'Enviando…' : 'Enviar foto' }}</button>
+      </fieldset>
+    </form>
+    @if (exclusao(); as foto) {
+      <div role="alertdialog" aria-label="Confirmar exclusão da foto" aria-describedby="exclusao-aviso" class="confirmacao">
+        <p id="exclusao-aviso">Excluir a foto de {{ foto.dataCaptura | date:'dd/MM/yyyy' }} ({{ foto.regiao }}) do prontuário? Esta ação remove a imagem.</p>
+        <div class="acoes">
+          <button type="button" data-confirmar-exclusao class="perigo" [disabled]="excluindo()" (click)="confirmarExclusao()">{{ excluindo() ? 'Excluindo…' : 'Sim, excluir foto' }}</button>
+          <button type="button" [disabled]="excluindo()" (click)="exclusao.set(null)">Cancelar</button>
+        </div>
+      </div>
+    }
+    @if (comparacao().length === 2) {
+      <section aria-label="Comparação de fotos" class="comparacao">
+        <h3>Comparação</h3>
+        <div class="duas-fotos">
+          @for (foto of comparacao(); track foto.id) {
+            <figure>
+              @if (urls()[foto.id]) { <img [src]="urls()[foto.id]" [alt]="foto.regiao + ' em ' + (foto.dataCaptura | date:'dd/MM/yyyy')" /> }
+              @else { <p>{{ errosImagem()[foto.id] ? 'Imagem indisponível' : 'Carregando imagem…' }}</p> }
+              <figcaption><strong>{{ foto.dataCaptura | date:'dd/MM/yyyy' }}</strong> · {{ foto.regiao }}<p>{{ foto.observacao }}</p></figcaption>
+            </figure>
+          }
+        </div>
+        <button type="button" (click)="selecionadas.set([])">Limpar comparação</button>
+      </section>
+    }
+    <h3>Galeria · {{ fotos().length }} foto(s)</h3>
+    @if (fotos().length) { <p class="ajuda" aria-live="polite">{{ selecionadas().length }} de 2 selecionadas para comparação.</p> }
+    <div class="galeria">
+      @for (foto of fotos(); track foto.id) {
+        <article>
+          @if (urls()[foto.id]) { <img [src]="urls()[foto.id]" [alt]="foto.regiao + ' em ' + (foto.dataCaptura | date:'dd/MM/yyyy')" loading="lazy" /> }
+          @else if (errosImagem()[foto.id]) { <div class="imagem-estado"><p>Não foi possível carregar esta imagem.</p><button type="button" (click)="carregarImagem(foto)">Tentar carregar imagem</button></div> }
+          @else { <p class="imagem-estado" role="status">Carregando imagem…</p> }
+          <div class="detalhes">
+            <strong>{{ foto.dataCaptura | date:'dd/MM/yyyy' }} · {{ foto.regiao }}</strong>
+            <p>{{ foto.observacao }}</p>
+            <small>{{ foto.autor }} · inclusão em {{ foto.criadoEm | date:'dd/MM/yyyy HH:mm' }}</small>
+            <label class="selecao"><input type="checkbox" [checked]="selecionadas().includes(foto.id)" [disabled]="selecionadas().length >= 2 && !selecionadas().includes(foto.id)" (change)="selecionarComparacao(foto.id)" />Comparar foto de {{ foto.dataCaptura | date:'dd/MM/yyyy' }}</label>
+            <button type="button" class="perigo" [attr.aria-label]="'Excluir foto de ' + (foto.dataCaptura | date:'dd/MM/yyyy')" [disabled]="enviando() || excluindo()" (click)="pedirExclusao(foto)">Excluir foto</button>
+          </div>
+        </article>
+      } @empty { <p>Nenhuma foto clínica cadastrada.</p> }
+    </div>
+  }
+</section>
