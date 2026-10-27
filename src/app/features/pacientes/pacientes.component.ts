@@ -24,6 +24,7 @@ import { formatDateForApi, formatDateTimeForApi } from '../../core/utils/date-fo
 import { HttpErrorResponse } from '@angular/common/http';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { BreakpointService } from '../../core/services/breakpoint.service';
+import { FotosPacienteComponent } from './fotos-paciente/fotos-paciente.component';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 
 @Component({
@@ -44,7 +45,8 @@ import { AgendamentoService } from '../../core/services/agendamento.service';
     SelectModule,
     ToastModule,
     ConfirmDialogModule,
-    SearchInputComponent
+    SearchInputComponent,
+    FotosPacienteComponent
 ],
     providers: [MessageService, ConfirmationService],
     templateUrl: './pacientes.component.html',
@@ -60,6 +62,8 @@ export class PacientesComponent implements OnInit {
   carregando = signal(false);
   salvando = signal(false);
   modalVisivel = false;
+  modalFotosVisivel = false;
+  pacienteFotos: PacienteResponseDTO | null = null;
   pacienteEmEdicao: PacienteResponseDTO | null = null;
   pacienteForm: FormGroup;
 
@@ -284,6 +288,12 @@ export class PacientesComponent implements OnInit {
     });
   }
 
+
+  abrirFotos(paciente: PacienteResponseDTO): void {
+    this.fecharModal();
+    this.pacienteFotos = paciente;
+    this.modalFotosVisivel = true;
+  }
 
   abrirModalNovoPaciente(): void {
     this.pacienteEmEdicao = null;

@@ -70,7 +70,7 @@
           }
         </div>
 
-        <button type="button" class="fin-mobile__fab" (click)="abrirModalNovaAssinatura()" aria-label="Nova assinatura">
+        <button type="button" class="fin-mobile__fab" (click)="abrirModalNovaAssinatura()" aria-label="Nova mensalidade de fisioterapia ou Pilates">
           <i class="pi pi-plus"></i>
         </button>
 
@@ -112,7 +112,7 @@
     <div class="page-header">
       <h2>Assinaturas</h2>
       <p-button
-        label="Nova Assinatura"
+        label="Nova mensalidade · Fisioterapia / Pilates"
         icon="pi pi-plus"
         (onClick)="abrirModalNovaAssinatura()"
       />
@@ -236,10 +236,10 @@
       </p-table>
     }
 
-    <!-- Modal Nova Assinatura -->
+    <!-- Modal Nova mensalidade · Fisioterapia / Pilates -->
     <p-dialog
       [(visible)]="modalVisivel"
-      header="Nova Assinatura"
+      header="Nova mensalidade · Fisioterapia / Pilates"
       [modal]="true"
       [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
       styleClass="dialog-fullscreen-mobile"
@@ -248,6 +248,7 @@
       [focusOnShow]="false"
       (onHide)="fecharModal()"
     >
+      <p>Mensalidade de fisioterapia ou Pilates, sem franquia de sessões. Atendimentos na vigência são cobertos pelo plano e seguem a capacidade do serviço.</p>
       <div class="form-group">
         <label>Paciente(s) *</label>
         <p-multiSelect
@@ -265,7 +266,7 @@
         <label>Serviço *</label>
         <p-select
           [(ngModel)]="novaAssinatura.servicoId"
-          [options]="servicos()"
+          [options]="servicosMensalidade()"
           optionLabel="nome"
           optionValue="id"
           placeholder="Selecione o serviço"

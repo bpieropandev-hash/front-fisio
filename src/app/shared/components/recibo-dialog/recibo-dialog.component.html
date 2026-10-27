@@ -1,0 +1,15 @@
+<p-dialog [visible]="visible" (visibleChange)="visibleChange.emit($event)" header="Recibo interno" [modal]="true" [style]="{width:'90vw',maxWidth:'560px'}" [draggable]="false">
+ <p>Comprovante interno de pagamento. Quando aplicável, emita também o documento pelo Receita Saúde; este recibo não o substitui.</p>
+ @if (erro()) { <p role="alert">{{ erro() }}</p> }
+ @if (carregando()) { <p role="status">Carregando recibo...</p> }
+ @else if (recibo()) {
+ <p>Recibo {{ recibo()!.numero }} · {{ recibo()!.valor | currency:'BRL' }}</p>
+ <p>Pagador: {{ recibo()!.pagadorNome }} · {{ recibo()!.dataPagamento | date:'dd/MM/yyyy' }}</p>
+ <p-button label="Baixar / reimprimir PDF" icon="pi pi-download" [loading]="ocupado()" (onClick)="baixar(recibo()!)" />
+ } @else {
+ <div class="form-group"><label for="recibo-data">Data do recebimento</label><input id="recibo-data" type="date" [(ngModel)]="dataPagamento" readonly /></div>
+ <div class="form-group"><label for="recibo-pagador">Nome do pagador *</label><input id="recibo-pagador" pInputText [(ngModel)]="pagadorNome" maxlength="200" /></div>
+ <div class="form-group"><label for="recibo-documento">CPF/CNPJ do pagador *</label><input id="recibo-documento" pInputText [(ngModel)]="pagadorDocumento" maxlength="20" /></div>
+ <p-button label="Emitir recibo" [loading]="ocupado()" [disabled]="!origem || !dataPagamento || !pagadorNome.trim() || !pagadorDocumento.trim()" (onClick)="emitir()" />
+ }
+ </p-dialog>

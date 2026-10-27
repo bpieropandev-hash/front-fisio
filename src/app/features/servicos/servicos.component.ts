@@ -88,6 +88,7 @@ export class ServicosComponent implements OnInit {
       nome: '',
       tipo: 'FISIOTERAPIA',
       valorBase: null,
+      capacidade: 1,
       pctClinica: 20,
       pctProfissional: 80,
       ativo: true
@@ -124,6 +125,7 @@ export class ServicosComponent implements OnInit {
       nome: servico.nome,
       tipo: servico.tipo,
       valorBase: servico.valorBase,
+      capacidade: servico.capacidade ?? (servico.tipo === 'PILATES' ? 15 : 1),
       pctClinica: servico.pctClinica,
       pctProfissional: servico.pctProfissional,
       ativo: servico.ativo ?? true
@@ -146,6 +148,9 @@ export class ServicosComponent implements OnInit {
       return;
     }
 
+    if (!Number.isInteger(this.formServico.capacidade) || this.formServico.capacidade! < 1 || this.formServico.capacidade! > 100) {
+      this.messageService.add({severity:'warn',summary:'Capacidade inválida',detail:'Informe uma capacidade inteira entre 1 e 100.'}); return;
+    }
     if ((this.formServico.pctClinica ?? 0) + (this.formServico.pctProfissional ?? 0) !== 100) {
       this.messageService.add({
         severity: 'warn',

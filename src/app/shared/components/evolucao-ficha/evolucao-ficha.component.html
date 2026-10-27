@@ -1,0 +1,67 @@
+<section class="ficha" aria-label="Evolução da sessão" [attr.aria-busy]="carregando() || salvando()">
+  <h3>Evolução da sessão</h3>
+  @if (carregando()) { <p role="status">Carregando evolução…</p> }
+  @if (erro()) {
+    <p role="alert" class="erro">{{ erro() }}</p>
+    @if (!carregado() || conflito()) {
+      <button type="button" (click)="carregar()">{{ conflito() ? 'Recarregar ficha (descarta preenchimento atual)' : 'Tentar novamente' }}</button>
+    }
+  }
+  @if (carregado()) {
+    <p class="ajuda">Marque o que foi realizado nesta sessão.</p>
+    <div [formGroup]="form">
+      <fieldset [disabled]="salvando() || conflito()">
+        <legend>Procedimentos realizados</legend>
+        <div class="opcoes">
+          @for (item of procedimentos; track item.codigo) {
+            <label class="opcao"><input type="checkbox" [checked]="form.controls.procedimentos.value.includes(item.codigo)" (change)="alternarProcedimento(item.codigo)" />{{ item.nome }}</label>
+          }
+        </div>
+      </fieldset>
+      @if (form.controls.procedimentos.value.includes('PRESSAO_ARTERIAL')) {
+        <fieldset [disabled]="salvando() || conflito()">
+          <legend>Pressão arterial · mmHg</legend>
+          <div class="medidas">
+            <label>Sistólica<input type="number" formControlName="pressaoSistolica" min="40" max="300" step="1" inputmode="numeric" aria-describedby="pressao-ajuda" /></label>
+            <label>Diastólica<input type="number" formControlName="pressaoDiastolica" min="20" max="200" step="1" inputmode="numeric" aria-describedby="pressao-ajuda" /></label>
+          </div>
+          <small id="pressao-ajuda">Informe as duas medidas: sistólica de 40 a 300 e diastólica de 20 a 200 mmHg. A sistólica deve ser maior.</small>
+          @if (form.hasError('pressao')) { <p class="erro" role="status">Preencha valores válidos para a pressão aferida.</p> }
+        </fieldset>
+      }
+      <fieldset [disabled]="salvando() || conflito()">
+        <legend>Equipamentos utilizados no Pilates</legend>
+        <div class="opcoes">
+          @for (item of equipamentos; track item.codigo) {
+            <label class="opcao"><input type="checkbox" [checked]="form.controls.equipamentos.value.includes(item.codigo)" (change)="alternarEquipamento(item.codigo)" />{{ item.nome }}</label>
+          }
+        </div>
+      </fieldset>
+      <fieldset [disabled]="salvando() || conflito()">
+        <legend>Informações complementares</legend>
+        <label class="campo">Dor (0 a 10, opcional)<input type="number" class="dor" formControlName="dor" min="0" max="10" step="1" inputmode="numeric" /></label>
+        @if (form.controls.dor.invalid) { <p class="erro">Informe um número inteiro entre 0 e 10.</p> }
+        <label class="campo">Observações (opcional)<textarea formControlName="observacoes" rows="3" maxlength="5000"></textarea></label>
+      </fieldset>
+      <div class="acoes">
+        <button type="button" class="primario" [disabled]="form.invalid || salvando() || conflito()" (click)="salvar()">{{ salvando() ? 'Salvando…' : 'Salvar evolução' }}</button>
+        <button type="button" [disabled]="carregandoHistorico()" (click)="carregarHistorico()">{{ carregandoHistorico() ? 'Carregando histórico…' : 'Ver histórico' }}</button>
+      </div>
+    </div>
+    @if (sucesso()) { <p role="status">{{ sucesso() }}</p> }
+    @if (resumo()) {
+      <div class="resumo"><h4>Resumo salvo / registro anterior</h4><p>{{ resumo() }}</p>
+        @if (autor()) { <small>{{ autor() }} · {{ atualizadoEm() | date:'dd/MM/yyyy HH:mm' }}</small> }
+      </div>
+    }
+    @if (historicoAberto()) {
+      <div class="historico" aria-label="Histórico da evolução">
+        <h4>Histórico</h4>
+        @if (erroHistorico()) { <p role="alert" class="erro">{{ erroHistorico() }}</p> }
+        @for (revisao of historico(); track revisao.versao) {
+          <article><strong>Versão {{ revisao.versao }}</strong><small>{{ revisao.autor }} · {{ revisao.atualizadoEm | date:'dd/MM/yyyy HH:mm' }}</small><p>{{ revisao.resumo }}</p></article>
+        } @empty { @if (!carregandoHistorico() && !erroHistorico()) { <p>Nenhuma revisão salva.</p> } }
+      </div>
+    }
+  }
+</section>

@@ -58,6 +58,7 @@
                       <div class="pac-mobile__item-nome">{{ paciente.nome }}</div>
                       <div class="pac-mobile__item-proximo">{{ rotuloProximoAtendimento(paciente.id) }}</div>
                     </div>
+                    <p-button icon="pi pi-images" [text]="true" [ariaLabel]="'Fotos clínicas de ' + paciente.nome" (onClick)="$event.stopPropagation(); abrirFotos(paciente)" />
                     <i class="pi pi-chevron-right pac-mobile__chevron"></i>
                   </div>
                 }
@@ -153,6 +154,7 @@
                 <span><strong>Telefone:</strong> {{ paciente.telefone || '-' }}</span>
               </div>
               <div class="mobile-card-actions">
+                <p-button icon="pi pi-images" label="Fotos clínicas" (onClick)="abrirFotos(paciente)" severity="secondary" [outlined]="true" />
                 <p-button
                   icon="pi pi-file-pdf"
                   label="Prontuário PDF"
@@ -218,6 +220,7 @@
             </td>
             <td style="display: flex; justify-content: center;">
               <div class="action-buttons">
+                <p-button icon="pi pi-images" label="Fotos" [ariaLabel]="'Fotos clínicas de ' + paciente.nome" (onClick)="abrirFotos(paciente)" styleClass="p-button-sm" severity="secondary" />
                 <p-button
                   icon="pi pi-file-pdf"
                   label="Prontuário PDF"
@@ -438,6 +441,7 @@
 
         @if (isTablet() && pacienteEmEdicao) {
           <div class="pac-mobile__modal-acoes">
+            <p-button icon="pi pi-images" label="Fotos clínicas" (onClick)="abrirFotos(pacienteEmEdicao)" severity="secondary" [outlined]="true" />
             <p-button
               icon="pi pi-file-pdf"
               label="Prontuário PDF"
@@ -481,4 +485,19 @@
           />
         </div>
       </form>
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="modalFotosVisivel"
+      [header]="'Fotos clínicas · ' + (pacienteFotos?.nome || '')"
+      [modal]="true"
+      [style]="{ width: '95vw', maxWidth: '1100px', maxHeight: '95vh' }"
+      [draggable]="false"
+      [resizable]="false"
+      styleClass="dialog-fullscreen-mobile"
+      (onHide)="pacienteFotos = null"
+    >
+      @if (modalFotosVisivel && pacienteFotos) {
+        <app-fotos-paciente [pacienteId]="pacienteFotos.id" [pacienteNome]="pacienteFotos.nome" />
+      }
     </p-dialog>

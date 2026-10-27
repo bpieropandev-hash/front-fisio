@@ -64,6 +64,7 @@ export class AssinaturasComponent implements OnInit {
   termoPesquisa = signal<string>('');
   pacientes = signal<PacienteResponseDTO[]>([]);
   servicos = signal<ServicoResponseDTO[]>([]);
+  servicosMensalidade = computed(() => this.servicos().map(s => ({...s, nome: `${s.tipo === 'PILATES' ? 'Pilates' : 'Fisioterapia'} · ${s.nome}`})));
   modalVisivel = false;
   modalEditarVisivel = false;
   carregando = signal(false);
@@ -187,6 +188,7 @@ export class AssinaturasComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarDados();
+    if (this.route.snapshot.queryParamMap.get('nova') === 'true') this.abrirModalNovaAssinatura();
   }
 
   carregarDados(): void {
