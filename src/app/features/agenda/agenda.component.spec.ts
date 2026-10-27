@@ -123,4 +123,48 @@ describe('integração agenda e recebimento', () => {
   expect(ficha.form.controls.observacoes.value).toHaveLength(4990);ficha.ngOnDestroy();http.verify();
  });
 
+ it('preserva data e hora do slot ao abrir criação no calendário', () => {
+  component.onDateClick({date:new Date(2026,9,27,10,0)});
+  expect(component.dataNovoAgendamento).toEqual(new Date(2026,9,27));
+  expect(component.horaNovoAgendamento).toBe('10:00');
+  expect(component.novoAgendamento.dataHora).toEqual(new Date(2026,9,27,10));
+ });
+ it('arredonda meia-noite para o dia seguinte sem perder a data', () => {
+  component.onDateClick({date:new Date(2026,9,27,23,50)});
+  expect(component.novoAgendamento.dataHora).toEqual(new Date(2026,9,28,0));
+ });
+ it('resposta atrasada de outro paciente não sobrescreve o lote atual', () => {
+  component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  const primeiro=http.expectOne(r=>r.params.get('pacienteId')==='1');
+  component.pacienteLoteId=2;component.aoSelecionarPacienteLote();
+  const segundo=http.expectOne(r=>r.params.get('pacienteId')==='2');
+  segundo.flush([{...atendimento,id:202,pacienteId:2,dataHoraInicio:'2025-01-01T10:00:00'}]);
+  primeiro.flush([{...atendimento,id:101,pacienteId:1,dataHoraInicio:'2025-01-01T10:00:00'}]);
+  expect(component.itensLote().map(item=>item.id)).toEqual([202]);
+  http.verify();
+ });
+ it('limpa lote anterior enquanto outro paciente carrega e impede envio', () => {
+  component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  http.expectOne(r=>r.params.get('pacienteId')==='1').flush([{...atendimento,evolucao:'Exercício',dataHoraInicio:'2025-01-01T10:00:00'}]);
+  component.pacienteLoteId=2;component.aoSelecionarPacienteLote();
+  expect(component.itensLote()).toEqual([]);
+  component.confirmarConclusaoLote();http.expectNone(r=>r.method==='POST');
+  http.expectOne(r=>r.params.get('pacienteId')==='2').flush([]);http.verify();
+ });
+ it('ignora resposta após fechar o lote e não repõe sessões antigas', () => {
+  component.abrirModalLote();component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  const req=http.expectOne(r=>r.params.get('pacienteId')==='1');
+  component.fecharModalLote();
+  req.flush([{...atendimento,dataHoraInicio:'2025-01-01T10:00:00'}]);
+  expect(component.itensLote()).toEqual([]);expect(component.carregandoLote()).toBe(false);http.verify();
+ });
+ it('mantém nomes históricos de paciente e serviço inativos na agenda', () => {
+  component.carregarDados();
+  http.expectOne(r=>r.url.endsWith('/pacientes')).flush([{id:1,nome:'Ana histórica',cpf:'123',ativo:false}]);
+  http.expectOne(r=>r.url.endsWith('/servicos')).flush([{id:1,nome:'Pilates histórico',tipo:'PILATES',ativo:false}]);
+  http.expectOne(r=>r.url.endsWith('/agendamentos')).flush([{...atendimento,status:'CONCLUIDO'}]);
+  expect(component.eventos()[0].extendedProps?.['pacienteNome']).toBe('Ana histórica');
+  expect(component.eventos()[0].extendedProps?.['servicoNome']).toBe('Pilates histórico');http.verify();
+ });
+
 });

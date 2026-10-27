@@ -98,6 +98,8 @@ export class AgendaComponent implements OnInit {
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
+  pacientesAtivos = computed(() => this.pacientes().filter(p => p.ativo !== false));
+  servicosAtivos = computed(() => this.servicos().filter(s => s.ativo !== false));
   obterPillStatus = obterPillStatus;
 
   @ViewChild(EvolucaoFichaComponent) fichaComponent?: EvolucaoFichaComponent;
@@ -356,29 +358,44 @@ export class AgendaComponent implements OnInit {
   carregandoLote = signal(false);
   salvandoLote = signal(false);
   itensLote = signal<ItemLoteUI[]>([]);
+  private requisicaoLote = 0;
+  private pacienteLoteCarregado: number | null = null;
 
   abrirModalLote(): void {
+    if (this.salvandoLote()) return;
+    ++this.requisicaoLote;
+    this.pacienteLoteCarregado = null;
+    this.carregandoLote.set(false);
     this.pacienteLoteId = null;
     this.itensLote.set([]);
     this.modalLoteVisivel = true;
   }
 
   fecharModalLote(): void {
+    if (this.salvandoLote()) return;
+    ++this.requisicaoLote;
+    this.pacienteLoteCarregado = null;
+    this.itensLote.set([]);
+    this.carregandoLote.set(false);
     this.modalLoteVisivel = false;
   }
 
   aoSelecionarPacienteLote(): void {
-    if (!this.pacienteLoteId) {
-      this.itensLote.set([]);
-      return;
-    }
+    if (this.salvandoLote()) return;
+    const requisicao = ++this.requisicaoLote;
+    const pacienteId = this.pacienteLoteId;
+    this.pacienteLoteCarregado = null;
+    this.itensLote.set([]);
+    this.carregandoLote.set(false);
+    if (!pacienteId) return;
 
     this.carregandoLote.set(true);
-    this.agendamentoService.listar({ pacienteId: this.pacienteLoteId }).subscribe({
+    this.agendamentoService.listar({ pacienteId }).subscribe({
       next: (atendimentos) => {
+        if (requisicao !== this.requisicaoLote || pacienteId !== this.pacienteLoteId) return;
         const agora = new Date();
         const itens: ItemLoteUI[] = atendimentos
-          .filter(a => a.status === 'AGENDADO' && new Date(a.dataHoraInicio) < agora)
+          .filter(a => a.pacienteId === pacienteId && a.status === 'AGENDADO' && new Date(a.dataHoraInicio) < agora)
           .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
           .map(a => ({
             id: a.id,
@@ -390,17 +407,15 @@ export class AgendaComponent implements OnInit {
             recebedor: null,
             tipoPagamento: null
           }));
+        this.pacienteLoteCarregado = pacienteId;
         this.itensLote.set(itens);
         this.carregandoLote.set(false);
       },
       error: (error: HttpErrorResponse) => {
+        if (requisicao !== this.requisicaoLote || pacienteId !== this.pacienteLoteId) return;
         this.carregandoLote.set(false);
-        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
-        this.messageService.add({
-          severity: errorMessage.severity,
-          summary: errorMessage.summary,
-          detail: errorMessage.detail
-        });
+        const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
       }
     });
   }
@@ -417,6 +432,7 @@ export class AgendaComponent implements OnInit {
   }
 
   confirmarConclusaoLote(): void {
+    if (this.carregandoLote() || this.salvandoLote() || !this.pacienteLoteId || this.pacienteLoteId !== this.pacienteLoteCarregado) return;
     const selecionados = this.itensLote().filter(i => i.selecionado);
     if (selecionados.length === 0) {
       this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Selecione ao menos um atendimento' });
@@ -536,8 +552,8 @@ export class AgendaComponent implements OnInit {
       servicos: this.servicoService.listar()
     }).subscribe({
       next: ({ pacientes, servicos }) => {
-        this.pacientes.set(pacientes.filter(p => p.ativo !== false));
-        this.servicos.set(servicos.filter(s => s.ativo !== false));
+        this.pacientes.set(pacientes);
+        this.servicos.set(servicos);
         this.carregarEventos();
       },
       error: (error: HttpErrorResponse) => {
@@ -757,12 +773,14 @@ export class AgendaComponent implements OnInit {
       if (clicouEmEvento || clicouEmMais) return;
     }
 
+    if (!this.abrirModalNovoAgendamento()) return;
     const dataSelecionada = new Date(info.date);
     // Arredonda para o intervalo de 30 minutos MAIS PRÓXIMO
     // (clicar às 10:00 em ponto sugere 10:00, não 10:30)
     const totalMinutos = dataSelecionada.getHours() * 60 + dataSelecionada.getMinutes();
     const arredondado = Math.round(totalMinutos / 30) * 30;
-    const horasAjustadas = Math.floor(arredondado / 60) % 24;
+    dataSelecionada.setHours(0, arredondado, 0, 0);
+    const horasAjustadas = dataSelecionada.getHours();
     const minutosArredondados = arredondado % 60;
 
     // Define a data (sem hora)
@@ -775,7 +793,6 @@ export class AgendaComponent implements OnInit {
     // Combina data e hora
     this.novoAgendamento.dataHora = combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
 
-    this.abrirModalNovoAgendamento();
   }
 
   /** Arrastar evento no calendário = remarcar o atendimento. Persiste ou reverte. */
@@ -889,8 +906,8 @@ export class AgendaComponent implements OnInit {
     }
   }
 
-  abrirModalNovoAgendamento(): void {
-    if (this.modalVisivel && this.temAlteracoesPendentes()) { this.avisarFichaPendente(); return; }
+  abrirModalNovoAgendamento(): boolean {
+    if (this.modalVisivel && this.temAlteracoesPendentes()) { this.avisarFichaPendente(); return false; }
     ++this.aberturaAtendimento;
     this.erroAtendimento.set('');
     this.carregandoAtendimento.set(false);
@@ -906,6 +923,7 @@ export class AgendaComponent implements OnInit {
     this.dataFimRecorrencia = null;
     this.diasSemanaSelecionados = [];
     this.modalVisivel = true;
+    return true;
   }
 
   private temAlteracoesPendentes(): boolean {

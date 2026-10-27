@@ -266,6 +266,7 @@
           label="Salvar"
           icon="pi pi-check"
           [loading]="salvando()"
+          [disabled]="carregandoContagem() || salvando()"
           (onClick)="salvarServico()"
         />
       </ng-template>

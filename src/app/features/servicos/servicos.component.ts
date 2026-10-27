@@ -3,7 +3,8 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { switchMap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { TableModule } from 'primeng/table';
 import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
@@ -18,7 +19,7 @@ import { RadioButton } from 'primeng/radiobutton';
 import { Checkbox } from 'primeng/checkbox';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ServicoService } from '../../core/services/servico.service';
-import { ServicoCreateRequestDTO, ServicoResponseDTO } from '../../core/interfaces/servico.interface';
+import { ServicoCreateRequestDTO, ServicoResponseDTO, ServicoReajusteResponseDTO } from '../../core/interfaces/servico.interface';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 import { BreakpointService } from '../../core/services/breakpoint.service';
 
@@ -65,6 +66,9 @@ export class ServicosComponent implements OnInit {
   formServico: ServicoForm = this.formPadrao();
 
   assinaturasAtivasCount = signal(0);
+  carregandoContagem = signal(false);
+  private erroContagem = false;
+  private consultaContagem = 0;
   reajusteDialogVisivel = false;
   reajusteOpcao: 'catalogo' | 'ativas' | 'ativasCobrancas' = 'ativas';
   preservarNegociados = true;
@@ -116,6 +120,9 @@ export class ServicosComponent implements OnInit {
   }
 
   abrirModalNovo(): void {
+    ++this.consultaContagem;
+    this.carregandoContagem.set(false);
+    this.erroContagem = false;
     this.servicoEmEdicao = null;
     this.formServico = this.formPadrao();
     this.modalVisivel = true;
@@ -133,14 +140,27 @@ export class ServicosComponent implements OnInit {
       ativo: servico.ativo ?? true
     };
     this.assinaturasAtivasCount.set(0);
+    this.carregandoContagem.set(true);
+    this.erroContagem = false;
+    const consulta = ++this.consultaContagem;
     this.servicoService.contarAssinaturasAtivas(servico.id).subscribe({
-      next: (count) => this.assinaturasAtivasCount.set(count),
-      error: () => this.assinaturasAtivasCount.set(0)
+      next: (count) => {
+        if (consulta !== this.consultaContagem) return;
+        this.assinaturasAtivasCount.set(count);
+        this.carregandoContagem.set(false);
+      },
+      error: () => {
+        if (consulta !== this.consultaContagem) return;
+        this.carregandoContagem.set(false);
+        this.erroContagem = true;
+        this.messageService.add({severity:'error', summary:'Consulta indisponível', detail:'Não foi possível consultar as assinaturas. Reabra a edição para tentar novamente antes de alterar o preço.'});
+      }
     });
     this.modalVisivel = true;
   }
 
   salvarServico(): void {
+    if (this.salvando() || this.carregandoContagem()) return;
     if (!this.formServico.nome || !this.formServico.tipo || !this.formServico.valorBase) {
       this.messageService.add({
         severity: 'warn',
@@ -168,6 +188,10 @@ export class ServicosComponent implements OnInit {
     };
 
     const valorMudou = this.servicoEmEdicao != null && this.servicoEmEdicao.valorBase !== payload.valorBase;
+    if (valorMudou && this.erroContagem) {
+      this.messageService.add({severity:'warn', summary:'Consulta pendente', detail:'Reabra a edição para consultar as assinaturas antes de alterar o preço.'});
+      return;
+    }
 
     if (this.servicoEmEdicao && valorMudou && this.assinaturasAtivasCount() > 0) {
       this.payloadPendente = payload;
@@ -216,7 +240,7 @@ export class ServicosComponent implements OnInit {
   }
 
   confirmarReajuste(): void {
-    if (!this.servicoEmEdicao || !this.payloadPendente) {
+    if (this.salvando() || !this.servicoEmEdicao || !this.payloadPendente) {
       return;
     }
 
@@ -225,19 +249,16 @@ export class ServicosComponent implements OnInit {
     this.reajusteDialogVisivel = false;
     this.salvando.set(true);
 
-    this.servicoService.atualizar(id, payload).pipe(
-      switchMap(() => {
-        if (this.reajusteOpcao === 'catalogo') {
-          return [null];
-        }
-        return this.servicoService.reajustar(id, {
+    const request$: Observable<ServicoReajusteResponseDTO | null> = this.reajusteOpcao === 'catalogo'
+      ? this.servicoService.atualizar(id, payload).pipe(map(() => null))
+      : this.servicoService.reajustar(id, {
           novoValorBase: payload.valorBase,
+          dadosServico: payload,
           aplicarEmAssinaturasAtivas: true,
           somenteAssinaturasNoValorAntigo: this.preservarNegociados,
           atualizarCobrancasPendentes: this.reajusteOpcao === 'ativasCobrancas'
         });
-      })
-    ).subscribe({
+    request$.subscribe({
       next: (resultado) => {
         this.salvando.set(false);
         this.modalVisivel = false;
@@ -305,6 +326,8 @@ export class ServicosComponent implements OnInit {
   }
 
   fecharModal(): void {
+    ++this.consultaContagem;
+    this.carregandoContagem.set(false);
     this.modalVisivel = false;
     this.servicoEmEdicao = null;
   }

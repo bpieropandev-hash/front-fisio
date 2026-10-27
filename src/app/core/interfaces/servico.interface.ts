@@ -22,6 +22,7 @@ export interface ServicoResponseDTO {
 }
 
 export interface ServicoReajusteRequestDTO {
+  dadosServico?: ServicoCreateRequestDTO;
   novoValorBase: number;
   aplicarEmAssinaturasAtivas?: boolean;
   somenteAssinaturasNoValorAntigo?: boolean;

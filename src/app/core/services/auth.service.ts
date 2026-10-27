@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError } from 'rxjs';
+import { UsuarioService } from './usuario.service';
 import { API_CONFIG } from '../config/api.config';
 import {
   AuthenticationDTO,
@@ -24,7 +25,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private usuarioService: UsuarioService
   ) {}
 
   login(credentials: AuthenticationDTO): Observable<LoginResponseDTO> {
@@ -66,6 +68,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.usuarioService.limpar();
     this.tokenSignal.set(null);
     localStorage.removeItem(this.TOKEN_KEY);
     this.router.navigate(['/login']);
@@ -89,6 +92,7 @@ export class AuthService {
 
   /** Limpa a sessão sem navegar (o chamador decide o redirect, ex.: guard com returnUrl) */
   limparSessao(): void {
+    this.usuarioService.limpar();
     this.tokenSignal.set(null);
     localStorage.removeItem(this.TOKEN_KEY);
   }

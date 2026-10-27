@@ -42,7 +42,7 @@ const ROTAS_SECUNDARIAS_MOBILE = ['/servicos', '/relatorios', '/perfil'];
 export class AppComponent {
   /** Guarda contra refetch: não é signal — não deve disparar o effect que a usa. */
   private usuarioCarregado = false;
-  usuarioAtual = signal<UsuarioMeResponseDTO | null>(null);
+  readonly usuarioAtual: Signal<UsuarioMeResponseDTO | null>;
   maisSheetAberto = signal(false);
 
   isMobileShell = computed(() => this.breakpointService.isTablet() && this.authService.isAuthenticated());
@@ -137,6 +137,7 @@ export class AppComponent {
     public configuracoes: ConfiguracaoClinicaService,
     private location: Location
   ) {
+    this.usuarioAtual = this.usuarioService.usuarioAtual;
     this.currentUrl = toSignal(
       this.router.events.pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -153,7 +154,7 @@ export class AppComponent {
         this.configuracoes.carregar();
         this.usuarioService.buscarMe().subscribe({
           next: (usuario) => {
-            this.usuarioAtual.set(usuario);
+            if (this.usuarioAtual() !== usuario || !this.authService.isAuthenticated()) return;
             this.accentThemeService.aplicarCor(usuario.corPrimaria);
             this.accentThemeService.aplicarFonte(usuario.fonteTema);
             this.accentThemeService.aplicarTamanhoFonte(usuario.tamanhoFonte);

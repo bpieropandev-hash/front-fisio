@@ -36,6 +36,8 @@
       [draggable]="false"
       [resizable]="false"
       [focusOnShow]="false"
+      [closable]="!salvandoLote()"
+      [closeOnEscape]="!salvandoLote()"
       (onHide)="fecharModalLote()"
     >
       <div class="form-group">
@@ -44,6 +46,7 @@
           [(ngModel)]="pacienteLoteId"
           (onChange)="aoSelecionarPacienteLote()"
           [options]="pacientes()"
+          [disabled]="salvandoLote()"
           optionLabel="nome"
           optionValue="id"
           placeholder="Selecione o paciente"
@@ -128,13 +131,14 @@
           icon="pi pi-times"
           (onClick)="fecharModalLote()"
           styleClass="p-button-text"
+          [disabled]="salvandoLote()"
         />
         <p-button
           label="Concluir Todos"
           icon="pi pi-check"
           (onClick)="confirmarConclusaoLote()"
           [loading]="salvandoLote()"
-          [disabled]="itensLote().length === 0"
+          [disabled]="carregandoLote() || salvandoLote() || itensLote().length === 0"
         />
       </div>
     </p-dialog>
@@ -473,7 +477,7 @@
           <label>Pacientes *</label>
           <p-multiSelect
             [(ngModel)]="novoAgendamento.pacienteIds"
-            [options]="pacientes()"
+            [options]="pacientesAtivos()"
             optionLabel="nome"
             optionValue="id"
             placeholder="Selecione um ou mais pacientes"
@@ -490,7 +494,7 @@
           <label>Serviço *</label>
           <p-select
             [(ngModel)]="novoAgendamento.servicoId"
-            [options]="servicos()"
+            [options]="servicosAtivos()"
             optionLabel="nome"
             optionValue="id"
             placeholder="Selecione o serviço"
@@ -500,7 +504,7 @@
         </div>
 
         @if (novoAgendamento.servicoId) {
-          @for (servico of servicos(); track servico.id) {
+          @for (servico of servicosAtivos(); track servico.id) {
             @if (servico.id === novoAgendamento.servicoId) { <p>Capacidade deste serviço: {{ servico.capacidade ?? (servico.tipo === 'PILATES' ? 15 : 1) }} participante(s). A disponibilidade será validada ao salvar.</p> }
           }
         }
