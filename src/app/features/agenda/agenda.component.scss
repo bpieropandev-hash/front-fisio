@@ -729,3 +729,11 @@
 .turma-participante {display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:1rem 0;}
 .turma-mobile {display:flex; flex-direction:column; gap:.75rem; padding:1rem; border:1px solid #cbd5e1; border-radius:12px; margin-bottom:1rem;}
 .turma-mobile button {text-align:left; padding:.75rem; background:white; border:1px solid #cbd5e1; border-radius:8px; cursor:pointer;}
+ .lote-periodo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 900px;
+  @media (max-width: 600px) { grid-template-columns: minmax(0, 1fr); }
+ }
+ .lote-erro { color: var(--text-primary); border-left: 3px solid var(--accent-color); padding-left: .75rem; }

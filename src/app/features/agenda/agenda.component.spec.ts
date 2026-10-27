@@ -134,7 +134,7 @@ describe('integração agenda e recebimento', () => {
   expect(component.novoAgendamento.dataHora).toEqual(new Date(2026,9,28,0));
  });
  it('resposta atrasada de outro paciente não sobrescreve o lote atual', () => {
-  component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  component.dataInicioLote=new Date(2025,0,1);component.dataFimLote=new Date(2025,0,31);component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
   const primeiro=http.expectOne(r=>r.params.get('pacienteId')==='1');
   component.pacienteLoteId=2;component.aoSelecionarPacienteLote();
   const segundo=http.expectOne(r=>r.params.get('pacienteId')==='2');
@@ -144,7 +144,7 @@ describe('integração agenda e recebimento', () => {
   http.verify();
  });
  it('limpa lote anterior enquanto outro paciente carrega e impede envio', () => {
-  component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  component.dataInicioLote=new Date(2025,0,1);component.dataFimLote=new Date(2025,0,31);component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
   http.expectOne(r=>r.params.get('pacienteId')==='1').flush([{...atendimento,evolucao:'Exercício',dataHoraInicio:'2025-01-01T10:00:00'}]);
   component.pacienteLoteId=2;component.aoSelecionarPacienteLote();
   expect(component.itensLote()).toEqual([]);
@@ -152,11 +152,30 @@ describe('integração agenda e recebimento', () => {
   http.expectOne(r=>r.params.get('pacienteId')==='2').flush([]);http.verify();
  });
  it('ignora resposta após fechar o lote e não repõe sessões antigas', () => {
-  component.abrirModalLote();component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  component.abrirModalLote();component.dataInicioLote=new Date(2025,0,1);component.dataFimLote=new Date(2025,0,31);component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
   const req=http.expectOne(r=>r.params.get('pacienteId')==='1');
   component.fecharModalLote();
   req.flush([{...atendimento,dataHoraInicio:'2025-01-01T10:00:00'}]);
   expect(component.itensLote()).toEqual([]);expect(component.carregandoLote()).toBe(false);http.verify();
+ });
+ it('consulta o lote no mês corrente e exclui respostas fora do período', () => {
+  component.abrirModalLote();component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  const req=http.expectOne(r=>r.params.get('pacienteId')==='1');
+  const hoje=new Date();const mes=String(hoje.getMonth()+1).padStart(2,'0');
+  expect(req.request.params.get('dataInicio')).toBe(`${hoje.getFullYear()}-${mes}-01 00:00:00.000`);
+  expect(req.request.params.get('dataFim')).toContain('23:59:59.999');
+  req.flush([{...atendimento,dataHoraInicio:'2020-01-01T10:00:00'}]);
+  expect(component.itensLote()).toEqual([]);http.verify();
+ });
+ it('impede consultar intervalo inválido e ignora consulta anterior após mudar período', () => {
+  component.abrirModalLote();component.dataInicioLote=new Date(2025,0,1);component.dataFimLote=new Date(2025,0,31);component.pacienteLoteId=1;component.aoSelecionarPacienteLote();
+  const req=http.expectOne(r=>r.params.get('pacienteId')==='1');
+  component.dataInicioLote=new Date(2026,9,31);component.dataFimLote=new Date(2026,9,1);
+  component.aoSelecionarPacienteLote();
+  expect(component.erroPeriodoLote()).toContain('inicial');
+  req.flush([{...atendimento,dataHoraInicio:'2026-10-02T10:00:00'}]);
+  expect(component.itensLote()).toEqual([]);expect(component.carregandoLote()).toBe(false);
+  http.expectNone(r=>r.method==='GET');http.verify();
  });
  it('mantém nomes históricos de paciente e serviço inativos na agenda', () => {
   component.carregarDados();

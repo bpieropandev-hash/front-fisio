@@ -355,11 +355,21 @@ export class AgendaComponent implements OnInit {
   // --- Fechamento em lote (spec 07 F1) ---
   modalLoteVisivel = false;
   pacienteLoteId: number | null = null;
+  dataInicioLote: Date | null = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  dataFimLote: Date | null = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+  erroPeriodoLote = signal('');
+  erroLote = signal('');
   carregandoLote = signal(false);
   salvandoLote = signal(false);
   itensLote = signal<ItemLoteUI[]>([]);
   private requisicaoLote = 0;
   private pacienteLoteCarregado: number | null = null;
+  private periodoLoteCarregado = '';
+
+  private chavePeriodoLote(): string {
+    return this.dataInicioLote && this.dataFimLote
+      ? `${formatDateForApi(this.dataInicioLote)}/${formatDateForApi(this.dataFimLote)}` : '';
+  }
 
   abrirModalLote(): void {
     if (this.salvandoLote()) return;
@@ -367,6 +377,11 @@ export class AgendaComponent implements OnInit {
     this.pacienteLoteCarregado = null;
     this.carregandoLote.set(false);
     this.pacienteLoteId = null;
+    const hoje = new Date();
+    this.dataInicioLote = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    this.dataFimLote = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    this.erroPeriodoLote.set('');
+    this.erroLote.set('');
     this.itensLote.set([]);
     this.modalLoteVisivel = true;
   }
@@ -387,15 +402,34 @@ export class AgendaComponent implements OnInit {
     this.pacienteLoteCarregado = null;
     this.itensLote.set([]);
     this.carregandoLote.set(false);
+    this.erroPeriodoLote.set('');
+    this.erroLote.set('');
+    this.periodoLoteCarregado = '';
+    if (!this.dataInicioLote || !this.dataFimLote ||
+        !Number.isFinite(this.dataInicioLote.getTime()) || !Number.isFinite(this.dataFimLote.getTime())) {
+      this.erroPeriodoLote.set('Informe a data inicial e a data final.');
+      return;
+    }
+    if (this.dataInicioLote > this.dataFimLote) {
+      this.erroPeriodoLote.set('A data inicial deve ser anterior ou igual à data final.');
+      return;
+    }
     if (!pacienteId) return;
 
+    const inicio = this.iniciarDoDia(this.dataInicioLote);
+    const fim = new Date(this.dataFimLote);
+    fim.setHours(23, 59, 59, 999);
+    const periodo = this.chavePeriodoLote();
     this.carregandoLote.set(true);
-    this.agendamentoService.listar({ pacienteId }).subscribe({
+    this.agendamentoService.listar({ pacienteId, dataInicio: formatDateTimeForApi(inicio), dataFim: formatDateTimeForApi(fim, true) }).subscribe({
       next: (atendimentos) => {
-        if (requisicao !== this.requisicaoLote || pacienteId !== this.pacienteLoteId) return;
+        if (requisicao !== this.requisicaoLote || pacienteId !== this.pacienteLoteId || periodo !== this.chavePeriodoLote()) return;
         const agora = new Date();
         const itens: ItemLoteUI[] = atendimentos
-          .filter(a => a.pacienteId === pacienteId && a.status === 'AGENDADO' && new Date(a.dataHoraInicio) < agora)
+          .filter(a => {
+            const data = new Date(a.dataHoraInicio);
+            return a.pacienteId === pacienteId && a.status === 'AGENDADO' && data < agora && data >= inicio && data <= fim;
+          })
           .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
           .map(a => ({
             id: a.id,
@@ -408,13 +442,15 @@ export class AgendaComponent implements OnInit {
             tipoPagamento: null
           }));
         this.pacienteLoteCarregado = pacienteId;
+        this.periodoLoteCarregado = periodo;
         this.itensLote.set(itens);
         this.carregandoLote.set(false);
       },
       error: (error: HttpErrorResponse) => {
-        if (requisicao !== this.requisicaoLote || pacienteId !== this.pacienteLoteId) return;
+        if (requisicao !== this.requisicaoLote || pacienteId !== this.pacienteLoteId || periodo !== this.chavePeriodoLote()) return;
         this.carregandoLote.set(false);
         const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.erroLote.set(msg.detail);
         this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
       }
     });
@@ -432,7 +468,7 @@ export class AgendaComponent implements OnInit {
   }
 
   confirmarConclusaoLote(): void {
-    if (this.carregandoLote() || this.salvandoLote() || !this.pacienteLoteId || this.pacienteLoteId !== this.pacienteLoteCarregado) return;
+    if (this.carregandoLote() || this.salvandoLote() || !this.pacienteLoteId || this.pacienteLoteId !== this.pacienteLoteCarregado || this.periodoLoteCarregado !== this.chavePeriodoLote()) return;
     const selecionados = this.itensLote().filter(i => i.selecionado);
     if (selecionados.length === 0) {
       this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Selecione ao menos um atendimento' });

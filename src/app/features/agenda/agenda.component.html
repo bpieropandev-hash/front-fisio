@@ -41,8 +41,9 @@
       (onHide)="fecharModalLote()"
     >
       <div class="form-group">
-        <label>Paciente *</label>
+        <label for="paciente-lote">Paciente *</label>
         <p-select
+          inputId="paciente-lote"
           [(ngModel)]="pacienteLoteId"
           (onChange)="aoSelecionarPacienteLote()"
           [options]="pacientes()"
@@ -56,13 +57,29 @@
         />
       </div>
 
+      <div class="lote-periodo">
+        <div class="form-group">
+          <label for="inicio-lote">Data inicial *</label>
+          <p-datepicker inputId="inicio-lote" [(ngModel)]="dataInicioLote" (ngModelChange)="aoSelecionarPacienteLote()"
+            [disabled]="salvandoLote()" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="full-width" />
+        </div>
+        <div class="form-group">
+          <label for="fim-lote">Data final *</label>
+          <p-datepicker inputId="fim-lote" [(ngModel)]="dataFimLote" (ngModelChange)="aoSelecionarPacienteLote()"
+            [disabled]="salvandoLote()" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="full-width" />
+        </div>
+      </div>
+      @if (erroPeriodoLote()) { <p class="lote-erro" role="alert">{{ erroPeriodoLote() }}</p> }
+
       @if (carregandoLote()) {
         <div class="lote-loading">
           <i class="pi pi-spin pi-spinner"></i>
           <span>Carregando atendimentos...</span>
         </div>
-      } @else if (pacienteLoteId && itensLote().length === 0) {
-        <p class="lote-vazio">Nenhum atendimento agendado (passado) encontrado para este paciente.</p>
+      } @else if (erroLote()) {
+        <div role="alert"><p>{{ erroLote() }}</p><p-button label="Tentar novamente" (onClick)="aoSelecionarPacienteLote()" /></div>
+      } @else if (pacienteLoteId && !erroPeriodoLote() && itensLote().length === 0) {
+        <p class="lote-vazio">Nenhum atendimento agendado passado neste período para este paciente.</p>
       } @else if (itensLote().length > 0) {
         <p>Recebimentos confirmados neste lote usarão a data de hoje. Para outra data, abra o atendimento individual.</p>
         <div class="lote-toolbar">
