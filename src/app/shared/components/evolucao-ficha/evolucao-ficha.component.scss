@@ -1,23 +1,58 @@
-:host { display: block; }
-.ficha { padding: 1rem; border: 1px solid var(--p-content-border-color, #d1d5db); border-radius: .75rem; }
-h3, h4 { margin: 0 0 .75rem; }
+:host {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+.ficha { padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; }
+h3, h4 { margin: 0 0 .75rem; font-family: var(--font-display); }
 fieldset { border: 0; margin: 1rem 0; padding: 0; min-width: 0; }
 legend { font-weight: 600; margin-bottom: .5rem; }
 .opcoes { display: flex; flex-wrap: wrap; gap: .5rem; }
-.opcao { display: flex; align-items: center; gap: .5rem; padding: .65rem .75rem; border: 1px solid var(--p-content-border-color, #d1d5db); border-radius: .5rem; cursor: pointer; }
-input[type=checkbox] { width: 1.1rem; height: 1.1rem; accent-color: var(--p-primary-color, #0f766e); }
+.opcao {
+  display: flex; align-items: center; gap: .5rem;
+  min-height: 44px; padding: .65rem .75rem;
+  border: 1px solid var(--border-color); border-radius: 8px;
+  background: var(--bg-secondary); cursor: pointer;
+}
+.opcao:has(input:checked) { border-color: var(--accent-color); background: var(--accent-soft); }
+input[type=checkbox] { width: 1.1rem; height: 1.1rem; flex-shrink: 0; accent-color: var(--pg-primary-color); }
 .medidas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .medidas label, .campo { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .75rem; }
-input[type=number], textarea { border: 1px solid var(--p-content-border-color, #9ca3af); background: var(--p-content-background, #fff); color: inherit; font: inherit; border-radius: .4rem; padding: .65rem; width: 100%; box-sizing: border-box; }
+input[type=number], textarea {
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary); color: var(--text-primary); font: inherit;
+  border-radius: 8px; padding: .75rem; width: 100%; min-height: 44px; box-sizing: border-box;
+}
 .dor { max-width: 8rem; }
 textarea { resize: vertical; }
-.acoes { display: flex; flex-wrap: wrap; gap: .5rem; }
-button { border: 1px solid var(--p-content-border-color, #9ca3af); border-radius: .5rem; background: var(--p-content-background, #fff); color: inherit; padding: .65rem 1rem; min-height: 44px; cursor: pointer; font: inherit; }
-button.primario { background: var(--p-primary-color, #0f766e); color: var(--p-primary-contrast-color, #fff); }
-button:disabled { opacity: .55; cursor: default; }
-.erro { color: var(--p-red-700, #b91c1c); }
-.ajuda, small { color: var(--p-text-muted-color, #4b5563); }
-.resumo, .historico { margin-top: 1rem; border-top: 1px solid var(--p-content-border-color, #d1d5db); padding-top: 1rem; }
+.acoes { display: flex; flex-wrap: wrap; gap: .75rem; padding-top: .25rem; }
+button {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-color); border-radius: 8px;
+  background: var(--bg-secondary); color: var(--text-primary);
+  padding: .75rem 1rem; min-height: 44px; max-width: 100%;
+  cursor: pointer; font: inherit; font-weight: 600; line-height: 1.4; text-align: center;
+  transition: background-color .15s, border-color .15s;
+}
+button:not(:disabled):hover { background: var(--bg-tertiary); border-color: var(--text-secondary); }
+button.primario { background: var(--pg-primary-active-color); border-color: var(--pg-primary-active-color); color: var(--pg-primary-contrast-color); }
+button.primario:not(:disabled):hover { background: var(--pg-primary-active-color); border-color: var(--pg-primary-color); }
+button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent-color); outline-offset: 3px;
+}
+button:disabled { opacity: .65; cursor: not-allowed; }
+input:disabled, textarea:disabled { opacity: .65; }
+.erro { color: var(--status-err-fg); }
+.ajuda, small { color: var(--text-secondary); }
+.resumo, .historico { margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem; }
 p { white-space: pre-wrap; overflow-wrap: anywhere; }
-article { padding: .75rem 0; border-bottom: 1px solid var(--p-content-border-color, #d1d5db); }
+article { padding: .75rem 0; border-bottom: 1px solid var(--border-color); }
 article small { display: block; margin-top: .25rem; }
+@media (max-width: 600px) {
+  .ficha { padding: .875rem; }
+  .acoes > button { flex: 1 1 100%; }
+  input[type=number], textarea { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }
