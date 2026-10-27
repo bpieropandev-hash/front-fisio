@@ -1,3 +1,4 @@
+import { ConfiguracaoClinicaService } from '../../../core/services/configuracao-clinica.service';
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -22,6 +23,7 @@ export class FotosPacienteComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) pacienteId!: number;
   @Input() pacienteNome = '';
   @ViewChild('arquivoInput') private arquivoInput?: ElementRef<HTMLInputElement>;
+  readonly configuracoes = inject(ConfiguracaoClinicaService);
   private readonly clinica = inject(ClinicaService);
   private requisicoes = new Subscription();
   private arquivo: File | null = null;
@@ -87,8 +89,8 @@ export class FotosPacienteComponent implements OnChanges, OnDestroy {
     this.arquivo = null; this.nomeArquivo.set(''); this.erro.set(''); this.sucesso.set('');
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size === 0 || file.size > 5 * 1024 * 1024) {
-      this.erro.set('Selecione uma imagem JPEG ou PNG de até 5 MiB.');
+    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size === 0 || file.size > this.configuracoes.atual().fotoLimiteMiB * 1024 * 1024) {
+      this.erro.set(`Selecione uma imagem JPEG ou PNG de até ${this.configuracoes.atual().fotoLimiteMiB} MiB.`);
       if (this.arquivoInput) this.arquivoInput.nativeElement.value = '';
       return;
     }
@@ -101,12 +103,12 @@ export class FotosPacienteComponent implements OnChanges, OnDestroy {
   enviar(): void {
     if (this.enviando() || this.carregando() || this.excluindo() || !this.carregado()) return;
     this.form.markAllAsTouched();
-    if (!this.arquivo || this.form.invalid) { this.erro.set('Selecione uma imagem JPEG ou PNG de até 5 MiB, a data da captura e a região corporal.'); return; }
+    if (!this.arquivo || this.form.invalid) { this.erro.set('Selecione uma imagem JPEG ou PNG dentro do limite configurado, a data da captura e a região corporal.'); return; }
     this.enviando.set(true); this.erro.set(''); this.sucesso.set('');
     const dados = this.form.getRawValue();
     this.requisicoes.add(this.clinica.enviarFoto(this.pacienteId, { imagem: this.arquivo, ...dados, regiao: dados.regiao.trim(), observacao: dados.observacao.trim() }).subscribe({
       next: () => { this.form.reset(); this.limparArquivo(); this.sucesso.set('Foto enviada.'); this.carregar(); },
-      error: () => { this.enviando.set(false); this.erro.set('Não foi possível enviar a foto. Verifique se é uma imagem JPEG ou PNG válida de até 5 MiB e tente novamente.'); }
+      error: () => { this.enviando.set(false); this.erro.set('Não foi possível enviar a foto. Verifique se é uma imagem JPEG ou PNG válida dentro do limite configurado e tente novamente.'); }
     }));
   }
   pedirExclusao(foto: FotoClinica): void { if (!this.enviando() && !this.excluindo()) { this.exclusao.set(foto); this.erro.set(''); } }

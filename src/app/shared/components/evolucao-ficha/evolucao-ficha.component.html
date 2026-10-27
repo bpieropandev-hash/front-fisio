@@ -14,7 +14,7 @@
         <legend>Procedimentos realizados</legend>
         <div class="opcoes">
           @for (item of procedimentos; track item.codigo) {
-            <label class="opcao"><input type="checkbox" [checked]="form.controls.procedimentos.value.includes(item.codigo)" (change)="alternarProcedimento(item.codigo)" />{{ item.nome }}</label>
+            <label class="opcao"><input type="checkbox" [disabled]="!item.ativo && !form.controls.procedimentos.value.includes(item.codigo)" [checked]="form.controls.procedimentos.value.includes(item.codigo)" (change)="alternarProcedimento(item.codigo)" />{{ item.nome }}</label>
           }
         </div>
       </fieldset>
@@ -33,14 +33,15 @@
         <legend>Equipamentos utilizados no Pilates</legend>
         <div class="opcoes">
           @for (item of equipamentos; track item.codigo) {
-            <label class="opcao"><input type="checkbox" [checked]="form.controls.equipamentos.value.includes(item.codigo)" (change)="alternarEquipamento(item.codigo)" />{{ item.nome }}</label>
+            <label class="opcao"><input type="checkbox" [disabled]="!item.ativo && !form.controls.equipamentos.value.includes(item.codigo)" [checked]="form.controls.equipamentos.value.includes(item.codigo)" (change)="alternarEquipamento(item.codigo)" />{{ item.nome }}</label>
           }
         </div>
       </fieldset>
       <fieldset [disabled]="salvando() || conflito()">
         <legend>Informações complementares</legend>
-        <label class="campo">Dor (0 a 10, opcional)<input type="number" class="dor" formControlName="dor" min="0" max="10" step="1" inputmode="numeric" /></label>
+        @if(configuracoes.atual().exibirDor || form.controls.dor.value !== null) { <label class="campo">Dor (0 a 10, opcional)<input type="number" class="dor" [readonly]="!configuracoes.atual().exibirDor" formControlName="dor" min="0" max="10" step="1" inputmode="numeric" /></label>
         @if (form.controls.dor.invalid) { <p class="erro">Informe um número inteiro entre 0 e 10.</p> }
+        }
         <label class="campo">Observações (opcional)<textarea formControlName="observacoes" rows="3" maxlength="5000"></textarea></label>
       </fieldset>
       <div class="acoes">

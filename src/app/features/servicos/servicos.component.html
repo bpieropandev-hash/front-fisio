@@ -199,7 +199,7 @@
         <div class="full">
           <label>Tipo *</label>
           <p-select
-            [(ngModel)]="formServico.tipo" (ngModelChange)="!servicoEmEdicao && (formServico.capacidade = $event === 'PILATES' ? 15 : 1)"
+            [(ngModel)]="formServico.tipo" (ngModelChange)="!servicoEmEdicao && (formServico.capacidade = $event === 'PILATES' ? configuracoes.atual().capacidadePilates : configuracoes.atual().capacidadeFisioterapia)"
             [options]="tipoServicoOptions"
             optionLabel="label"
             optionValue="value"

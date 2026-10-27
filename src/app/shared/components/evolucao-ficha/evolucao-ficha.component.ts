@@ -1,3 +1,4 @@
+import { ConfiguracaoClinicaService } from '../../../core/services/configuracao-clinica.service';
 import { Component, EventEmitter, Input, Output, OnChanges, OnDestroy, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -54,15 +55,9 @@ export class EvolucaoFichaComponent implements OnChanges, OnDestroy {
   readonly historicoAberto = signal(false);
   readonly carregandoHistorico = signal(false);
   readonly erroHistorico = signal('');
-  readonly procedimentos: { codigo: ProcedimentoClinico; nome: string }[] = [
-    { codigo: 'PRESSAO_ARTERIAL', nome: 'Pressão aferida' }, { codigo: 'ALONGAMENTO', nome: 'Alongamento' },
-    { codigo: 'FORTALECIMENTO', nome: 'Fortalecimento' }, { codigo: 'MOBILIZACAO', nome: 'Mobilização' },
-    { codigo: 'TERAPIA_MANUAL', nome: 'Terapia manual' }, { codigo: 'EXERCICIO_RESPIRATORIO', nome: 'Exercício respiratório' }, { codigo: 'PILATES', nome: 'Pilates' }
-  ];
-  readonly equipamentos: { codigo: EquipamentoClinico; nome: string }[] = [
-    { codigo: 'REFORMER', nome: 'Reformer' }, { codigo: 'CADILLAC', nome: 'Cadillac' }, { codigo: 'CHAIR', nome: 'Chair' },
-    { codigo: 'BARREL', nome: 'Barrel' }, { codigo: 'SOLO', nome: 'Solo' }, { codigo: 'ACESSORIOS', nome: 'Acessórios' }
-  ];
+  readonly configuracoes = inject(ConfiguracaoClinicaService);
+  get procedimentos() { return this.configuracoes.atual().procedimentos.filter(i=>i.ativo || this.form.controls.procedimentos.value.includes(i.codigo)); }
+  get equipamentos() { return this.configuracoes.atual().equipamentos.filter(i=>i.ativo || this.form.controls.equipamentos.value.includes(i.codigo)); }
   readonly form = new FormGroup({
     procedimentos: new FormControl<ProcedimentoClinico[]>([], { nonNullable: true }),
     equipamentos: new FormControl<EquipamentoClinico[]>([], { nonNullable: true }),

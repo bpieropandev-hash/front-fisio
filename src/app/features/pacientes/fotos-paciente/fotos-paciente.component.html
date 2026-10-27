@@ -9,7 +9,7 @@
       <h3>Adicionar foto clínica</h3>
       <fieldset [disabled]="enviando() || excluindo()">
         <legend class="sr-only">Dados da nova foto</legend>
-        <label>Imagem JPEG ou PNG (até 5 MiB)<input #arquivoInput type="file" accept="image/jpeg,image/png" (change)="selecionarArquivo($event)" aria-describedby="foto-privacidade" /></label>
+        <label>Imagem JPEG ou PNG (até {{configuracoes.atual().fotoLimiteMiB}} MiB)<input #arquivoInput type="file" accept="image/jpeg,image/png" (change)="selecionarArquivo($event)" aria-describedby="foto-privacidade" /></label>
         @if (nomeArquivo()) { <small>{{ nomeArquivo() }}</small> }
         <div class="campos">
           <label>Data da captura<input type="date" name="dataCaptura" formControlName="dataCaptura" required /></label>

@@ -1,3 +1,4 @@
+import { ConfiguracaoClinicaService } from './core/services/configuracao-clinica.service';
 import { Component, signal, computed, effect, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
@@ -66,7 +67,7 @@ export class AppComponent {
 
   avatarMenuItems: MenuItem[] = [
     {
-      label: 'Meu Perfil',
+      label: 'Perfil e configurações',
       icon: 'pi pi-user',
       command: () => this.router.navigateByUrl('/perfil')
     },
@@ -133,6 +134,7 @@ export class AppComponent {
     private accentThemeService: AccentThemeService,
     private usuarioService: UsuarioService,
     private router: Router,
+    public configuracoes: ConfiguracaoClinicaService,
     private location: Location
   ) {
     this.currentUrl = toSignal(
@@ -148,6 +150,7 @@ export class AppComponent {
     effect(() => {
       if (this.authService.isAuthenticated() && !this.usuarioCarregado) {
         this.usuarioCarregado = true;
+        this.configuracoes.carregar();
         this.usuarioService.buscarMe().subscribe({
           next: (usuario) => {
             this.usuarioAtual.set(usuario);
@@ -163,6 +166,7 @@ export class AppComponent {
       }
       if (!this.authService.isAuthenticated()) {
         this.usuarioCarregado = false;
+        this.configuracoes.limpar();
       }
     });
   }

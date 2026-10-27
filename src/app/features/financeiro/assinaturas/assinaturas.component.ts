@@ -1,3 +1,4 @@
+import { ConfiguracaoClinicaService } from '../../../core/services/configuracao-clinica.service';
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -56,6 +57,7 @@ import { BreakpointService } from '../../../core/services/breakpoint.service';
     styleUrls: ['./assinaturas.component.scss']
 })
 export class AssinaturasComponent implements OnInit {
+  private readonly configuracoes = inject(ConfiguracaoClinicaService);
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
@@ -229,8 +231,8 @@ export class AssinaturasComponent implements OnInit {
     this.pacienteIdsSelecionados = [];
     this.novaAssinatura = {
       servicoId: 0,
-      valorMensal: undefined,
-      diaVencimento: 5,
+      valorMensal: this.configuracoes.atual().mensalidadeValorPadrao || undefined,
+      diaVencimento: this.configuracoes.atual().mensalidadeDiaVencimento,
       dataInicio: undefined
     };
     this.modalVisivel = true;

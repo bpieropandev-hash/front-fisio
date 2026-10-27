@@ -1,5 +1,5 @@
-export type ProcedimentoClinico = 'PRESSAO_ARTERIAL' | 'ALONGAMENTO' | 'FORTALECIMENTO' | 'MOBILIZACAO' | 'TERAPIA_MANUAL' | 'EXERCICIO_RESPIRATORIO' | 'PILATES';
-export type EquipamentoClinico = 'REFORMER' | 'CADILLAC' | 'CHAIR' | 'BARREL' | 'SOLO' | 'ACESSORIOS';
+export type ProcedimentoClinico = string;
+export type EquipamentoClinico = string;
 export interface EvolucaoClinicaRequest {
   versao: number;
   procedimentos: ProcedimentoClinico[];

@@ -1,3 +1,5 @@
+import { untracked } from '@angular/core';
+import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
 import { Component, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -91,6 +93,8 @@ interface ItemLoteUI {
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
+  readonly configuracoes = inject(ConfiguracaoClinicaService);
+  private readonly atualizarAgrupamento = effect(() => { this.configuracoes.atual(); untracked(() => this.aplicarFiltros()); });
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
@@ -700,7 +704,8 @@ export class AgendaComponent implements OnInit {
 
   aplicarFiltros(): void {
     const fontes = new Map(this.eventos().map(evento => [(evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO).id, evento]));
-    const grupos = agruparAtendimentos([...fontes.values()].map(evento => evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO), this.filtros);
+    let grupos = agruparAtendimentos([...fontes.values()].map(evento => evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO), this.filtros);
+    if (!this.configuracoes.atual().agruparAgenda) grupos = grupos.flatMap(g => g.participantes.map(p => ({chave:`individual-${p.id}`,participantes:[p]})));
     this.eventosFiltrados.set(grupos.map(grupo => {
       const primeiro = fontes.get(grupo.participantes[0].id)!;
       if (grupo.participantes.length === 1) return {...primeiro, extendedProps: {...primeiro.extendedProps, participantes: grupo.participantes}};

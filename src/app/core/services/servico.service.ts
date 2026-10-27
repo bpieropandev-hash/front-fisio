@@ -44,6 +44,10 @@ export class ServicoService {
     );
   }
 
+  atualizarCapacidade(id: number, capacidade: number): Observable<void> {
+    return this.http.put<void>(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.servicos}/${id}/capacidade`, {capacidade});
+  }
+
   deletar(id: number): Observable<void> {
     return this.http.delete<void>(
       `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.servicos}/${id}`
