@@ -170,6 +170,11 @@ export class AssinaturasComponent implements OnInit {
 
   filtroStatus = signal<"todas" | "ativas" | "canceladas">("todas");
   filtroServicoId = signal<number>(0);
+  filtroDiaVencimento = signal(0);
+  diasVencimentoOptions = Array.from({ length: 28 }, (_, i) => ({ label: `Dia ${i + 1}`, value: i + 1 }));
+  assinaturaCobranca = signal<AssinaturaResponseDTO | null>(null);
+  gerandoCobranca = signal(false);
+  erroCobranca = signal("");
 
   filtroStatusOptions: {
     label: string;
@@ -198,6 +203,9 @@ export class AssinaturasComponent implements OnInit {
       );
     }
 
+    if (this.filtroDiaVencimento()) {
+      assinaturasLista = assinaturasLista.filter(a => a.diaVencimento === this.filtroDiaVencimento());
+    }
     if (!termo) {
       return assinaturasLista;
     }
@@ -250,6 +258,8 @@ export class AssinaturasComponent implements OnInit {
     if (statusParam === "ativas" || statusParam === "canceladas") {
       this.filtroStatus.set(statusParam);
     }
+    const vencimento = Number(params.get("vencimento"));
+    this.filtroDiaVencimento.set(Number.isInteger(vencimento) && vencimento >= 1 && vencimento <= 28 ? vencimento : 0);
     const servicoParam = params.get("servico");
     if (servicoParam) {
       this.filtroServicoId.set(Number(servicoParam));
@@ -289,12 +299,18 @@ export class AssinaturasComponent implements OnInit {
     this.atualizarQueryParams();
   }
 
+  aoMudarFiltroVencimento(valor: number | null): void {
+    this.filtroDiaVencimento.set(Number.isInteger(valor) && valor! >= 1 && valor! <= 28 ? valor! : 0);
+    this.atualizarQueryParams();
+  }
+
   private atualizarQueryParams(): void {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
         status: this.filtroStatus() === "todas" ? null : this.filtroStatus(),
         servico: this.filtroServicoId() || null,
+        vencimento: this.filtroDiaVencimento() || null,
       },
       queryParamsHandling: "merge",
       replaceUrl: true,
@@ -627,10 +643,30 @@ export class AssinaturasComponent implements OnInit {
       });
   }
 
+  gerarCobrancaAtual(): void {
+    const assinatura = this.assinaturaCobranca();
+    if (!assinatura || this.gerandoCobranca()) return;
+    this.gerandoCobranca.set(true);
+    this.erroCobranca.set("");
+    this.assinaturaService.gerarCobrancaMesAtual(assinatura.id).subscribe({
+      next: resultado => {
+        this.gerandoCobranca.set(false);
+        this.assinaturaCobranca.set(null);
+        this.messageService.add({ severity: "success", summary: "Cobrança do mês",
+          detail: resultado.gerada ? "Cobrança gerada com sucesso." : "A cobrança deste mês já existe e foi mantida." });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.gerandoCobranca.set(false);
+        this.erroCobranca.set(ErrorHandlerUtil.getErrorMessage(error).detail || "Não foi possível gerar a cobrança. Tente novamente.");
+      }
+    });
+  }
+
   reativarAssinatura(id: number): void {
+    if (this.salvando() || this.gerandoCobranca()) return;
     this.salvando.set(true);
     this.assinaturaService.reativar(id).subscribe({
-      next: () => {
+      next: (assinatura) => {
         this.messageService.add({
           severity: "success",
           summary: "Sucesso",
@@ -638,6 +674,16 @@ export class AssinaturasComponent implements OnInit {
         });
         this.carregarDados();
         this.salvando.set(false);
+        this.assinaturaCobranca.set(assinatura);
+        this.erroCobranca.set("");
+        this.confirmationService.confirm({
+          header: "Gerar cobrança do mês?",
+          message: `Gerar a cobrança do mês corrente para ${assinatura.pacienteNome}? Se já existir, ela será mantida.`,
+          acceptLabel: "Gerar cobrança",
+          rejectLabel: "Agora não",
+          accept: () => this.gerarCobrancaAtual(),
+          reject: () => this.assinaturaCobranca.set(null),
+        });
       },
       error: (error: HttpErrorResponse) => {
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);

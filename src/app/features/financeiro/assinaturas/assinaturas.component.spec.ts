@@ -134,6 +134,63 @@ describe("Cadastro de assinatura mensal", () => {
     dataInicio: "2026-01-01",
   };
 
+  it("filtra vencimento exato e preserva os outros filtros na URL", () => {
+    const navigate = vi.spyOn((component as any).router, "navigate").mockResolvedValue(true);
+    component.assinaturas.set([assinatura, { ...assinatura, id: 2, diaVencimento: 15 }]);
+    component.aoMudarFiltroStatus("ativas");
+    component.aoMudarFiltroServico(2);
+    component.aoMudarFiltroVencimento(5);
+    expect(component.assinaturasFiltradas().map(a => a.id)).toEqual([1]);
+    expect(navigate).toHaveBeenLastCalledWith([], expect.objectContaining({
+      queryParams: { status: "ativas", servico: 2, vencimento: 5 }, queryParamsHandling: "merge"
+    }));
+    component.aoMudarFiltroVencimento(29);
+    expect(component.filtroDiaVencimento()).toBe(0);
+  });
+
+  it("oferece gerar somente a assinatura reativada após confirmação", () => {
+    const confirm = vi.spyOn((component as any).confirmationService, "confirm");
+    component.reativarAssinatura(1);
+    http.expectOne(r => r.url.endsWith("/1/reativar")).flush(assinatura);
+    http.expectOne(r => r.url.endsWith("/assinaturas")).flush([assinatura]);
+    http.expectOne(r => r.url.endsWith("/pacientes")).flush([]);
+    http.expectOne(r => r.url.endsWith("/servicos")).flush([]);
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ header: "Gerar cobrança do mês?" }));
+    http.expectNone(r => r.method === "POST");
+    (confirm.mock.calls[0][0] as { accept: () => void }).accept();
+    http.expectOne(r => r.url.endsWith("/assinaturas/1/cobranca-mes-atual")).flush({ gerada: false });
+    expect(component.gerandoCobranca()).toBe(false);
+    expect(component.assinaturaCobranca()).toBeNull();
+    http.verify();
+  });
+
+  it("permite recusar geração após reativar sem alterar a reativação", () => {
+    const confirm = vi.spyOn((component as any).confirmationService, "confirm");
+    component.reativarAssinatura(1);
+    http.expectOne(r => r.url.endsWith("/1/reativar")).flush(assinatura);
+    http.expectOne(r => r.url.endsWith("/assinaturas")).flush([assinatura]);
+    http.expectOne(r => r.url.endsWith("/pacientes")).flush([]);
+    http.expectOne(r => r.url.endsWith("/servicos")).flush([]);
+    (confirm.mock.calls[0][0] as { reject: () => void }).reject();
+    expect(component.assinaturaCobranca()).toBeNull();
+    expect(component.assinaturas()[0].ativo).toBe(true);
+    http.expectNone(r => r.method === "POST");
+    http.verify();
+  });
+
+  it("mantém erro e retry de geração e impede cliques duplicados", () => {
+    component.assinaturaCobranca.set(assinatura);
+    component.gerarCobrancaAtual();
+    component.gerarCobrancaAtual();
+    http.expectOne(r => r.method === "POST").flush({}, { status: 500, statusText: "Falha" });
+    expect(component.erroCobranca()).toBeTruthy();
+    expect(component.assinaturaCobranca()?.id).toBe(1);
+    component.gerarCobrancaAtual();
+    http.expectOne(r => r.method === "POST").flush({ gerada: true });
+    expect(component.erroCobranca()).toBe("");
+    http.verify();
+  });
+
   it("aplica a mesma validação financeira ao editar e trocar plano", () => {
     component.abrirModalEditar(assinatura);
     component.edicao.valorMensal = -1;

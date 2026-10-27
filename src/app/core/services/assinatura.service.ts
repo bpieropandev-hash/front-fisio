@@ -62,6 +62,12 @@ export class AssinaturaService {
     );
   }
 
+  gerarCobrancaMesAtual(id: number): Observable<{ gerada: boolean }> {
+    return this.http.post<{ gerada: boolean }>(
+      `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}/${id}/cobranca-mes-atual`, {}
+    );
+  }
+
   trocarPlano(id: number, dados: AssinaturaTrocarPlanoRequestDTO): Observable<AssinaturaTrocaPlanoResponseDTO> {
     return this.http.post<AssinaturaTrocaPlanoResponseDTO>(
       `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.assinaturas}/${id}/trocar-plano`,

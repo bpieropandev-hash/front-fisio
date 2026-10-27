@@ -784,3 +784,19 @@ a:focus-visible {
     flex-direction: column-reverse;
   }
 }
+
+:host { display: block; max-width: 1440px; margin-inline: auto; }
+.filtro-vencimento { max-width: 100%; min-width: min(180px, 100%); }
+.cobranca-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}

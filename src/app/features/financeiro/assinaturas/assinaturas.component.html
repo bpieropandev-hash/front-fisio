@@ -1,5 +1,16 @@
 <p-toast />
 <p-confirmDialog />
+@if (gerandoCobranca() || erroCobranca()) {
+  <div class="cobranca-feedback" [attr.role]="erroCobranca() ? 'alert' : 'status'" aria-live="polite">
+    @if (gerandoCobranca()) {
+      <span>Gerando cobrança do mês para {{ assinaturaCobranca()?.pacienteNome }}…</span>
+    } @else {
+      <span>{{ erroCobranca() }}</span>
+      <p-button label="Tentar gerar novamente" (onClick)="gerarCobrancaAtual()" [disabled]="gerandoCobranca()" />
+      <p-button label="Agora não" styleClass="p-button-text" (onClick)="assinaturaCobranca.set(null); erroCobranca.set('')" />
+    }
+  </div>
+}
 
 @if (erroLista()) {
   <div class="form-alert" role="alert">
@@ -74,6 +85,13 @@
         [showClear]="true"
         styleClass="full-width"
       />
+    </div>
+    <div class="filtro-campo filtro-vencimento">
+      <label for="vencimento-mobile">Dia de vencimento</label>
+      <p-select inputId="vencimento-mobile" [ngModel]="filtroDiaVencimento() || null"
+        (ngModelChange)="aoMudarFiltroVencimento($event)" [options]="diasVencimentoOptions"
+        optionLabel="label" optionValue="value" placeholder="Todos os dias" [showClear]="true"
+        styleClass="full-width" />
     </div>
     <div class="fin-mobile__filtros">
       @for (opcao of filtroStatusOptions; track opcao.value) {
@@ -260,6 +278,14 @@
     </div>
   </div>
   <div class="filtros-linha">
+    <div class="filtro-campo filtro-vencimento">
+      <label for="vencimento-desktop">Dia de vencimento</label>
+      <p-select inputId="vencimento-desktop" [ngModel]="filtroDiaVencimento() || null"
+        (ngModelChange)="aoMudarFiltroVencimento($event)" [options]="diasVencimentoOptions"
+        optionLabel="label" optionValue="value" placeholder="Todos os dias" [showClear]="true"
+        styleClass="full-width" />
+    </div>
+
     <div class="filtro-campo">
       <label for="filtro-status">Status</label>
       <p-select
