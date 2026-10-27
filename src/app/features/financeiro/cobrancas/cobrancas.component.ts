@@ -23,6 +23,7 @@ import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
 import { ReciboDialogComponent } from '../../../shared/components/recibo-dialog/recibo-dialog.component';
 import { OrigemRecibo } from '../../../core/interfaces/recibo.interface';
+import { PageStateComponent } from '../../../shared/components/page-state/page-state.component';
 import { BreakpointService } from '../../../core/services/breakpoint.service';
 
 @Component({
@@ -40,7 +41,7 @@ import { BreakpointService } from '../../../core/services/breakpoint.service';
         TagModule,
         TooltipModule,
         ToastModule,
-        SearchInputComponent, ReciboDialogComponent
+        SearchInputComponent, ReciboDialogComponent, PageStateComponent
     ],
     providers: [MessageService],
     templateUrl: './cobrancas.component.html',
@@ -50,6 +51,59 @@ export class CobrancasComponent implements OnInit {
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
+
+  modalEstornoVisivel = false;
+  motivoEstorno = '';
+  estornando = signal(false);
+  erroEstorno = signal('');
+  cobrancaEstorno: CobrancaMensalResponseDTO | null = null;
+  filtroPacienteId = signal<number | null>(null);
+  erroCarregamento = signal('');
+  private consultaAtual = 0;
+  pacientesOptions = computed(() => {
+    const pacientes = new Map<number, string>();
+    for (const c of this.cobrancas()) if (c.pacienteId) pacientes.set(c.pacienteId, c.pacienteNome || c.descricao);
+    return [...pacientes].map(([value, label]) => ({value, label})).sort((a,b)=>a.label.localeCompare(b.label, 'pt-BR'));
+  });
+
+  abrirModalEstorno(cobranca: CobrancaMensalResponseDTO): void {
+    if (this.estornando() || cobranca.status !== 'PAGO') return;
+    this.cobrancaEstorno = cobranca;
+    this.motivoEstorno = '';
+    this.erroEstorno.set('');
+    this.modalEstornoVisivel = true;
+  }
+  fecharModalEstorno(): void {
+    if (this.estornando()) return;
+    this.modalEstornoVisivel = false;
+    this.cobrancaEstorno = null;
+  }
+  confirmarEstorno(): void {
+    if (this.estornando() || !this.cobrancaEstorno) return;
+    const motivo = this.motivoEstorno.trim();
+    if (!motivo || motivo.length > 1000) {
+      this.erroEstorno.set('Informe o motivo do estorno (até 1000 caracteres).');
+      return;
+    }
+    this.estornando.set(true);
+    this.erroEstorno.set('');
+    this.cobrancaService.estornar(this.cobrancaEstorno.id, motivo).subscribe({
+      next: (atualizada) => {
+        this.cobrancas.update(lista => lista.map(c => c.id === atualizada.id ? atualizada : c));
+        this.estornando.set(false);
+        this.fecharModalEstorno();
+        this.messageService.add({severity:'success', summary:'Estorno concluído', detail:'A cobrança voltou a ficar pendente.'});
+      },
+      error: (erro: HttpErrorResponse) => {
+        this.erroEstorno.set(ErrorHandlerUtil.getErrorMessage(erro).detail);
+        this.estornando.set(false);
+      }
+    });
+  }
+  aoMudarFiltroPaciente(id: number | null): void {
+    this.filtroPacienteId.set(id);
+    this.atualizarQueryParams();
+  }
 
   cobrancas = signal<CobrancaMensalResponseDTO[]>([]);
   termoPesquisa = signal<string>('');
@@ -104,6 +158,8 @@ export class CobrancasComponent implements OnInit {
     const termo = this.termoPesquisa().toLowerCase().trim();
     const filtroStatus = this.filtroStatus();
     let cobrancasLista = this.cobrancas();
+    const pacienteId = this.filtroPacienteId();
+    if (pacienteId) cobrancasLista = cobrancasLista.filter(c => c.pacienteId === pacienteId);
 
     if (filtroStatus === 'pago') {
       cobrancasLista = cobrancasLista.filter(c => c.status === 'PAGO');
@@ -180,6 +236,8 @@ export class CobrancasComponent implements OnInit {
     } else if (mesParam && anoParam) {
       this.filtroMesAno.set(new Date(Number(anoParam), Number(mesParam) - 1, 1));
     }
+    const pacienteParam = Number(params.get('paciente'));
+    if (Number.isInteger(pacienteParam) && pacienteParam > 0) this.filtroPacienteId.set(pacienteParam);
     const statusParam = params.get('status');
     if (statusParam === 'pago' || statusParam === 'pendente') {
       this.filtroStatus.set(statusParam);
@@ -208,7 +266,8 @@ export class CobrancasComponent implements OnInit {
       queryParams: {
         mes: mesAno ? mesAno.getMonth() + 1 : 'todos',
         ano: mesAno ? mesAno.getFullYear() : null,
-        status: this.filtroStatus() === 'todos' ? null : this.filtroStatus()
+        status: this.filtroStatus() === 'todos' ? null : this.filtroStatus(),
+        paciente: this.filtroPacienteId()
       },
       queryParamsHandling: 'merge',
       replaceUrl: true
@@ -217,12 +276,15 @@ export class CobrancasComponent implements OnInit {
 
   carregarCobrancas(): void {
     this.carregando.set(true);
+    this.erroCarregamento.set('');
+    const consulta = ++this.consultaAtual;
     const mesAno = this.filtroMesAno();
     const mes = mesAno ? mesAno.getMonth() + 1 : undefined;
     const ano = mesAno ? mesAno.getFullYear() : undefined;
 
     this.cobrancaService.listar(mes, ano).subscribe({
       next: (cobrancas) => {
+        if (consulta !== this.consultaAtual) return;
         const cobrancasOrdenadas = cobrancas.sort((a, b) => {
           const descricaoA = a.descricao?.toLowerCase() || '';
           const descricaoB = b.descricao?.toLowerCase() || '';
@@ -232,12 +294,8 @@ export class CobrancasComponent implements OnInit {
         this.carregando.set(false);
       },
       error: (error: HttpErrorResponse) => {
-        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
-        this.messageService.add({
-          severity: errorMessage.severity,
-          summary: errorMessage.summary,
-          detail: errorMessage.detail
-        });
+        if (consulta !== this.consultaAtual) return;
+        this.erroCarregamento.set(ErrorHandlerUtil.getErrorMessage(error).detail);
         this.carregando.set(false);
       }
     });
@@ -300,7 +358,7 @@ export class CobrancasComponent implements OnInit {
 
   confirmarBaixa(): void {
     const cobranca = this.cobrancaSelecionada();
-    if (!cobranca) return;
+    if (!cobranca || this.salvando()) return;
 
     if (!this.baixaData.dataPagamento || !this.baixaData.recebedor || !this.baixaData.tipoPagamento) {
       this.messageService.add({

@@ -53,6 +53,10 @@ export class CobrancaService {
     );
   }
 
+  estornar(id: number, motivo: string): Observable<CobrancaMensalResponseDTO> {
+    return this.http.post<CobrancaMensalResponseDTO>(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.cobrancas}/${id}/estorno`, {motivo});
+  }
+
   gerarMensalidades(request: GerarCobrancasRequestDTO): Observable<any> {
     return this.http.post(
       `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.financeiro}/gerar-mensalidades`,

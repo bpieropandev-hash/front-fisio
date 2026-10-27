@@ -8,6 +8,8 @@ export interface CobrancaMensalUpdateRequestDTO {
 export interface CobrancaMensalResponseDTO {
   id: number;
   assinaturaId: number;
+  pacienteId?: number;
+  pacienteNome?: string;
   descricao: string;
   mesReferencia: number;
   anoReferencia: number;

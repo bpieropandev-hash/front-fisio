@@ -431,3 +431,11 @@
 .fin-mobile__item-valor--pendente {
   color: var(--text-secondary);
 }
+
+:host { display:block; max-width:1600px; margin-inline:auto; }
+.filtro-paciente { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:16px; max-width:100%; color:var(--text-primary); }
+.estorno-form { display:grid; gap:16px; max-width:100%; color:var(--text-primary); font-family:var(--font-body); }
+.estorno-form textarea { width:100%; max-width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; color:var(--text-primary); background:var(--bg-primary); font:inherit; }
+.estorno-form textarea:focus-visible { outline:2px solid var(--accent-color); outline-offset:2px; }
+.cobranca-erro { color:var(--status-err-fg); background:var(--status-err-bg); padding:12px; border-radius:8px; max-width:100%; }
+@media(max-width:600px) { .filtro-paciente { flex-direction:column; align-items:stretch; } .estorno-form .dialog-footer { display:flex; flex-wrap:wrap; gap:12px; } }

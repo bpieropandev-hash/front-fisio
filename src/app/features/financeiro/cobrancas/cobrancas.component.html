@@ -1,4 +1,9 @@
     <p-toast />
+    <div class="filtro-paciente">
+      <label for="filtro-paciente">Paciente</label>
+      <p-select inputId="filtro-paciente" [ngModel]="filtroPacienteId()" (ngModelChange)="aoMudarFiltroPaciente($event)" [options]="pacientesOptions()" optionLabel="label" optionValue="value" placeholder="Todos os pacientes" [showClear]="true" [filter]="true" filterBy="label" [loading]="carregando()" />
+    </div>
+    <app-page-state [loading]="carregando()" [error]="erroCarregamento()" [empty]="!carregando() && !erroCarregamento() && cobrancasFiltradas().length === 0" loadingLabel="Carregando cobranças…" emptyLabel="Nenhuma cobrança encontrada" (retry)="carregarCobrancas()" />
 
     @if (isTablet()) {
       <div class="fin-mobile">
@@ -53,11 +58,7 @@
         <div class="fin-mobile__section">
           <div class="fin-mobile__section-title">Movimentações</div>
 
-          @if (carregando()) {
-            <div class="fin-mobile__vazio">Carregando…</div>
-          } @else if (cobrancasFiltradas().length === 0) {
-            <div class="fin-mobile__vazio">Nenhuma cobrança encontrada.</div>
-          } @else {
+          @if (!carregando() && !erroCarregamento() && cobrancasFiltradas().length > 0) {
             <div class="fin-mobile__lista">
               @for (cobranca of cobrancasFiltradas(); track cobranca.id) {
                 <div
@@ -76,6 +77,7 @@
                       }
                     </div>
                   </div>
+                  @if (cobranca.status === 'PAGO') { <p-button label="Estornar baixa" icon="pi pi-undo" severity="warn" (onClick)="$event.stopPropagation(); abrirModalEstorno(cobranca)" /> }
                   @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="$event.stopPropagation(); abrirRecibo(cobranca)" /> }
                   <div class="fin-mobile__item-valor" [class.fin-mobile__item-valor--pendente]="cobranca.status === 'PENDENTE'">
                     {{ cobranca.status === 'PAGO' ? '+ ' : '' }}{{ cobranca.valor | currency: 'BRL' }}
@@ -152,7 +154,7 @@
           <span>{{ cobrancasFiltradas().length }} cobrança(s) encontrada(s)</span>
         </div>
       }
-      @if (termoPesquisa() && cobrancasFiltradas().length === 0) {
+      @if (termoPesquisa() && !carregando() && !erroCarregamento() && cobrancasFiltradas().length === 0) {
         <div class="search-no-results">
           <i class="pi pi-search"></i>
           <span>Nenhuma cobrança encontrada com o termo "{{ termoPesquisa() }}"</span>
@@ -160,6 +162,7 @@
       }
     </div>
 
+    @if (!carregando() && !erroCarregamento() && cobrancasFiltradas().length > 0) {
     @if (isMobile()) {
       <div class="mobile-card-list">
         @if (carregando()) {
@@ -192,7 +195,8 @@
                 <span><strong>Recebedor:</strong> {{ obterLabelRecebedor(cobranca.recebedor) }}</span>
                 <span><strong>Tipo:</strong> {{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</span>
               </div>
-              @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo(cobranca)" /> }
+              @if (cobranca.status === 'PAGO') { <p-button label="Estornar baixa" icon="pi pi-undo" severity="warn" (onClick)="$event.stopPropagation(); abrirModalEstorno(cobranca)" /> }
+                  @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo(cobranca)" /> }
               @if (cobranca.status === 'PENDENTE') {
                 <div class="mobile-card-actions">
                   <p-button
@@ -241,7 +245,8 @@
             <td>{{ obterLabelRecebedor(cobranca.recebedor) }}</td>
             <td>{{ obterLabelTipoPagamento(cobranca.tipoPagamento) }}</td>
             <td>
-              @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo(cobranca)" /> }
+              @if (cobranca.status === 'PAGO') { <p-button label="Estornar baixa" icon="pi pi-undo" severity="warn" (onClick)="$event.stopPropagation(); abrirModalEstorno(cobranca)" /> }
+                  @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo(cobranca)" /> }
               @if (cobranca.status === 'PENDENTE') {
                 <p-button
                   label="Dar Baixa"
@@ -255,6 +260,8 @@
         </ng-template>
       </p-table>
     }
+    }
+
     }
 
     <!-- Modal Dar Baixa -->
@@ -324,3 +331,17 @@
     </p-dialog>
 
 <app-recibo-dialog [(visible)]="reciboVisivel" [origem]="reciboOrigem" [dataPagamento]="cobrancaRecibo?.dataPagamento || ''" />
+
+<p-dialog [(visible)]="modalEstornoVisivel" header="Estornar baixa" [modal]="true" [style]="{width:'92vw',maxWidth:'520px'}" [closable]="!estornando()" [closeOnEscape]="!estornando()" [draggable]="false" [resizable]="false" (onHide)="fecharModalEstorno()">
+  <div class="estorno-form">
+    <p><strong>{{ cobrancaEstorno?.descricao }}</strong></p>
+    <p>A cobrança voltará a ficar pendente. Os dados do recebimento serão removidos e o motivo ficará registrado. Cobranças com recibo emitido não podem ser estornadas.</p>
+    <label for="motivo-estorno">Motivo do estorno *</label>
+    <textarea id="motivo-estorno" [(ngModel)]="motivoEstorno" maxlength="1000" rows="4" [disabled]="estornando()" [attr.aria-invalid]="!!erroEstorno()" aria-describedby="erro-estorno"></textarea>
+    @if (erroEstorno()) { <p id="erro-estorno" class="cobranca-erro" role="alert">{{ erroEstorno() }}</p> }
+    <div class="dialog-footer">
+      <p-button label="Cancelar" severity="secondary" [disabled]="estornando()" (onClick)="fecharModalEstorno()" />
+      <p-button label="Confirmar estorno" icon="pi pi-undo" severity="warn" [loading]="estornando()" [disabled]="estornando() || !motivoEstorno.trim()" (onClick)="confirmarEstorno()" />
+    </div>
+  </div>
+</p-dialog>
