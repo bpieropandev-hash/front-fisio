@@ -1,60 +1,72 @@
-import { ConfiguracaoClinicaService } from '../../../core/services/configuracao-clinica.service';
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SelectModule } from 'primeng/select';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
-import { MessageService, ConfirmationService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { AssinaturaService } from '../../../core/services/assinatura.service';
-import { PacienteService } from '../../../core/services/paciente.service';
-import { ServicoService } from '../../../core/services/servico.service';
+import { ConfiguracaoClinicaService } from "../../../core/services/configuracao-clinica.service";
+import {
+  Component,
+  OnInit,
+  signal,
+  computed,
+  inject,
+  ElementRef,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import {
+  ActivatedRoute,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+} from "@angular/router";
+import { TableModule } from "primeng/table";
+import { ButtonModule } from "primeng/button";
+import { DialogModule } from "primeng/dialog";
+import { InputTextModule } from "primeng/inputtext";
+import { InputNumberModule } from "primeng/inputnumber";
+import { SelectModule } from "primeng/select";
+import { MultiSelectModule } from "primeng/multiselect";
+import { TagModule } from "primeng/tag";
+import { TooltipModule } from "primeng/tooltip";
+import { MessageService, ConfirmationService } from "primeng/api";
+import { ToastModule } from "primeng/toast";
+import { ConfirmDialogModule } from "primeng/confirmdialog";
+import { AssinaturaService } from "../../../core/services/assinatura.service";
+import { PacienteService } from "../../../core/services/paciente.service";
+import { ServicoService } from "../../../core/services/servico.service";
 import {
   AssinaturaResponseDTO,
   AssinaturaCreateRequestDTO,
   AssinaturaUpdateRequestDTO,
-  AssinaturaTrocarPlanoRequestDTO
-} from '../../../core/interfaces/assinatura.interface';
-import { PacienteResponseDTO } from '../../../core/interfaces/paciente.interface';
-import { ServicoResponseDTO } from '../../../core/interfaces/servico.interface';
-import { ErrorHandlerUtil } from '../../../core/utils/error-handler.util';
-import { formatDateForApi } from '../../../core/utils/date-format.util';
-import { HttpErrorResponse } from '@angular/common/http';
-import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
-import { BreakpointService } from '../../../core/services/breakpoint.service';
+  AssinaturaTrocarPlanoRequestDTO,
+} from "../../../core/interfaces/assinatura.interface";
+import { PacienteResponseDTO } from "../../../core/interfaces/paciente.interface";
+import { ServicoResponseDTO } from "../../../core/interfaces/servico.interface";
+import { ErrorHandlerUtil } from "../../../core/utils/error-handler.util";
+import { formatDateForApi } from "../../../core/utils/date-format.util";
+import { HttpErrorResponse } from "@angular/common/http";
+import { SearchInputComponent } from "../../../shared/components/search-input/search-input.component";
+import { BreakpointService } from "../../../core/services/breakpoint.service";
 
 @Component({
-    selector: 'app-assinaturas',
-    imports: [
-        CommonModule,
-        FormsModule,
-        RouterLink,
-        RouterLinkActive,
-        TableModule,
-        ButtonModule,
-        DialogModule,
-        InputTextModule,
-        InputNumberModule,
-        SelectModule,
-        MultiSelectModule,
-        TagModule,
-        TooltipModule,
-        ToastModule,
-        ConfirmDialogModule,
-        SearchInputComponent
-    ],
-    providers: [MessageService, ConfirmationService],
-    templateUrl: './assinaturas.component.html',
-    styleUrls: ['./assinaturas.component.scss']
+  selector: "app-assinaturas",
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    RouterLinkActive,
+    TableModule,
+    ButtonModule,
+    DialogModule,
+    InputTextModule,
+    InputNumberModule,
+    SelectModule,
+    MultiSelectModule,
+    TagModule,
+    TooltipModule,
+    ToastModule,
+    ConfirmDialogModule,
+    SearchInputComponent,
+  ],
+  providers: [MessageService, ConfirmationService],
+  templateUrl: "./assinaturas.component.html",
+  styleUrls: ["./assinaturas.component.scss"],
 })
 export class AssinaturasComponent implements OnInit {
   private readonly configuracoes = inject(ConfiguracaoClinicaService);
@@ -63,29 +75,109 @@ export class AssinaturasComponent implements OnInit {
   isTablet = this.breakpointService.isTablet;
 
   assinaturas = signal<AssinaturaResponseDTO[]>([]);
-  termoPesquisa = signal<string>('');
+  termoPesquisa = signal<string>("");
   pacientes = signal<PacienteResponseDTO[]>([]);
   servicos = signal<ServicoResponseDTO[]>([]);
-  servicosMensalidade = computed(() => this.servicos().map(s => ({...s, nome: `${s.tipo === 'PILATES' ? 'Pilates' : 'Fisioterapia'} · ${s.nome}`})));
+  servicosMensalidade = computed(() =>
+    this.servicos().map((s) => ({
+      ...s,
+      nome: `${s.tipo === "PILATES" ? "Pilates" : "Fisioterapia"} · ${s.nome}`,
+    })),
+  );
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  tentativa: Record<string, boolean> = {};
+  erroFormulario = signal("");
+  erroLista = signal("");
+  erroPacientes = signal("");
+  erroServicos = signal("");
+  carregandoPacientes = signal(false);
+  carregandoServicos = signal(false);
+
+  erroCampo(form: string, campo: string): string {
+    if (!this.tentativa[form]) return "";
+    const dados =
+      form === "nova"
+        ? this.novaAssinatura
+        : form === "editar"
+          ? this.edicao
+          : {
+              servicoId: this.trocaPlano.novoServicoId,
+              valorMensal: this.trocaPlano.novoValorMensal,
+              diaVencimento: this.trocaPlano.diaVencimento!,
+              dataInicio: this.trocaPlano.dataInicio,
+            };
+    if (campo === "pacientes")
+      return this.pacienteIdsSelecionados.length
+        ? ""
+        : "Selecione pelo menos um paciente.";
+    if (campo === "servico")
+      return "servicoId" in dados && dados.servicoId
+        ? ""
+        : "Selecione um serviço.";
+    if (campo === "valor")
+      return Number.isFinite(dados.valorMensal) && dados.valorMensal! >= 0.01
+        ? ""
+        : "Informe um valor a partir de R$ 0,01.";
+    if (campo === "dia")
+      return Number.isInteger(dados.diaVencimento) &&
+        dados.diaVencimento! >= 1 &&
+        dados.diaVencimento! <= 28
+        ? ""
+        : "Informe um dia inteiro entre 1 e 28.";
+    if (campo === "data" && "dataInicio" in dados && dados.dataInicio) {
+      const data = new Date(`${dados.dataInicio}T12:00:00`);
+      return Number.isNaN(data.getTime()) ||
+        formatDateForApi(data) !== dados.dataInicio
+        ? "Informe uma data válida."
+        : "";
+    }
+    return "";
+  }
+
+  private validarFormulario(form: string): boolean {
+    this.tentativa[form] = true;
+    const campos =
+      form === "nova"
+        ? ["pacientes", "servico", "valor", "dia", "data"]
+        : form === "editar"
+          ? ["valor", "dia"]
+          : ["servico", "valor", "dia", "data"];
+    if (!campos.some((campo) => this.erroCampo(form, campo))) return true;
+    setTimeout(() =>
+      this.element.nativeElement
+        .querySelector<HTMLElement>(
+          '.field-invalid input, .field-invalid [role="combobox"]',
+        )
+        ?.focus(),
+    );
+    return false;
+  }
+
   modalVisivel = false;
   modalEditarVisivel = false;
   carregando = signal(false);
   salvando = signal(false);
 
   assinaturaEditando: AssinaturaResponseDTO | null = null;
-  edicao: AssinaturaUpdateRequestDTO = { valorMensal: undefined, diaVencimento: undefined };
+  edicao: AssinaturaUpdateRequestDTO = {
+    valorMensal: undefined,
+    diaVencimento: undefined,
+  };
 
   modalTrocarPlanoVisivel = false;
   assinaturaTrocandoPlano: AssinaturaResponseDTO | null = null;
   trocaPlano: Partial<AssinaturaTrocarPlanoRequestDTO> = {};
 
-  filtroStatus = signal<'todas' | 'ativas' | 'canceladas'>('todas');
+  filtroStatus = signal<"todas" | "ativas" | "canceladas">("todas");
   filtroServicoId = signal<number>(0);
 
-  filtroStatusOptions: { label: string; value: 'todas' | 'ativas' | 'canceladas' }[] = [
-    { label: 'Todas', value: 'todas' },
-    { label: 'Ativas', value: 'ativas' },
-    { label: 'Canceladas', value: 'canceladas' }
+  filtroStatusOptions: {
+    label: string;
+    value: "todas" | "ativas" | "canceladas";
+  }[] = [
+    { label: "Todas", value: "todas" },
+    { label: "Ativas", value: "ativas" },
+    { label: "Canceladas", value: "canceladas" },
   ];
 
   assinaturasFiltradas = computed(() => {
@@ -94,40 +186,46 @@ export class AssinaturasComponent implements OnInit {
     const filtroServicoId = this.filtroServicoId();
     let assinaturasLista = this.assinaturas();
 
-    if (filtroStatus === 'ativas') {
-      assinaturasLista = assinaturasLista.filter(a => a.ativo);
-    } else if (filtroStatus === 'canceladas') {
-      assinaturasLista = assinaturasLista.filter(a => !a.ativo);
+    if (filtroStatus === "ativas") {
+      assinaturasLista = assinaturasLista.filter((a) => a.ativo);
+    } else if (filtroStatus === "canceladas") {
+      assinaturasLista = assinaturasLista.filter((a) => !a.ativo);
     }
 
     if (filtroServicoId) {
-      assinaturasLista = assinaturasLista.filter(a => a.servicoId === filtroServicoId);
+      assinaturasLista = assinaturasLista.filter(
+        (a) => a.servicoId === filtroServicoId,
+      );
     }
 
     if (!termo) {
       return assinaturasLista;
     }
 
-    return assinaturasLista.filter(assinatura => {
-      const pacienteNome = assinatura.pacienteNome?.toLowerCase() || '';
-      const servicoNome = assinatura.servicoNome?.toLowerCase() || '';
-      const valorMensal = assinatura.valorMensal?.toString() || '';
-      const diaVencimento = assinatura.diaVencimento?.toString() || '';
-      
-      return pacienteNome.includes(termo) || 
-             servicoNome.includes(termo) || 
-             valorMensal.includes(termo) ||
-             diaVencimento.includes(termo);
+    return assinaturasLista.filter((assinatura) => {
+      const pacienteNome = assinatura.pacienteNome?.toLowerCase() || "";
+      const servicoNome = assinatura.servicoNome?.toLowerCase() || "";
+      const valorMensal = assinatura.valorMensal?.toString() || "";
+      const diaVencimento = assinatura.diaVencimento?.toString() || "";
+
+      return (
+        pacienteNome.includes(termo) ||
+        servicoNome.includes(termo) ||
+        valorMensal.includes(termo) ||
+        diaVencimento.includes(termo)
+      );
     });
   });
 
   assinaturaAcaoAberta = signal<AssinaturaResponseDTO | null>(null);
 
-  totalAssinaturasAtivas = computed(() => this.assinaturas().filter(a => a.ativo).length);
+  totalAssinaturasAtivas = computed(
+    () => this.assinaturas().filter((a) => a.ativo).length,
+  );
   receitaMensalAtiva = computed(() =>
     this.assinaturas()
-      .filter(a => a.ativo)
-      .reduce((soma, a) => soma + (a.valorMensal || 0), 0)
+      .filter((a) => a.ativo)
+      .reduce((soma, a) => soma + (a.valorMensal || 0), 0),
   );
 
   pacienteIdsSelecionados: number[] = [];
@@ -135,7 +233,7 @@ export class AssinaturasComponent implements OnInit {
     servicoId: 0,
     valorMensal: undefined,
     diaVencimento: 5,
-    dataInicio: undefined
+    dataInicio: undefined,
   };
 
   constructor(
@@ -145,22 +243,37 @@ export class AssinaturasComponent implements OnInit {
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
   ) {
     const params = this.route.snapshot.queryParamMap;
-    const statusParam = params.get('status');
-    if (statusParam === 'ativas' || statusParam === 'canceladas') {
+    const statusParam = params.get("status");
+    if (statusParam === "ativas" || statusParam === "canceladas") {
       this.filtroStatus.set(statusParam);
     }
-    const servicoParam = params.get('servico');
+    const servicoParam = params.get("servico");
     if (servicoParam) {
       this.filtroServicoId.set(Number(servicoParam));
     }
   }
 
-  aoMudarFiltroStatus(valor: 'todas' | 'ativas' | 'canceladas'): void {
+  aoMudarFiltroStatus(valor: "todas" | "ativas" | "canceladas"): void {
     this.filtroStatus.set(valor);
     this.atualizarQueryParams();
+  }
+
+  proximoVencimento(assinatura: AssinaturaResponseDTO): Date | null {
+    if (!assinatura.ativo) return null;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const inicio = new Date(`${assinatura.dataInicio}T00:00:00`);
+    const referencia = inicio > hoje ? inicio : hoje;
+    const vencimento = new Date(
+      referencia.getFullYear(),
+      referencia.getMonth(),
+      assinatura.diaVencimento,
+    );
+    if (vencimento < referencia) vencimento.setMonth(vencimento.getMonth() + 1);
+    return vencimento;
   }
 
   abrirAcoes(assinatura: AssinaturaResponseDTO): void {
@@ -180,77 +293,110 @@ export class AssinaturasComponent implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        status: this.filtroStatus() === 'todas' ? null : this.filtroStatus(),
-        servico: this.filtroServicoId() || null
+        status: this.filtroStatus() === "todas" ? null : this.filtroStatus(),
+        servico: this.filtroServicoId() || null,
       },
-      queryParamsHandling: 'merge',
-      replaceUrl: true
+      queryParamsHandling: "merge",
+      replaceUrl: true,
     });
   }
 
   ngOnInit(): void {
     this.carregarDados();
-    if (this.route.snapshot.queryParamMap.get('nova') === 'true') this.abrirModalNovaAssinatura();
+    if (this.route.snapshot.queryParamMap.get("nova") === "true")
+      this.abrirModalNovaAssinatura();
   }
 
   carregarDados(): void {
     this.carregando.set(true);
+    this.erroLista.set("");
     this.assinaturaService.listar().subscribe({
       next: (assinaturas) => {
         // Ordenar assinaturas por nome do paciente (ASC)
         const assinaturasOrdenadas = assinaturas.sort((a, b) => {
-          const nomeA = a.pacienteNome?.toLowerCase() || '';
-          const nomeB = b.pacienteNome?.toLowerCase() || '';
-          return nomeA.localeCompare(nomeB, 'pt-BR');
+          const nomeA = a.pacienteNome?.toLowerCase() || "";
+          const nomeB = b.pacienteNome?.toLowerCase() || "";
+          return nomeA.localeCompare(nomeB, "pt-BR");
         });
         this.assinaturas.set(assinaturasOrdenadas);
         this.carregando.set(false);
       },
       error: (error: HttpErrorResponse) => {
-        console.error('Erro ao carregar assinaturas:', error);
+        this.erroLista.set(
+          "Não foi possível carregar as assinaturas. Tente novamente.",
+        );
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({
           severity: errorMessage.severity,
           summary: errorMessage.summary,
-          detail: errorMessage.detail
+          detail: errorMessage.detail,
         });
         this.carregando.set(false);
-      }
+      },
     });
 
+    this.carregarOpcoes();
+  }
+
+  carregarOpcoes(): void {
+    this.carregandoPacientes.set(true);
+    this.carregandoServicos.set(true);
+    this.erroPacientes.set("");
+    this.erroServicos.set("");
     this.pacienteService.listar().subscribe({
-      next: (pacientes) => this.pacientes.set(pacientes.filter(p => p.ativo !== false))
+      next: (pacientes) => {
+        this.pacientes.set(pacientes.filter((p) => p.ativo !== false));
+        this.carregandoPacientes.set(false);
+      },
+      error: () => {
+        this.pacientes.set([]);
+        this.erroPacientes.set("Não foi possível carregar os pacientes.");
+        this.carregandoPacientes.set(false);
+      },
     });
-
     this.servicoService.listar().subscribe({
-      next: (servicos) => this.servicos.set(servicos.filter(s => s.ativo !== false))
+      next: (servicos) => {
+        this.servicos.set(servicos.filter((s) => s.ativo !== false));
+        this.carregandoServicos.set(false);
+      },
+      error: () => {
+        this.servicos.set([]);
+        this.erroServicos.set("Não foi possível carregar os serviços.");
+        this.carregandoServicos.set(false);
+      },
     });
   }
 
   abrirModalNovaAssinatura(): void {
+    this.tentativa["nova"] = false;
+    this.erroFormulario.set("");
     this.pacienteIdsSelecionados = [];
     this.novaAssinatura = {
       servicoId: 0,
-      valorMensal: this.configuracoes.atual().mensalidadeValorPadrao || undefined,
+      valorMensal:
+        this.configuracoes.atual().mensalidadeValorPadrao || undefined,
       diaVencimento: this.configuracoes.atual().mensalidadeDiaVencimento,
-      dataInicio: undefined
+      dataInicio: undefined,
     };
     this.modalVisivel = true;
   }
 
   fecharModal(): void {
+    if (this.salvando()) return;
     this.modalVisivel = false;
   }
 
   criarAssinatura(): void {
-    if (!this.pacienteIdsSelecionados || this.pacienteIdsSelecionados.length === 0 || !this.novaAssinatura.servicoId || !this.novaAssinatura.valorMensal || !this.novaAssinatura.diaVencimento) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Atenção',
-        detail: 'Preencha todos os campos obrigatórios'
-      });
+    if (
+      this.salvando() ||
+      this.carregandoServicos() ||
+      !!this.erroServicos() ||
+      this.carregandoPacientes() ||
+      !!this.erroPacientes()
+    )
       return;
-    }
+    if (!this.validarFormulario("nova")) return;
+    this.erroFormulario.set("");
 
     this.salvando.set(true);
 
@@ -259,19 +405,22 @@ export class AssinaturasComponent implements OnInit {
       servicoId: this.novaAssinatura.servicoId!,
       valorMensal: this.novaAssinatura.valorMensal!,
       diaVencimento: this.novaAssinatura.diaVencimento!,
-      dataInicio: this.novaAssinatura.dataInicio || formatDateForApi(new Date())
+      dataInicio:
+        this.novaAssinatura.dataInicio || formatDateForApi(new Date()),
     };
 
     this.assinaturaService.criar(data).subscribe({
       next: (assinaturasCriadas) => {
         const quantidade = assinaturasCriadas.length;
         this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: quantidade === 1 
-            ? 'Assinatura criada com sucesso' 
-            : `${quantidade} assinaturas criadas com sucesso`
+          severity: "success",
+          summary: "Sucesso",
+          detail:
+            quantidade === 1
+              ? "Assinatura criada com sucesso"
+              : `${quantidade} assinaturas criadas com sucesso`,
         });
+        this.salvando.set(false);
         this.fecharModal();
         this.carregarDados();
         this.salvando.set(false);
@@ -280,28 +429,33 @@ export class AssinaturasComponent implements OnInit {
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         // Mensagem específica para conflito (assinatura já existe)
         if (error.status === 409 || error.status === 400) {
-          errorMessage.detail = errorMessage.detail || 'Erro ao criar assinatura(s). Verifique se os pacientes estão ativos e não possuem assinatura ativa para este serviço.';
+          errorMessage.detail =
+            errorMessage.detail ||
+            "Erro ao criar assinatura(s). Verifique se os pacientes estão ativos e não possuem assinatura ativa para este serviço.";
         }
+        this.erroFormulario.set(
+          errorMessage.detail || "Não foi possível salvar. Tente novamente.",
+        );
         this.messageService.add({
           severity: errorMessage.severity,
           summary: errorMessage.summary,
-          detail: errorMessage.detail
+          detail: errorMessage.detail,
         });
         this.salvando.set(false);
-      }
+      },
     });
   }
 
   confirmarCancelamento(assinatura: AssinaturaResponseDTO): void {
     this.confirmationService.confirm({
       message: `Tem certeza que deseja cancelar o plano de ${assinatura.pacienteNome}?`,
-      header: 'Confirmar Cancelamento',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sim, cancelar',
-      rejectLabel: 'Não',
+      header: "Confirmar Cancelamento",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "Sim, cancelar",
+      rejectLabel: "Não",
       accept: () => {
         this.cancelarAssinatura(assinatura.id);
-      }
+      },
     });
   }
 
@@ -310,9 +464,9 @@ export class AssinaturasComponent implements OnInit {
     this.assinaturaService.cancelar(id).subscribe({
       next: () => {
         this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Assinatura cancelada com sucesso'
+          severity: "success",
+          summary: "Sucesso",
+          detail: "Assinatura cancelada com sucesso",
         });
         this.carregarDados();
         this.salvando.set(false);
@@ -322,140 +476,155 @@ export class AssinaturasComponent implements OnInit {
         this.messageService.add({
           severity: errorMessage.severity,
           summary: errorMessage.summary,
-          detail: errorMessage.detail
+          detail: errorMessage.detail,
         });
         this.salvando.set(false);
-      }
+      },
     });
   }
 
-
   abrirModalEditar(assinatura: AssinaturaResponseDTO): void {
+    this.tentativa["editar"] = false;
+    this.erroFormulario.set("");
     this.assinaturaEditando = assinatura;
     this.edicao = {
       valorMensal: assinatura.valorMensal,
-      diaVencimento: assinatura.diaVencimento
+      diaVencimento: assinatura.diaVencimento,
     };
     this.modalEditarVisivel = true;
   }
 
   fecharModalEditar(): void {
+    if (this.salvando()) return;
     this.modalEditarVisivel = false;
     this.assinaturaEditando = null;
   }
 
   salvarEdicao(): void {
-    if (!this.assinaturaEditando || !this.edicao.valorMensal || !this.edicao.diaVencimento) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Atenção',
-        detail: 'Preencha todos os campos obrigatórios'
-      });
-      return;
-    }
+    if (this.salvando() || !this.assinaturaEditando) return;
+    if (!this.validarFormulario("editar")) return;
+    this.erroFormulario.set("");
 
     this.salvando.set(true);
-    this.assinaturaService.atualizar(this.assinaturaEditando.id, this.edicao).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Assinatura atualizada com sucesso'
-        });
-        this.fecharModalEditar();
-        this.carregarDados();
-        this.salvando.set(false);
-      },
-      error: (error: HttpErrorResponse) => {
-        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
-        this.messageService.add({
-          severity: errorMessage.severity,
-          summary: errorMessage.summary,
-          detail: errorMessage.detail
-        });
-        this.salvando.set(false);
-      }
-    });
+    this.assinaturaService
+      .atualizar(this.assinaturaEditando.id, this.edicao)
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: "success",
+            summary: "Sucesso",
+            detail: "Assinatura atualizada com sucesso",
+          });
+          this.salvando.set(false);
+          this.fecharModalEditar();
+          this.carregarDados();
+          this.salvando.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+          this.erroFormulario.set(
+            errorMessage.detail || "Não foi possível salvar. Tente novamente.",
+          );
+          this.messageService.add({
+            severity: errorMessage.severity,
+            summary: errorMessage.summary,
+            detail: errorMessage.detail,
+          });
+          this.salvando.set(false);
+        },
+      });
   }
 
   confirmarReativacao(assinatura: AssinaturaResponseDTO): void {
     this.confirmationService.confirm({
       message: `Tem certeza que deseja reativar o plano de ${assinatura.pacienteNome}?`,
-      header: 'Confirmar Reativação',
-      icon: 'pi pi-question-circle',
-      acceptLabel: 'Sim, reativar',
-      rejectLabel: 'Não',
+      header: "Confirmar Reativação",
+      icon: "pi pi-question-circle",
+      acceptLabel: "Sim, reativar",
+      rejectLabel: "Não",
       accept: () => {
         this.reativarAssinatura(assinatura.id);
-      }
+      },
     });
   }
 
   abrirModalTrocarPlano(assinatura: AssinaturaResponseDTO): void {
+    this.tentativa["trocar"] = false;
+    this.erroFormulario.set("");
     this.assinaturaTrocandoPlano = assinatura;
     this.trocaPlano = {
       novoServicoId: undefined,
       novoValorMensal: undefined,
       diaVencimento: assinatura.diaVencimento,
-      dataInicio: undefined
+      dataInicio: undefined,
     };
     this.modalTrocarPlanoVisivel = true;
   }
 
   fecharModalTrocarPlano(): void {
+    if (this.salvando()) return;
     this.modalTrocarPlanoVisivel = false;
     this.assinaturaTrocandoPlano = null;
   }
 
   aoSelecionarNovoServico(): void {
-    const servico = this.servicos().find(s => s.id === this.trocaPlano.novoServicoId);
+    const servico = this.servicos().find(
+      (s) => s.id === this.trocaPlano.novoServicoId,
+    );
     if (servico) {
       this.trocaPlano.novoValorMensal = servico.valorBase;
     }
   }
 
   confirmarTrocarPlano(): void {
-    if (!this.assinaturaTrocandoPlano || !this.trocaPlano.novoServicoId || !this.trocaPlano.novoValorMensal || !this.trocaPlano.diaVencimento) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Atenção',
-        detail: 'Preencha todos os campos obrigatórios'
-      });
+    if (
+      this.salvando() ||
+      !this.assinaturaTrocandoPlano ||
+      this.carregandoServicos() ||
+      !!this.erroServicos()
+    )
       return;
-    }
+    if (!this.validarFormulario("trocar")) return;
+    this.erroFormulario.set("");
 
     this.salvando.set(true);
 
     const data: AssinaturaTrocarPlanoRequestDTO = {
-      novoServicoId: this.trocaPlano.novoServicoId,
-      novoValorMensal: this.trocaPlano.novoValorMensal,
-      diaVencimento: this.trocaPlano.diaVencimento,
-      dataInicio: this.trocaPlano.dataInicio || formatDateForApi(new Date())
+      novoServicoId: this.trocaPlano.novoServicoId!,
+      novoValorMensal: this.trocaPlano.novoValorMensal!,
+      diaVencimento: this.trocaPlano.diaVencimento!,
+      dataInicio: this.trocaPlano.dataInicio || formatDateForApi(new Date()),
     };
 
-    this.assinaturaService.trocarPlano(this.assinaturaTrocandoPlano.id, data).subscribe({
-      next: (resultado) => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Plano trocado',
-          detail: resultado.cobrancaMesAtualMantida
-            ? 'Nova assinatura criada. A cobrança já gerada neste mês para o plano antigo foi mantida.'
-            : 'Nova assinatura criada com sucesso.'
-        });
-        this.fecharModalTrocarPlano();
-        this.carregarDados();
-        this.salvando.set(false);
-      },
-      error: (error: HttpErrorResponse) => {
-        const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
-        this.messageService.add({
-          severity: errorMessage.severity,
-          summary: errorMessage.summary,
-          detail: errorMessage.detail
-        });
-        this.salvando.set(false);
-      }
-    });
+    this.assinaturaService
+      .trocarPlano(this.assinaturaTrocandoPlano.id, data)
+      .subscribe({
+        next: (resultado) => {
+          this.messageService.add({
+            severity: "success",
+            summary: "Plano trocado",
+            detail: resultado.cobrancaMesAtualMantida
+              ? "Nova assinatura criada. A cobrança já gerada neste mês para o plano antigo foi mantida."
+              : "Nova assinatura criada com sucesso.",
+          });
+          this.salvando.set(false);
+          this.fecharModalTrocarPlano();
+          this.carregarDados();
+          this.salvando.set(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
+          this.erroFormulario.set(
+            errorMessage.detail || "Não foi possível salvar. Tente novamente.",
+          );
+          this.messageService.add({
+            severity: errorMessage.severity,
+            summary: errorMessage.summary,
+            detail: errorMessage.detail,
+          });
+          this.salvando.set(false);
+        },
+      });
   }
 
   reativarAssinatura(id: number): void {
@@ -463,9 +632,9 @@ export class AssinaturasComponent implements OnInit {
     this.assinaturaService.reativar(id).subscribe({
       next: () => {
         this.messageService.add({
-          severity: 'success',
-          summary: 'Sucesso',
-          detail: 'Assinatura reativada com sucesso'
+          severity: "success",
+          summary: "Sucesso",
+          detail: "Assinatura reativada com sucesso",
         });
         this.carregarDados();
         this.salvando.set(false);
@@ -473,16 +642,17 @@ export class AssinaturasComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         if (error.status === 400) {
-          errorMessage.detail = errorMessage.detail || 'Já existe uma assinatura ativa para este paciente e serviço.';
+          errorMessage.detail =
+            errorMessage.detail ||
+            "Já existe uma assinatura ativa para este paciente e serviço.";
         }
         this.messageService.add({
           severity: errorMessage.severity,
           summary: errorMessage.summary,
-          detail: errorMessage.detail
+          detail: errorMessage.detail,
         });
         this.salvando.set(false);
-      }
+      },
     });
   }
 }
-

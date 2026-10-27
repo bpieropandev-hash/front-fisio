@@ -1,473 +1,948 @@
-    <p-toast />
-    <p-confirmDialog />
+<p-toast />
+<p-confirmDialog />
 
-    @if (isTablet()) {
-      <div class="fin-mobile">
-        <div class="fin-mobile__tabs">
-          <a routerLink="/financeiro/cobrancas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Cobranças</a>
-          <a routerLink="/financeiro/assinaturas" routerLinkActive="fin-mobile__tab--ativo" class="fin-mobile__tab">Assinaturas</a>
-        </div>
+@if (erroLista()) {
+  <div class="form-alert" role="alert">
+    <span>{{ erroLista() }}</span>
+    <p-button
+      label="Tentar novamente"
+      (onClick)="carregarDados()"
+      [disabled]="carregando()"
+      styleClass="p-button-text"
+    />
+  </div>
+}
+@if (isTablet()) {
+  <div class="fin-mobile">
+    <div class="fin-mobile__tabs">
+      <a
+        routerLink="/financeiro/cobrancas"
+        routerLinkActive="fin-mobile__tab--ativo"
+        class="fin-mobile__tab"
+        >Cobranças</a
+      >
+      <a
+        routerLink="/financeiro/assinaturas"
+        routerLinkActive="fin-mobile__tab--ativo"
+        class="fin-mobile__tab"
+        >Assinaturas</a
+      >
+    </div>
 
-        <div class="fin-mobile__resumo">
-          <div class="fin-mobile__resumo-label">Resumo</div>
-          <div class="fin-mobile__resumo-cards">
-            <div class="fin-mobile__resumo-card">
-              <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--ok"><i class="pi pi-check-circle"></i></div>
-              <div class="fin-mobile__resumo-texto">Ativas</div>
-              <div class="fin-mobile__resumo-valor">{{ totalAssinaturasAtivas() }}</div>
-            </div>
-            <div class="fin-mobile__resumo-card">
-              <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--ok"><i class="pi pi-wallet"></i></div>
-              <div class="fin-mobile__resumo-texto">Receita mensal</div>
-              <div class="fin-mobile__resumo-valor">{{ receitaMensalAtiva() | currency: 'BRL' }}</div>
-            </div>
+    <div class="fin-mobile__resumo">
+      <div class="fin-mobile__resumo-label">Resumo</div>
+      <div class="fin-mobile__resumo-cards">
+        <div class="fin-mobile__resumo-card">
+          <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--ok">
+            <i class="pi pi-check-circle"></i>
+          </div>
+          <div class="fin-mobile__resumo-texto">Ativas</div>
+          <div class="fin-mobile__resumo-valor">
+            {{ carregando() || erroLista() ? "—" : totalAssinaturasAtivas() }}
           </div>
         </div>
+        <div class="fin-mobile__resumo-card">
+          <div class="fin-mobile__resumo-icone fin-mobile__resumo-icone--ok">
+            <i class="pi pi-wallet"></i>
+          </div>
+          <div class="fin-mobile__resumo-texto">Receita mensal</div>
+          <div class="fin-mobile__resumo-valor">
+            {{
+              carregando() || erroLista()
+                ? "—"
+                : (receitaMensalAtiva() | currency: "BRL")
+            }}
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <div class="fin-mobile__filtros">
-          @for (opcao of filtroStatusOptions; track opcao.value) {
+    <app-search-input
+      [(value)]="termoPesquisa"
+      placeholder="Pesquisar paciente ou serviço"
+    />
+    <div class="filtro-campo">
+      <label for="servico-mobile">Modalidade / serviço</label>
+      <p-select
+        inputId="servico-mobile"
+        [ngModel]="filtroServicoId()"
+        (ngModelChange)="aoMudarFiltroServico($event)"
+        [options]="servicos()"
+        optionLabel="nome"
+        optionValue="id"
+        placeholder="Todos os serviços"
+        [showClear]="true"
+        styleClass="full-width"
+      />
+    </div>
+    <div class="fin-mobile__filtros">
+      @for (opcao of filtroStatusOptions; track opcao.value) {
+        <button
+          type="button"
+          class="fin-mobile__filtro-pill"
+          [class.fin-mobile__filtro-pill--ativo]="
+            filtroStatus() === opcao.value
+          "
+          [attr.aria-pressed]="filtroStatus() === opcao.value"
+          (click)="aoMudarFiltroStatus(opcao.value)"
+        >
+          {{ opcao.label }}
+        </button>
+      }
+    </div>
+
+    <div class="fin-mobile__section">
+      <div class="fin-mobile__section-title">Assinaturas</div>
+
+      @if (carregando()) {
+        <div class="fin-mobile__vazio" role="status">Carregando…</div>
+      } @else if (erroLista()) {
+        <div class="fin-mobile__vazio">
+          Assinaturas indisponíveis. Use “Tentar novamente” acima.
+        </div>
+      } @else if (assinaturasFiltradas().length === 0) {
+        <div class="fin-mobile__vazio">Nenhuma assinatura encontrada.</div>
+      } @else {
+        <div class="fin-mobile__lista">
+          @for (assinatura of assinaturasFiltradas(); track assinatura.id) {
+            <div class="fin-mobile__item">
+              <div class="fin-mobile__avatar">
+                {{ (assinatura.pacienteNome || "?").charAt(0).toUpperCase() }}
+              </div>
+              <div class="fin-mobile__item-info">
+                <div class="fin-mobile__item-nome">
+                  {{ assinatura.pacienteNome }}
+                </div>
+                <div class="fin-mobile__item-meta">
+                  {{ assinatura.servicoNome }} ·
+                  {{
+                    assinatura.ativo
+                      ? "vencimento previsto " +
+                        (proximoVencimento(assinatura) | date: "dd/MM/yyyy")
+                      : "assinatura inativa"
+                  }}
+                </div>
+              </div>
+              <div class="fin-mobile__item-end">
+                <div class="fin-mobile__item-valores">
+                  <div class="fin-mobile__item-valor">
+                    {{ assinatura.valorMensal | currency: "BRL" }}
+                  </div>
+                  <span
+                    class="status-pill"
+                    [class.status-pill--ok]="assinatura.ativo"
+                    [class.status-pill--err]="!assinatura.ativo"
+                  >
+                    {{ assinatura.ativo ? "Ativa" : "Inativa" }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="fin-mobile__kebab"
+                  (click)="abrirAcoes(assinatura)"
+                  aria-label="Ações"
+                >
+                  <i class="pi pi-ellipsis-v"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="fin-mobile__fab"
+      (click)="abrirModalNovaAssinatura()"
+      aria-label="Nova assinatura mensal de fisioterapia ou Pilates"
+    >
+      <i class="pi pi-plus"></i>
+    </button>
+
+    @if (assinaturaAcaoAberta(); as acao) {
+      <div class="acao-sheet__backdrop" (click)="fecharAcoes()"></div>
+      <div class="acao-sheet">
+        <div class="acao-sheet__grabber-row">
+          <div class="acao-sheet__grabber"></div>
+        </div>
+        <div class="acao-sheet__label">{{ acao.pacienteNome }}</div>
+        <div class="acao-sheet__list">
+          <button
+            type="button"
+            class="acao-sheet__item"
+            (click)="abrirModalEditar(acao); fecharAcoes()"
+          >
+            <div class="acao-sheet__item-icone">
+              <i class="pi pi-pencil"></i>
+            </div>
+            <div class="acao-sheet__item-label">Editar assinatura</div>
+          </button>
+          @if (acao.ativo) {
             <button
               type="button"
-              class="fin-mobile__filtro-pill"
-              [class.fin-mobile__filtro-pill--ativo]="filtroStatus() === opcao.value"
-              (click)="aoMudarFiltroStatus(opcao.value)"
+              class="acao-sheet__item"
+              (click)="abrirModalTrocarPlano(acao); fecharAcoes()"
             >
-              {{ opcao.label }}
+              <div class="acao-sheet__item-icone">
+                <i class="pi pi-sync"></i>
+              </div>
+              <div class="acao-sheet__item-label">Trocar plano</div>
+            </button>
+            <button
+              type="button"
+              class="acao-sheet__item acao-sheet__item--perigo"
+              (click)="confirmarCancelamento(acao); fecharAcoes()"
+            >
+              <div
+                class="acao-sheet__item-icone acao-sheet__item-icone--perigo"
+              >
+                <i class="pi pi-times-circle"></i>
+              </div>
+              <div class="acao-sheet__item-label">Cancelar assinatura</div>
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="acao-sheet__item"
+              (click)="confirmarReativacao(acao); fecharAcoes()"
+            >
+              <div class="acao-sheet__item-icone">
+                <i class="pi pi-refresh"></i>
+              </div>
+              <div class="acao-sheet__item-label">Reativar assinatura</div>
             </button>
           }
         </div>
-
-        <div class="fin-mobile__section">
-          <div class="fin-mobile__section-title">Assinaturas</div>
-
-          @if (carregando()) {
-            <div class="fin-mobile__vazio">Carregando…</div>
-          } @else if (assinaturasFiltradas().length === 0) {
-            <div class="fin-mobile__vazio">Nenhuma assinatura encontrada.</div>
-          } @else {
-            <div class="fin-mobile__lista">
-              @for (assinatura of assinaturasFiltradas(); track assinatura.id) {
-                <div class="fin-mobile__item">
-                  <div class="fin-mobile__avatar">{{ (assinatura.pacienteNome || '?').charAt(0).toUpperCase() }}</div>
-                  <div class="fin-mobile__item-info">
-                    <div class="fin-mobile__item-nome">{{ assinatura.pacienteNome }}</div>
-                    <div class="fin-mobile__item-meta">{{ assinatura.servicoNome }} · vence dia {{ assinatura.diaVencimento }}</div>
-                  </div>
-                  <div class="fin-mobile__item-end">
-                    <div class="fin-mobile__item-valores">
-                      <div class="fin-mobile__item-valor">{{ assinatura.valorMensal | currency: 'BRL' }}</div>
-                      <span class="status-pill" [class.status-pill--ok]="assinatura.ativo" [class.status-pill--err]="!assinatura.ativo">
-                        {{ assinatura.ativo ? 'Ativa' : 'Inativa' }}
-                      </span>
-                    </div>
-                    <button type="button" class="fin-mobile__kebab" (click)="abrirAcoes(assinatura)" aria-label="Ações">
-                      <i class="pi pi-ellipsis-v"></i>
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          }
+        <div class="acao-sheet__cancelar-row">
+          <button
+            type="button"
+            class="acao-sheet__cancelar"
+            (click)="fecharAcoes()"
+          >
+            Fechar
+          </button>
         </div>
-
-        <button type="button" class="fin-mobile__fab" (click)="abrirModalNovaAssinatura()" aria-label="Nova mensalidade de fisioterapia ou Pilates">
-          <i class="pi pi-plus"></i>
-        </button>
-
-        @if (assinaturaAcaoAberta(); as acao) {
-          <div class="acao-sheet__backdrop" (click)="fecharAcoes()"></div>
-          <div class="acao-sheet">
-            <div class="acao-sheet__grabber-row"><div class="acao-sheet__grabber"></div></div>
-            <div class="acao-sheet__label">{{ acao.pacienteNome }}</div>
-            <div class="acao-sheet__list">
-              <button type="button" class="acao-sheet__item" (click)="abrirModalEditar(acao); fecharAcoes()">
-                <div class="acao-sheet__item-icone"><i class="pi pi-pencil"></i></div>
-                <div class="acao-sheet__item-label">Editar assinatura</div>
-              </button>
-              @if (acao.ativo) {
-                <button type="button" class="acao-sheet__item" (click)="abrirModalTrocarPlano(acao); fecharAcoes()">
-                  <div class="acao-sheet__item-icone"><i class="pi pi-sync"></i></div>
-                  <div class="acao-sheet__item-label">Trocar plano</div>
-                </button>
-                <button type="button" class="acao-sheet__item acao-sheet__item--perigo" (click)="confirmarCancelamento(acao); fecharAcoes()">
-                  <div class="acao-sheet__item-icone acao-sheet__item-icone--perigo"><i class="pi pi-times-circle"></i></div>
-                  <div class="acao-sheet__item-label">Cancelar assinatura</div>
-                </button>
-              } @else {
-                <button type="button" class="acao-sheet__item" (click)="confirmarReativacao(acao); fecharAcoes()">
-                  <div class="acao-sheet__item-icone"><i class="pi pi-refresh"></i></div>
-                  <div class="acao-sheet__item-label">Reativar assinatura</div>
-                </button>
-              }
-            </div>
-            <div class="acao-sheet__cancelar-row">
-              <button type="button" class="acao-sheet__cancelar" (click)="fecharAcoes()">Fechar</button>
-            </div>
-          </div>
-        }
       </div>
     }
+  </div>
+}
 
-    @if (!isTablet()) {
-    <div class="page-header">
+@if (!isTablet()) {
+  <div class="page-header">
+    <div>
       <h2>Assinaturas</h2>
-      <p-button
-        label="Nova mensalidade · Fisioterapia / Pilates"
-        icon="pi pi-plus"
-        (onClick)="abrirModalNovaAssinatura()"
+      <p class="page-description">
+        Fisioterapia e Pilates · planos e cobranças mensais
+      </p>
+    </div>
+    <p-button
+      label="Nova assinatura mensal"
+      icon="pi pi-plus"
+      (onClick)="abrirModalNovaAssinatura()"
+    />
+  </div>
+
+  <div class="desktop-summary" aria-label="Resumo das assinaturas">
+    <div>
+      <span>Assinaturas ativas</span
+      ><strong>{{
+        carregando() || erroLista() ? "—" : totalAssinaturasAtivas()
+      }}</strong>
+    </div>
+    <div>
+      <span>Receita mensal ativa</span
+      ><strong>{{
+        carregando() || erroLista()
+          ? "—"
+          : (receitaMensalAtiva() | currency: "BRL")
+      }}</strong>
+    </div>
+  </div>
+  <div class="filtros-linha">
+    <div class="filtro-campo">
+      <label for="filtro-status">Status</label>
+      <p-select
+        inputId="filtro-status"
+        [ngModel]="filtroStatus()"
+        (ngModelChange)="aoMudarFiltroStatus($event)"
+        [options]="filtroStatusOptions"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="filtro-select"
       />
     </div>
 
-    <div class="filtros-linha">
-      <div class="filtro-campo">
-        <label>Status</label>
-        <p-select
-          [ngModel]="filtroStatus()"
-          (ngModelChange)="aoMudarFiltroStatus($event)"
-          [options]="filtroStatusOptions"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="filtro-select"
-        />
-      </div>
-
-      <div class="filtro-campo">
-        <label>Serviço</label>
-        <p-select
-          [ngModel]="filtroServicoId()"
-          (ngModelChange)="aoMudarFiltroServico($event)"
-          [options]="servicos()"
-          optionLabel="nome"
-          optionValue="id"
-          placeholder="Todos"
-          [showClear]="true"
-          styleClass="filtro-select"
-        />
-      </div>
-    </div>
-
-    <div class="search-container">
-      <app-search-input
-        [(value)]="termoPesquisa"
-        placeholder="Pesquisar por paciente, serviço, valor..."
+    <div class="filtro-campo">
+      <label for="filtro-servico">Serviço</label>
+      <p-select
+        inputId="filtro-servico"
+        [ngModel]="filtroServicoId()"
+        (ngModelChange)="aoMudarFiltroServico($event)"
+        [options]="servicos()"
+        optionLabel="nome"
+        optionValue="id"
+        placeholder="Todos"
+        [showClear]="true"
+        styleClass="filtro-select"
       />
-      @if (termoPesquisa() && assinaturasFiltradas().length > 0) {
-        <div class="search-results-info">
-          <i class="pi pi-info-circle"></i>
-          <span>{{ assinaturasFiltradas().length }} assinatura(s) encontrada(s)</span>
-        </div>
-      }
-      @if (termoPesquisa() && assinaturasFiltradas().length === 0) {
-        <div class="search-no-results">
-          <i class="pi pi-search"></i>
-          <span>Nenhuma assinatura encontrada com o termo "{{ termoPesquisa() }}"</span>
-        </div>
-      }
     </div>
+  </div>
 
-      <p-table
-        [value]="assinaturasFiltradas()"
-        [paginator]="true"
-        [rows]="10"
-        [loading]="carregando()"
-        [tableStyle]="{ 'min-width': '50rem' }"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Paciente</th>
-            <th>Serviço</th>
-            <th>Valor Mensal</th>
-            <th>Dia Vencimento</th>
-            <th>Data Início</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-assinatura>
-          <tr>
-            <td>{{ assinatura.pacienteNome }}</td>
-            <td>{{ assinatura.servicoNome }}</td>
-            <td>{{ assinatura.valorMensal | currency: 'BRL' }}</td>
-            <td>{{ assinatura.diaVencimento }}</td>
-            <td>{{ assinatura.dataInicio | date: 'dd/MM/yyyy' }}</td>
-            <td>
-              <p-tag
-                [value]="assinatura.ativo ? 'Ativa' : 'Inativa'"
-                [severity]="assinatura.ativo ? 'success' : 'danger'"
-              />
-            </td>
-            <td>
-              <div class="action-buttons">
-                @if (assinatura.ativo) {
-                  <p-button
-                    icon="pi pi-pencil"
-                    label="Editar"
-                    severity="secondary"
-                    (onClick)="abrirModalEditar(assinatura)"
-                    styleClass="p-button-sm"
-                  />
-                  <p-button
-                    icon="pi pi-sync"
-                    label="Trocar plano"
-                    severity="info"
-                    (onClick)="abrirModalTrocarPlano(assinatura)"
-                    styleClass="p-button-sm"
-                  />
-                  <p-button
-                    icon="pi pi-times"
-                    label="Cancelar"
-                    severity="danger"
-                    (onClick)="confirmarCancelamento(assinatura)"
-                    styleClass="p-button-sm"
-                  />
-                } @else {
-                  <p-button
-                    icon="pi pi-refresh"
-                    label="Reativar"
-                    severity="success"
-                    (onClick)="confirmarReativacao(assinatura)"
-                    styleClass="p-button-sm"
-                  />
-                }
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
+  <div class="search-container">
+    <app-search-input
+      [(value)]="termoPesquisa"
+      placeholder="Pesquisar por paciente, serviço, valor..."
+    />
+    @if (termoPesquisa() && assinaturasFiltradas().length > 0) {
+      <div class="search-results-info">
+        <i class="pi pi-info-circle"></i>
+        <span
+          >{{ assinaturasFiltradas().length }} assinatura(s) encontrada(s)</span
+        >
+      </div>
     }
+    @if (termoPesquisa() && assinaturasFiltradas().length === 0) {
+      <div class="search-no-results">
+        <i class="pi pi-search"></i>
+        <span
+          >Nenhuma assinatura encontrada com o termo "{{
+            termoPesquisa()
+          }}"</span
+        >
+      </div>
+    }
+  </div>
 
-    <!-- Modal Nova mensalidade · Fisioterapia / Pilates -->
-    <p-dialog
-      [(visible)]="modalVisivel"
-      header="Nova mensalidade · Fisioterapia / Pilates"
-      [modal]="true"
-      [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
-      styleClass="dialog-fullscreen-mobile"
-      [draggable]="false"
-      [resizable]="false"
-      [focusOnShow]="false"
-      (onHide)="fecharModal()"
+  <p-table
+    [value]="erroLista() ? [] : assinaturasFiltradas()"
+    [paginator]="true"
+    [rows]="10"
+    [loading]="carregando()"
+    [tableStyle]="{ 'min-width': '50rem' }"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Paciente</th>
+        <th>Serviço</th>
+        <th>Valor Mensal</th>
+        <th>Dia Vencimento</th>
+        <th>Data Início</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-assinatura>
+      <tr>
+        <td>{{ assinatura.pacienteNome }}</td>
+        <td>{{ assinatura.servicoNome }}</td>
+        <td>{{ assinatura.valorMensal | currency: "BRL" }}</td>
+        <td>{{ assinatura.diaVencimento }}</td>
+        <td>{{ assinatura.dataInicio | date: "dd/MM/yyyy" }}</td>
+        <td>
+          <p-tag
+            [value]="assinatura.ativo ? 'Ativa' : 'Inativa'"
+            [severity]="assinatura.ativo ? 'success' : 'danger'"
+          />
+        </td>
+        <td>
+          <div class="action-buttons">
+            @if (assinatura.ativo) {
+              <p-button
+                icon="pi pi-pencil"
+                label="Editar"
+                severity="secondary"
+                (onClick)="abrirModalEditar(assinatura)"
+                styleClass="p-button-sm"
+              />
+              <p-button
+                icon="pi pi-sync"
+                label="Trocar plano"
+                severity="info"
+                (onClick)="abrirModalTrocarPlano(assinatura)"
+                styleClass="p-button-sm"
+              />
+              <p-button
+                icon="pi pi-times"
+                label="Cancelar"
+                severity="danger"
+                (onClick)="confirmarCancelamento(assinatura)"
+                styleClass="p-button-sm"
+              />
+            } @else {
+              <p-button
+                icon="pi pi-refresh"
+                label="Reativar"
+                severity="success"
+                (onClick)="confirmarReativacao(assinatura)"
+                styleClass="p-button-sm"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage"
+      ><tr>
+        <td colspan="7">
+          {{
+            erroLista()
+              ? "Assinaturas indisponíveis. Tente carregar novamente."
+              : "Nenhuma assinatura encontrada."
+          }}
+        </td>
+      </tr></ng-template
     >
-      <p>Mensalidade de fisioterapia ou Pilates, sem franquia de sessões. Atendimentos na vigência são cobertos pelo plano e seguem a capacidade do serviço.</p>
-      <div class="form-group">
-        <label>Paciente(s) *</label>
+  </p-table>
+}
+
+<p-dialog
+  [(visible)]="modalVisivel"
+  header="Nova assinatura mensal"
+  [modal]="true"
+  [style]="{ width: '94vw', maxWidth: '800px', maxHeight: '94dvh' }"
+  styleClass="dialog-fullscreen-mobile subscription-dialog"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!salvando()"
+  [closeOnEscape]="!salvando()"
+  (onHide)="fecharModal()"
+>
+  <p class="form-intro">
+    Fisioterapia ou Pilates, sem franquia de sessões. Atendimentos durante a
+    vigência seguem a capacidade do serviço.
+  </p>
+  @if (erroPacientes() || erroServicos()) {
+    <div class="form-alert" role="alert">
+      <span>{{ erroPacientes() }} {{ erroServicos() }}</span
+      ><p-button
+        label="Tentar novamente"
+        (onClick)="carregarOpcoes()"
+        [disabled]="carregandoPacientes() || carregandoServicos()"
+        styleClass="p-button-text"
+      />
+    </div>
+  }
+  <section class="subscription-group">
+    <h3>01 · Paciente</h3>
+    <div class="subscription-grid">
+      <div
+        class="form-group"
+        [class.field-invalid]="erroCampo('nova', 'pacientes')"
+      >
+        <label id="nova-pacientes-label" for="nova-pacientes"
+          >Paciente(s) *</label
+        >
         <p-multiSelect
+          inputId="nova-pacientes"
+          [ariaLabelledBy]="
+            erroCampo('nova', 'pacientes')
+              ? 'nova-pacientes-label nova-pacientes-erro'
+              : 'nova-pacientes-label'
+          "
           [(ngModel)]="pacienteIdsSelecionados"
           [options]="pacientes()"
           optionLabel="nome"
           optionValue="id"
-          placeholder="Selecione um ou mais pacientes"
+          [filter]="true"
+          ariaFilterLabel="Pesquisar pacientes"
+          filterBy="nome"
+          [maxSelectedLabels]="1"
+          selectedItemsLabel="{0} pacientes selecionados"
+          [loading]="carregandoPacientes()"
+          [disabled]="carregandoPacientes() || !!erroPacientes() || salvando()"
+          [invalid]="!!erroCampo('nova', 'pacientes')"
+          placeholder="Busque e selecione os pacientes"
+          emptyMessage="Nenhum paciente ativo disponível"
+          emptyFilterMessage="Nenhum paciente encontrado"
+          scrollHeight="240px"
           styleClass="full-width"
+          panelStyleClass="assinatura-options"
           [appendTo]="'body'"
         />
+        <small id="nova-pacientes-ajuda" class="field-help"
+          >Uma assinatura individual será criada para cada paciente
+          selecionado.</small
+        >
+        @if (erroCampo("nova", "pacientes")) {
+          <small id="nova-pacientes-erro" class="field-error" role="alert">{{
+            erroCampo("nova", "pacientes")
+          }}</small>
+        }
       </div>
-
-      <div class="form-group">
-        <label>Serviço *</label>
+    </div>
+  </section>
+  <section class="subscription-group">
+    <h3>02 · Serviço e valor</h3>
+    <div class="subscription-grid">
+      <div
+        class="form-group"
+        [class.field-invalid]="erroCampo('nova', 'servico')"
+      >
+        <label id="nova-servico-label" for="nova-servico"
+          >Modalidade / serviço *</label
+        >
         <p-select
+          inputId="nova-servico"
+          [ariaLabelledBy]="
+            erroCampo('nova', 'servico')
+              ? 'nova-servico-label nova-servico-erro'
+              : 'nova-servico-label'
+          "
+          [invalid]="!!erroCampo('nova', 'servico')"
           [(ngModel)]="novaAssinatura.servicoId"
           [options]="servicosMensalidade()"
           optionLabel="nome"
           optionValue="id"
           placeholder="Selecione o serviço"
+          [filter]="true"
+          ariaFilterLabel="Pesquisar serviços"
+          filterBy="nome"
+          [loading]="carregandoServicos()"
+          [disabled]="carregandoServicos() || !!erroServicos() || salvando()"
+          emptyMessage="Nenhum serviço disponível"
+          emptyFilterMessage="Nenhum serviço encontrado"
           styleClass="full-width"
+          panelStyleClass="assinatura-options"
           [appendTo]="'body'"
         />
-      </div>
 
-      <div class="form-group">
-        <label>Valor Mensal *</label>
+        @if (erroCampo("nova", "servico")) {
+          <small id="nova-servico-erro" class="field-error" role="alert">{{
+            erroCampo("nova", "servico")
+          }}</small>
+        }
+      </div>
+      <div
+        class="form-group"
+        [class.field-invalid]="erroCampo('nova', 'valor')"
+      >
+        <label id="nova-valor-label" for="nova-valor"
+          >Valor mensal por paciente *</label
+        >
         <p-inputNumber
+          inputId="nova-valor"
+          [ariaDescribedBy]="
+            erroCampo('nova', 'valor') ? 'nova-valor-erro' : 'nova-valor-ajuda'
+          "
+          [invalid]="!!erroCampo('nova', 'valor')"
           [(ngModel)]="novaAssinatura.valorMensal"
           mode="currency"
           currency="BRL"
           locale="pt-BR"
           [min]="0.01"
+          [disabled]="salvando()"
           placeholder="R$ 0,00"
-          styleClass="full-width"
+          styleClass="full-width money-field"
         />
+        <small id="nova-valor-ajuda" class="field-help"
+          >O valor será aplicado individualmente a cada paciente.</small
+        >
+        @if (erroCampo("nova", "valor")) {
+          <small id="nova-valor-erro" class="field-error" role="alert">{{
+            erroCampo("nova", "valor")
+          }}</small>
+        }
       </div>
-
-      <div class="form-group">
-        <label>Dia de Vencimento *</label>
-        <p-inputNumber
-          [(ngModel)]="novaAssinatura.diaVencimento"
-          [min]="1"
-          [max]="28"
-          placeholder="Dia do mês (1-28)"
-          styleClass="full-width"
-        />
-      </div>
-
-      <div class="form-group">
-        <label>Data de Início</label>
+    </div>
+  </section>
+  <section class="subscription-group">
+    <h3>03 · Vigência e cobrança</h3>
+    <div class="subscription-grid">
+      <div class="form-group" [class.field-invalid]="erroCampo('nova', 'data')">
+        <label for="nova-data">Data de início</label>
         <input
+          id="nova-data"
           type="date"
           pInputText
           [(ngModel)]="novaAssinatura.dataInicio"
+          [disabled]="salvando()"
+          [attr.aria-invalid]="!!erroCampo('nova', 'data')"
+          [attr.aria-describedby]="
+            erroCampo('nova', 'data')
+              ? 'nova-data-ajuda nova-data-erro'
+              : 'nova-data-ajuda'
+          "
+          class="full-width"
+        />
+        <small id="nova-data-ajuda" class="field-help"
+          >Se não preencher, será usada a data de hoje.</small
+        >
+        @if (erroCampo("nova", "data")) {
+          <small id="nova-data-erro" class="field-error" role="alert">{{
+            erroCampo("nova", "data")
+          }}</small>
+        }
+      </div>
+      <div class="form-group" [class.field-invalid]="erroCampo('nova', 'dia')">
+        <label id="nova-dia-label" for="nova-dia">Dia de vencimento *</label>
+        <p-inputNumber
+          inputId="nova-dia"
+          [ariaDescribedBy]="
+            erroCampo('nova', 'dia') ? 'nova-dia-erro' : 'nova-dia-ajuda'
+          "
+          [invalid]="!!erroCampo('nova', 'dia')"
+          [(ngModel)]="novaAssinatura.diaVencimento"
+          [min]="1"
+          [max]="28"
+          [useGrouping]="false"
+          [maxFractionDigits]="0"
+          [disabled]="salvando()"
+          placeholder="Ex.: 5"
           styleClass="full-width"
         />
+        <small id="nova-dia-ajuda" class="field-help"
+          >Dia do mês, de 1 a 28.</small
+        >
+        @if (erroCampo("nova", "dia")) {
+          <small id="nova-dia-erro" class="field-error" role="alert">{{
+            erroCampo("nova", "dia")
+          }}</small>
+        }
       </div>
-
-      <div class="dialog-footer">
-        <p-button
-          label="Cancelar"
-          icon="pi pi-times"
-          (onClick)="fecharModal()"
-          styleClass="p-button-text"
-        />
-        <p-button
-          label="Criar"
-          icon="pi pi-check"
-          (onClick)="criarAssinatura()"
-          [loading]="salvando()"
-        />
+    </div>
+  </section>
+  @if (erroFormulario()) {
+    <div class="form-alert" role="alert">{{ erroFormulario() }}</div>
+  }
+  <ng-template #footer
+    ><div class="dialog-footer">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        (onClick)="fecharModal()"
+        [disabled]="salvando()"
+        styleClass="p-button-text"
+      />
+      <p-button
+        label="Criar assinatura"
+        icon="pi pi-check"
+        (onClick)="criarAssinatura()"
+        [loading]="salvando()"
+        [disabled]="
+          salvando() ||
+          carregandoPacientes() ||
+          carregandoServicos() ||
+          !!erroPacientes() ||
+          !!erroServicos()
+        "
+      /></div
+  ></ng-template> </p-dialog
+><p-dialog
+  [(visible)]="modalEditarVisivel"
+  header="Editar assinatura"
+  [modal]="true"
+  [style]="{ width: '94vw', maxWidth: '800px', maxHeight: '94dvh' }"
+  styleClass="dialog-fullscreen-mobile subscription-dialog"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!salvando()"
+  [closeOnEscape]="!salvando()"
+  (onHide)="fecharModalEditar()"
+>
+  @if (assinaturaEditando) {
+    <section class="subscription-group">
+      <h3>Paciente e serviço</h3>
+      <div class="subscription-grid">
+        <div class="form-group">
+          <label for="editar-paciente">Paciente</label
+          ><input
+            id="editar-paciente"
+            type="text"
+            pInputText
+            [value]="assinaturaEditando.pacienteNome"
+            readonly
+            class="full-width"
+          />
+        </div>
+        <div class="form-group">
+          <label id="editar-servico-label" for="editar-servico">Serviço</label
+          ><input
+            id="editar-servico"
+            type="text"
+            pInputText
+            [value]="assinaturaEditando.servicoNome"
+            readonly
+            class="full-width"
+          />
+        </div>
       </div>
-    </p-dialog>
-
-    <!-- Modal Editar Assinatura -->
-    <p-dialog
-      [(visible)]="modalEditarVisivel"
-      header="Editar Assinatura"
-      [modal]="true"
-      [style]="{ width: '90vw', maxWidth: '500px' }"
-      styleClass="dialog-fullscreen-mobile"
-      [draggable]="false"
-      [resizable]="false"
-      [focusOnShow]="false"
-      (onHide)="fecharModalEditar()"
-    >
-      @if (assinaturaEditando) {
-        <div class="form-group">
-          <label>Paciente</label>
-          <input type="text" pInputText [value]="assinaturaEditando.pacienteNome" disabled styleClass="full-width" />
-        </div>
-
-        <div class="form-group">
-          <label>Serviço</label>
-          <input type="text" pInputText [value]="assinaturaEditando.servicoNome" disabled styleClass="full-width" />
-        </div>
-
-        <div class="form-group">
-          <label>Valor Mensal *</label>
+    </section>
+    <section class="subscription-group">
+      <h3>Condições da mensalidade</h3>
+      <div class="subscription-grid">
+        <div
+          class="form-group"
+          [class.field-invalid]="erroCampo('editar', 'valor')"
+        >
+          <label id="editar-valor-label" for="editar-valor"
+            >Valor mensal por paciente *</label
+          >
           <p-inputNumber
+            inputId="editar-valor"
+            [ariaDescribedBy]="
+              erroCampo('editar', 'valor') ? 'editar-valor-erro' : undefined
+            "
+            [invalid]="!!erroCampo('editar', 'valor')"
             [(ngModel)]="edicao.valorMensal"
             mode="currency"
             currency="BRL"
             locale="pt-BR"
             [min]="0.01"
+            [disabled]="salvando()"
             placeholder="R$ 0,00"
-            styleClass="full-width"
+            styleClass="full-width money-field"
           />
-        </div>
 
-        <div class="form-group">
-          <label>Dia de Vencimento *</label>
+          @if (erroCampo("editar", "valor")) {
+            <small id="editar-valor-erro" class="field-error" role="alert">{{
+              erroCampo("editar", "valor")
+            }}</small>
+          }
+        </div>
+        <div
+          class="form-group"
+          [class.field-invalid]="erroCampo('editar', 'dia')"
+        >
+          <label id="editar-dia-label" for="editar-dia"
+            >Dia de vencimento *</label
+          >
           <p-inputNumber
+            inputId="editar-dia"
+            [ariaDescribedBy]="
+              erroCampo('editar', 'dia')
+                ? 'editar-dia-erro'
+                : 'editar-dia-ajuda'
+            "
+            [invalid]="!!erroCampo('editar', 'dia')"
             [(ngModel)]="edicao.diaVencimento"
             [min]="1"
             [max]="28"
-            placeholder="Dia do mês (1-28)"
+            [useGrouping]="false"
+            [maxFractionDigits]="0"
+            [disabled]="salvando()"
+            placeholder="Ex.: 5"
             styleClass="full-width"
           />
+          <small id="editar-dia-ajuda" class="field-help"
+            >Dia do mês, de 1 a 28.</small
+          >
+          @if (erroCampo("editar", "dia")) {
+            <small id="editar-dia-erro" class="field-error" role="alert">{{
+              erroCampo("editar", "dia")
+            }}</small>
+          }
         </div>
-      }
-
-      <div class="dialog-footer">
-        <p-button
-          label="Cancelar"
-          icon="pi pi-times"
-          (onClick)="fecharModalEditar()"
+      </div>
+    </section>
+  }
+  @if (erroFormulario()) {
+    <div class="form-alert" role="alert">{{ erroFormulario() }}</div>
+  }
+  <ng-template #footer
+    ><div class="dialog-footer">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        (onClick)="fecharModalEditar()"
+        [disabled]="salvando()"
+        styleClass="p-button-text"
+      />
+      <p-button
+        label="Salvar"
+        icon="pi pi-check"
+        (onClick)="salvarEdicao()"
+        [loading]="salvando()"
+        [disabled]="salvando()"
+      /></div
+  ></ng-template> </p-dialog
+><p-dialog
+  [(visible)]="modalTrocarPlanoVisivel"
+  header="Trocar plano"
+  [modal]="true"
+  [style]="{ width: '94vw', maxWidth: '800px', maxHeight: '94dvh' }"
+  styleClass="dialog-fullscreen-mobile subscription-dialog"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!salvando()"
+  [closeOnEscape]="!salvando()"
+  (onHide)="fecharModalTrocarPlano()"
+>
+  @if (assinaturaTrocandoPlano) {
+    <p class="form-intro">
+      O plano de <strong>{{ assinaturaTrocandoPlano.pacienteNome }}</strong> ({{
+        assinaturaTrocandoPlano.servicoNome
+      }}) será cancelado e uma nova assinatura será criada no serviço escolhido.
+    </p>
+    @if (erroPacientes() || erroServicos()) {
+      <div class="form-alert" role="alert">
+        <span>{{ erroPacientes() }} {{ erroServicos() }}</span
+        ><p-button
+          label="Tentar novamente"
+          (onClick)="carregarOpcoes()"
+          [disabled]="carregandoPacientes() || carregandoServicos()"
           styleClass="p-button-text"
         />
-        <p-button
-          label="Salvar"
-          icon="pi pi-check"
-          (onClick)="salvarEdicao()"
-          [loading]="salvando()"
-        />
       </div>
-    </p-dialog>
-
-    <!-- Modal Trocar Plano -->
-    <p-dialog
-      [(visible)]="modalTrocarPlanoVisivel"
-      header="Trocar Plano"
-      [modal]="true"
-      [style]="{ width: '90vw', maxWidth: '500px' }"
-      styleClass="dialog-fullscreen-mobile"
-      [draggable]="false"
-      [resizable]="false"
-      [focusOnShow]="false"
-      (onHide)="fecharModalTrocarPlano()"
-    >
-      @if (assinaturaTrocandoPlano) {
-        <p class="troca-plano-info">
-          Cancela o plano atual de <strong>{{ assinaturaTrocandoPlano.pacienteNome }}</strong>
-          ({{ assinaturaTrocandoPlano.servicoNome }}) e cria uma nova assinatura no serviço escolhido.
-        </p>
-
-        <div class="form-group">
-          <label>Novo Serviço *</label>
+    }
+    <section class="subscription-group">
+      <h3>Novo serviço e valor</h3>
+      <div class="subscription-grid">
+        <div
+          class="form-group"
+          [class.field-invalid]="erroCampo('trocar', 'servico')"
+        >
+          <label id="trocar-servico-label" for="trocar-servico"
+            >Modalidade / serviço *</label
+          >
           <p-select
+            inputId="trocar-servico"
+            [ariaLabelledBy]="
+              erroCampo('trocar', 'servico')
+                ? 'trocar-servico-label trocar-servico-erro'
+                : 'trocar-servico-label'
+            "
+            [invalid]="!!erroCampo('trocar', 'servico')"
             [(ngModel)]="trocaPlano.novoServicoId"
-            (onChange)="aoSelecionarNovoServico()"
-            [options]="servicos()"
+            [options]="servicosMensalidade()"
             optionLabel="nome"
             optionValue="id"
-            placeholder="Selecione o novo serviço"
+            placeholder="Selecione o serviço"
+            [filter]="true"
+            ariaFilterLabel="Pesquisar serviços"
+            filterBy="nome"
+            [loading]="carregandoServicos()"
+            [disabled]="carregandoServicos() || !!erroServicos() || salvando()"
+            emptyMessage="Nenhum serviço disponível"
+            emptyFilterMessage="Nenhum serviço encontrado"
             styleClass="full-width"
+            panelStyleClass="assinatura-options"
             [appendTo]="'body'"
+            (onChange)="aoSelecionarNovoServico()"
           />
-        </div>
 
-        <div class="form-group">
-          <label>Valor Mensal *</label>
+          @if (erroCampo("trocar", "servico")) {
+            <small id="trocar-servico-erro" class="field-error" role="alert">{{
+              erroCampo("trocar", "servico")
+            }}</small>
+          }
+        </div>
+        <div
+          class="form-group"
+          [class.field-invalid]="erroCampo('trocar', 'valor')"
+        >
+          <label id="trocar-valor-label" for="trocar-valor"
+            >Valor mensal por paciente *</label
+          >
           <p-inputNumber
+            inputId="trocar-valor"
+            [ariaDescribedBy]="
+              erroCampo('trocar', 'valor') ? 'trocar-valor-erro' : undefined
+            "
+            [invalid]="!!erroCampo('trocar', 'valor')"
             [(ngModel)]="trocaPlano.novoValorMensal"
             mode="currency"
             currency="BRL"
             locale="pt-BR"
             [min]="0.01"
+            [disabled]="salvando()"
             placeholder="R$ 0,00"
-            styleClass="full-width"
+            styleClass="full-width money-field"
           />
-        </div>
 
-        <div class="form-group">
-          <label>Dia de Vencimento *</label>
-          <p-inputNumber
-            [(ngModel)]="trocaPlano.diaVencimento"
-            [min]="1"
-            [max]="28"
-            placeholder="Dia do mês (1-28)"
-            styleClass="full-width"
-          />
+          @if (erroCampo("trocar", "valor")) {
+            <small id="trocar-valor-erro" class="field-error" role="alert">{{
+              erroCampo("trocar", "valor")
+            }}</small>
+          }
         </div>
-
-        <div class="form-group">
-          <label>Data de Início</label>
+      </div>
+    </section>
+    <section class="subscription-group">
+      <h3>Vigência e cobrança</h3>
+      <div class="subscription-grid">
+        <div
+          class="form-group"
+          [class.field-invalid]="erroCampo('trocar', 'data')"
+        >
+          <label for="trocar-data">Data de início</label>
           <input
+            id="trocar-data"
             type="date"
             pInputText
             [(ngModel)]="trocaPlano.dataInicio"
+            [disabled]="salvando()"
+            [attr.aria-invalid]="!!erroCampo('trocar', 'data')"
+            [attr.aria-describedby]="
+              erroCampo('trocar', 'data')
+                ? 'trocar-data-ajuda trocar-data-erro'
+                : 'trocar-data-ajuda'
+            "
+            class="full-width"
+          />
+          <small id="trocar-data-ajuda" class="field-help"
+            >Se não preencher, será usada a data de hoje.</small
+          >
+          @if (erroCampo("trocar", "data")) {
+            <small id="trocar-data-erro" class="field-error" role="alert">{{
+              erroCampo("trocar", "data")
+            }}</small>
+          }
+        </div>
+        <div
+          class="form-group"
+          [class.field-invalid]="erroCampo('trocar', 'dia')"
+        >
+          <label id="trocar-dia-label" for="trocar-dia"
+            >Dia de vencimento *</label
+          >
+          <p-inputNumber
+            inputId="trocar-dia"
+            [ariaDescribedBy]="
+              erroCampo('trocar', 'dia')
+                ? 'trocar-dia-erro'
+                : 'trocar-dia-ajuda'
+            "
+            [invalid]="!!erroCampo('trocar', 'dia')"
+            [(ngModel)]="trocaPlano.diaVencimento"
+            [min]="1"
+            [max]="28"
+            [useGrouping]="false"
+            [maxFractionDigits]="0"
+            [disabled]="salvando()"
+            placeholder="Ex.: 5"
             styleClass="full-width"
           />
+          <small id="trocar-dia-ajuda" class="field-help"
+            >Dia do mês, de 1 a 28.</small
+          >
+          @if (erroCampo("trocar", "dia")) {
+            <small id="trocar-dia-erro" class="field-error" role="alert">{{
+              erroCampo("trocar", "dia")
+            }}</small>
+          }
         </div>
-      }
-
-      <div class="dialog-footer">
-        <p-button
-          label="Cancelar"
-          icon="pi pi-times"
-          (onClick)="fecharModalTrocarPlano()"
-          styleClass="p-button-text"
-        />
-        <p-button
-          label="Trocar"
-          icon="pi pi-sync"
-          (onClick)="confirmarTrocarPlano()"
-          [loading]="salvando()"
-        />
       </div>
-    </p-dialog>
+    </section>
+  }
+  @if (erroFormulario()) {
+    <div class="form-alert" role="alert">{{ erroFormulario() }}</div>
+  }
+  <ng-template #footer
+    ><div class="dialog-footer">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        (onClick)="fecharModalTrocarPlano()"
+        [disabled]="salvando()"
+        styleClass="p-button-text"
+      />
+      <p-button
+        label="Trocar plano"
+        icon="pi pi-check"
+        (onClick)="confirmarTrocarPlano()"
+        [loading]="salvando()"
+        [disabled]="salvando() || carregandoServicos() || !!erroServicos()"
+      /></div
+  ></ng-template>
+</p-dialog>

@@ -5,6 +5,12 @@
 }
 
 :root {
+  /* Existing subscription button colors, shared without changing their values. */
+  --subscription-on-accent: #ffffff;
+  --subscription-fab-shadow: rgba(58, 184, 217, 0.35);
+  --subscription-danger: #e5484d;
+  --subscription-danger-soft: rgba(229, 72, 77, 0.1);
+  --subscription-backdrop: rgba(9, 15, 20, 0.45);
   --primary-gradient: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-color-light) 100%);
   --surface-soft: #f8fbff;
   --surface-border: #e2e8f0; /* adicionado para consistência */
@@ -974,4 +980,15 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
   .p-datepicker {
     font-size: 16px !important; /* Evita zoom no iOS */
   }
+}
+
+/* Subscription menus are appended to body, outside component style scoping. */
+.assinatura-options {
+  max-width: calc(100vw - 32px);
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  .p-select-option, .p-multiselect-option { min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
+  .p-select-list-container, .p-multiselect-list-container { max-height: min(240px, 40dvh); overflow-y: auto; }
 }
