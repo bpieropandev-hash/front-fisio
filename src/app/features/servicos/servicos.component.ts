@@ -1,3 +1,4 @@
+import { PageStateComponent } from '../../shared/components/page-state/page-state.component';
 import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -28,7 +29,7 @@ type ServicoForm = Omit<ServicoCreateRequestDTO, 'valorBase'> & { valorBase: num
 
 @Component({
   selector: 'app-servicos',
-  imports: [
+  imports: [PageStateComponent,
     CommonModule,
     FormsModule,
     TableModule,
@@ -49,6 +50,8 @@ type ServicoForm = Omit<ServicoCreateRequestDTO, 'valorBase'> & { valorBase: num
   styleUrls: ['./servicos.component.scss']
 })
 export class ServicosComponent implements OnInit {
+  erroCarga = signal('');
+
   readonly configuracoes = inject(ConfiguracaoClinicaService);
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
@@ -103,12 +106,14 @@ export class ServicosComponent implements OnInit {
 
   carregarServicos(): void {
     this.carregando.set(true);
+    this.erroCarga.set('');
     this.servicoService.listar().subscribe({
       next: (servicos) => {
         this.servicos.set(servicos);
         this.carregando.set(false);
       },
       error: () => {
+        this.erroCarga.set('Não conseguimos carregar os serviços.');
         this.carregando.set(false);
         this.messageService.add({
           severity: 'error',

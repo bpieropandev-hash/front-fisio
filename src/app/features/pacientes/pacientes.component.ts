@@ -1,3 +1,4 @@
+import { PageStateComponent } from '../../shared/components/page-state/page-state.component';
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -29,7 +30,7 @@ import { AgendamentoService } from '../../core/services/agendamento.service';
 
 @Component({
     selector: 'app-pacientes',
-    imports: [
+    imports: [PageStateComponent,
     FormsModule,
     ReactiveFormsModule,
     TableModule,
@@ -53,6 +54,8 @@ import { AgendamentoService } from '../../core/services/agendamento.service';
     styleUrls: ['./pacientes.component.scss']
 })
 export class PacientesComponent implements OnInit {
+  erroCarga = signal('');
+
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
@@ -112,6 +115,8 @@ export class PacientesComponent implements OnInit {
   // --- Shell mobile (spec 10) ---
   filtroPillMobile = signal<'todos' | 'tratamento' | 'inativos'>('todos');
   proximosPorPaciente = signal<Map<number, Date>>(new Map());
+  carregandoProximos = signal(false);
+  erroProximos = signal('');
 
   totalAtivos = computed(() => this.pacientes().filter(p => p.ativo !== false).length);
 
@@ -159,6 +164,8 @@ export class PacientesComponent implements OnInit {
   }
 
   rotuloProximoAtendimento(pacienteId: number): string {
+    if (this.carregandoProximos()) return 'Consultando próximos horários…';
+    if (this.erroProximos()) return 'Horários indisponíveis';
     const data = this.proximosPorPaciente().get(pacienteId);
     if (!data) return 'Sem atendimento agendado';
 
@@ -176,7 +183,9 @@ export class PacientesComponent implements OnInit {
     return `Próximo: ${dataFmt}, ${hora}`;
   }
 
-  private carregarProximosAtendimentos(): void {
+  carregarProximosAtendimentos(): void {
+    this.carregandoProximos.set(true);
+    this.erroProximos.set('');
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     const limite = new Date(hoje);
@@ -195,9 +204,11 @@ export class PacientesComponent implements OnInit {
           if (!atual || data < atual) mapa.set(a.pacienteId, data);
         }
         this.proximosPorPaciente.set(mapa);
+        this.carregandoProximos.set(false);
       },
       error: () => {
-        // Não é crítico: lista de pacientes continua funcional sem o rótulo de próximo atendimento
+        this.carregandoProximos.set(false);
+        this.erroProximos.set('Os pacientes foram carregados, mas os próximos horários estão indisponíveis.');
       }
     });
   }
@@ -243,6 +254,7 @@ export class PacientesComponent implements OnInit {
 
   carregarPacientes(): void {
     this.carregando.set(true);
+    this.erroCarga.set('');
     this.pacienteService.listar().subscribe({
       next: (pacientes) => {
         // Ordenar pacientes por nome
@@ -255,6 +267,7 @@ export class PacientesComponent implements OnInit {
         this.carregando.set(false);
       },
       error: (error) => {
+        this.erroCarga.set('Não conseguimos carregar os pacientes.');
         console.error('Erro ao carregar pacientes:', error);
         this.messageService.add({
           severity: 'error',

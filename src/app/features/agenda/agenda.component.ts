@@ -1,3 +1,4 @@
+import { PageStateComponent } from '../../shared/components/page-state/page-state.component';
 import { untracked } from '@angular/core';
 import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
 import { Component, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
@@ -73,7 +74,7 @@ interface ItemLoteUI {
 
 @Component({
   selector: 'app-agenda',
-  imports: [
+  imports: [PageStateComponent,
     CommonModule,
     FormsModule,
     FullCalendarModule,
@@ -93,6 +94,10 @@ interface ItemLoteUI {
   styleUrls: ['./agenda.component.scss']
 })
 export class AgendaComponent implements OnInit {
+  carregandoAgenda = signal(false);
+  erroAgenda = signal('');
+  erroCatalogoAgenda = signal('');
+  private consultaAgenda = 0;
   readonly configuracoes = inject(ConfiguracaoClinicaService);
   private readonly atualizarAgrupamento = effect(() => { this.configuracoes.atual(); untracked(() => this.aplicarFiltros()); });
   private readonly breakpointService = inject(BreakpointService);
@@ -581,6 +586,8 @@ export class AgendaComponent implements OnInit {
   }
 
   carregarDados(): void {
+    this.carregandoAgenda.set(true);
+    this.erroCatalogoAgenda.set('');
     // Pacientes e serviços em paralelo; eventos só depois — assim os títulos
     // sempre resolvem os nomes (sem "Paciente #42") e a API é chamada uma vez
     forkJoin({
@@ -594,6 +601,7 @@ export class AgendaComponent implements OnInit {
       },
       error: (error: HttpErrorResponse) => {
         const msg = ErrorHandlerUtil.getErrorMessage(error);
+        this.erroCatalogoAgenda.set('Não conseguimos carregar os nomes de pacientes e serviços. Tente novamente antes de cadastrar.');
         this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
         // Mesmo sem nomes, ainda mostra a agenda
         this.carregarEventos();
@@ -602,6 +610,9 @@ export class AgendaComponent implements OnInit {
   }
 
   carregarEventos(): void {
+    const consulta = ++this.consultaAgenda;
+    this.carregandoAgenda.set(true);
+    this.erroAgenda.set('');
     // Monta parâmetros de filtro para a API (apenas data e paciente para otimizar)
     const params: any = {};
 
@@ -623,6 +634,8 @@ export class AgendaComponent implements OnInit {
 
     this.agendamentoService.listar(params).subscribe({
       next: (atendimentos) => {
+        if (consulta !== this.consultaAgenda) return;
+        this.carregandoAgenda.set(false);
         const eventos: EventInput[] = [];
         atendimentos.forEach(atendimento => {
           const isMensalista = ehMensalidade(atendimento);
@@ -666,9 +679,9 @@ export class AgendaComponent implements OnInit {
         this.aplicarFiltros();
       },
       error: (error) => {
-        console.error('Erro ao carregar atendimentos:', error);
-        this.eventos.set([]);
-        this.eventosFiltrados.set([]);
+        if (consulta !== this.consultaAgenda) return;
+        this.carregandoAgenda.set(false);
+        this.erroAgenda.set(ErrorHandlerUtil.getErrorMessage(error).detail);
       }
     });
   }

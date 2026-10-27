@@ -7,10 +7,9 @@
     }
 
     @if (carregando()) {
-      <div class="loading-state">
-        <i class="pi pi-spin pi-spinner"></i>
-        <span>Carregando perfil...</span>
-      </div>
+      <app-page-state [loading]="true" loadingLabel="Carregando perfil…" />
+    } @else if (erroCarga()) {
+      <app-page-state [error]="erroCarga()" (retry)="carregarPerfil()" />
     } @else if (isTablet()) {
       <div class="perfil-mobile">
         <div class="perfil-mobile__avatar-wrap">

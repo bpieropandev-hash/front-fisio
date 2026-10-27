@@ -258,7 +258,12 @@
       </p-card>
     }
 
-    @if (isTablet()) {
+    @if (erroCatalogoAgenda()) {
+      <app-page-state [error]="erroCatalogoAgenda()" (retry)="carregarDados()" />
+    }
+    @if (carregandoAgenda() || erroAgenda()) {
+      <app-page-state [loading]="carregandoAgenda()" [error]="erroAgenda()" loadingLabel="Carregando agenda…" (retry)="carregarEventos()" />
+    } @else if (isTablet()) {
       <!-- Shell mobile (spec 10): semana + lista do dia, sem FullCalendar -->
       <div class="agenda-mobile">
         <div class="agenda-mobile__semana-nav">

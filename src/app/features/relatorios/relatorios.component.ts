@@ -1,3 +1,4 @@
+import { PageStateComponent } from '../../shared/components/page-state/page-state.component';
 import { Component, OnInit, signal, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ import { BreakpointService } from '../../core/services/breakpoint.service';
 
 @Component({
     selector: 'app-relatorios',
-    imports: [
+    imports: [PageStateComponent,
     FormsModule,
     CardModule,
     ButtonModule,
@@ -27,11 +28,15 @@ import { BreakpointService } from '../../core/services/breakpoint.service';
     styleUrls: ['./relatorios.component.scss']
 })
 export class RelatoriosComponent implements OnInit {
+  erroCarga = signal('');
+
   private readonly breakpointService = inject(BreakpointService);
   isTablet = this.breakpointService.isTablet;
 
   servicos = signal<ServicoResponseDTO[]>([]);
   gerando = signal(false);
+  erroGeracao = signal('');
+  carregando = signal(false);
   formSubmetido = false;
   periodoPillAtivo = signal<'mes' | '30dias' | 'ano' | null>(null);
 
@@ -73,11 +78,16 @@ export class RelatoriosComponent implements OnInit {
   }
 
   carregarServicos(): void {
+    this.carregando.set(true);
+    this.erroCarga.set('');
     this.servicoService.listar().subscribe({
       next: (servicos) => {
+        this.carregando.set(false);
         this.servicos.set(servicos.filter(s => s.ativo !== false));
       },
       error: (error) => {
+        this.carregando.set(false);
+        this.erroCarga.set('Não conseguimos carregar os serviços para o relatório.');
         console.error('Erro ao carregar serviços:', error);
         this.messageService.add({
           severity: 'error',
@@ -89,6 +99,8 @@ export class RelatoriosComponent implements OnInit {
   }
 
   gerarRelatorio(): void {
+    if (this.gerando()) return;
+    this.erroGeracao.set('');
     this.formSubmetido = true;
 
     // Validações
@@ -160,7 +172,7 @@ export class RelatoriosComponent implements OnInit {
         this.gerando.set(false);
       },
       error: (error) => {
-        console.error('Erro ao gerar relatório:', error);
+        this.erroGeracao.set(error.error?.mensagem || 'Não conseguimos gerar o relatório. Confira o período e tente novamente.');
         this.messageService.add({
           severity: 'error',
           summary: 'Erro',

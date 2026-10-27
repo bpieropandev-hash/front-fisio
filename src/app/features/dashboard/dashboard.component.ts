@@ -1,3 +1,4 @@
+import { PageStateComponent } from '../../shared/components/page-state/page-state.component';
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +33,7 @@ export interface ProximoAtendimentoUI {
 
 @Component({
     selector: 'app-dashboard',
-    imports: [
+    imports: [PageStateComponent,
         CommonModule,
         FormsModule,
         CardModule,
@@ -48,6 +49,8 @@ export interface ProximoAtendimentoUI {
     styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
+  erroCarga = signal('');
+
   private readonly breakpointService = inject(BreakpointService);
   isMobile = this.breakpointService.isMobile;
   isTablet = this.breakpointService.isTablet;
@@ -60,6 +63,9 @@ export class DashboardComponent implements OnInit {
   // --- Shell mobile (spec 10) ---
   nomeUsuario = signal<string | null>(null);
   carregandoProximos = signal(true);
+  erroProximos = signal('');
+  private consultaProximos = 0;
+  private consultaResumo = 0;
   proximosAtendimentos = signal<ProximoAtendimentoUI[]>([]);
   saudacaoData = computed(() => {
     const hoje = new Date();
@@ -96,7 +102,9 @@ export class DashboardComponent implements OnInit {
 
   /** Atendimentos de hoje, ordenados por horário — para o card "Próximos atendimentos" do shell mobile */
   carregarProximosAtendimentos(): void {
+    const consulta = ++this.consultaProximos;
     this.carregandoProximos.set(true);
+    this.erroProximos.set('');
     const hoje = new Date();
     const inicioDia = new Date(hoje);
     inicioDia.setHours(0, 0, 0, 0);
@@ -110,6 +118,7 @@ export class DashboardComponent implements OnInit {
       servicos: this.servicoService.listar()
     }).subscribe({
       next: ({ atendimentos, pacientes, servicos }) => {
+        if (consulta !== this.consultaProximos) return;
         const lista: ProximoAtendimentoUI[] = atendimentos
           .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
           .slice(0, 4)
@@ -123,7 +132,8 @@ export class DashboardComponent implements OnInit {
         this.carregandoProximos.set(false);
       },
       error: () => {
-        this.proximosAtendimentos.set([]);
+        if (consulta !== this.consultaProximos) return;
+        this.erroProximos.set('Não conseguimos carregar os atendimentos de hoje.');
         this.carregandoProximos.set(false);
       }
     });
@@ -164,7 +174,9 @@ export class DashboardComponent implements OnInit {
   }
 
   carregarDados(): void {
+    const consulta = ++this.consultaResumo;
     this.carregando.set(true);
+    this.erroCarga.set('');
 
     const inicio = this.filtros.dataInicio ? formatDateForApi(this.filtros.dataInicio) : undefined;
     const fim = this.filtros.dataFim ? formatDateForApi(this.filtros.dataFim) : undefined;
@@ -172,10 +184,13 @@ export class DashboardComponent implements OnInit {
 
     this.dashboardService.buscarResumo(inicio, fim).subscribe({
       next: (resumo) => {
+        if (consulta !== this.consultaResumo) return;
         this.resumo.set(resumo);
         this.carregando.set(false);
       },
       error: (error: HttpErrorResponse) => {
+        if (consulta !== this.consultaResumo) return;
+        this.erroCarga.set('Não conseguimos carregar o resumo financeiro.');
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({
           severity: errorMessage.severity,

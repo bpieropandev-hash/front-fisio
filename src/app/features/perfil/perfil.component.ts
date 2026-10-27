@@ -1,3 +1,4 @@
+import { PageStateComponent } from '../../shared/components/page-state/page-state.component';
 import { ConfiguracoesClinicaComponent } from './configuracoes-clinica/configuracoes-clinica.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -24,12 +25,14 @@ function senhasIguaisValidator(control: AbstractControl): ValidationErrors | nul
 
 @Component({
     selector: 'app-perfil',
-    imports: [ConfiguracoesClinicaComponent, CommonModule, FormsModule, ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule, CardModule, ToastModule],
+    imports: [PageStateComponent, ConfiguracoesClinicaComponent, CommonModule, FormsModule, ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule, CardModule, ToastModule],
     providers: [MessageService],
     templateUrl: './perfil.component.html',
     styleUrls: ['./perfil.component.scss']
 })
 export class PerfilComponent implements OnInit {
+  erroCarga = signal('');
+
   private readonly breakpointService = inject(BreakpointService);
   isTablet = this.breakpointService.isTablet;
 
@@ -82,6 +85,7 @@ export class PerfilComponent implements OnInit {
 
   carregarPerfil(): void {
     this.carregando.set(true);
+    this.erroCarga.set('');
     this.usuarioService.buscarMe().subscribe({
       next: (dados) => {
         this.usuario.set(dados);
@@ -101,6 +105,7 @@ export class PerfilComponent implements OnInit {
         this.carregando.set(false);
       },
       error: (error: HttpErrorResponse) => {
+        this.erroCarga.set('Não conseguimos carregar seu perfil.');
         this.carregando.set(false);
         const errorMessage = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({

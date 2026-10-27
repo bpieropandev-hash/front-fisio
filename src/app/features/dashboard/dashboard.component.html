@@ -12,7 +12,9 @@
             {{ periodoLabel() === 'Mês atual' ? 'Este mês' : periodoLabel() }}
           </div>
           @if (carregando()) {
-            <div class="mobile-dashboard__stats-loading">Carregando…</div>
+            <app-page-state [loading]="true" loadingLabel="Carregando resumo…" />
+          } @else if (erroCarga()) {
+            <app-page-state [error]="erroCarga()" (retry)="carregarDados()" />
           } @else {
             <div class="mobile-dashboard__stats-row">
               <div class="mobile-dashboard__stat">
@@ -39,9 +41,11 @@
             <a class="mobile-dashboard__section-link" (click)="irParaAgenda()">Ver agenda</a>
           </div>
           @if (carregandoProximos()) {
-            <div class="mobile-dashboard__proximos-loading">Carregando…</div>
+            <app-page-state [loading]="true" loadingLabel="Carregando atendimentos…" />
+          } @else if (erroProximos()) {
+            <app-page-state [error]="erroProximos()" (retry)="carregarProximosAtendimentos()" />
           } @else if (proximosAtendimentos().length === 0) {
-            <div class="mobile-dashboard__proximos-vazio">Nenhum atendimento hoje.</div>
+            <app-page-state [empty]="true" emptyLabel="Nenhum atendimento hoje" emptyHint="Os próximos horários aparecem aqui depois de agendados." />
           } @else {
             <div class="mobile-dashboard__proximos-list">
               @for (item of proximosAtendimentos(); track item.hora + item.pacienteNome) {
@@ -142,9 +146,9 @@
     }
 
     @if (carregando()) {
-      <div class="loading-container">
-        <p-progressSpinner />
-      </div>
+      <app-page-state [loading]="true" loadingLabel="Carregando resumo…" />
+    } @else if (erroCarga()) {
+      <app-page-state [error]="erroCarga()" (retry)="carregarDados()" />
     } @else {
       <!-- Cards de Resumo (escondidos no shell mobile — mesmos números já aparecem no cartão de estatísticas do topo) -->
       <div class="summary-cards" [class.summary-cards--hidden-mobile]="isTablet()">

@@ -15,6 +15,10 @@
       </div>
     }
 
+    @if (carregando() || erroCarga() || servicos().length === 0) {
+      <app-page-state [loading]="carregando()" [error]="erroCarga()" [empty]="servicos().length === 0"
+        emptyLabel="Nenhum serviço ativo" emptyHint="Cadastre ou reative um serviço para gerar o relatório." (retry)="carregarServicos()" />
+    } @else {
     <p-card class="relatorio-card">
       <ng-template pTemplate="header">
         <div class="card-header">
@@ -89,6 +93,7 @@
         </div>
 
         <div class="form-actions">
+          @if (erroGeracao()) { <app-page-state [error]="erroGeracao()" (retry)="gerarRelatorio()" /> }
           <p-button
             type="submit"
             label="Gerar PDF"
@@ -99,3 +104,5 @@
         </div>
       </form>
     </p-card>
+
+    }

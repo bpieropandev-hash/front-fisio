@@ -41,8 +41,11 @@
         </div>
 
         <div class="pac-mobile__lista-wrap">
+          @if (erroProximos()) { <app-page-state [error]="erroProximos()" (retry)="carregarProximosAtendimentos()" /> }
           @if (carregando()) {
-            <div class="pac-mobile__vazio">Carregando…</div>
+            <app-page-state [loading]="true" loadingLabel="Carregando pacientes…" />
+          } @else if (erroCarga()) {
+            <app-page-state [error]="erroCarga()" (retry)="carregarPacientes()" />
           } @else if (pacientesMobile().length === 0) {
             <div class="pac-mobile__vazio">Nenhum paciente encontrado.</div>
           } @else {
@@ -116,7 +119,7 @@
           <span>{{ pacientesFiltrados().length }} paciente(s) encontrado(s)</span>
         </div>
       }
-      @if (termoPesquisa() && pacientesFiltrados().length === 0) {
+      @if (!carregando() && !erroCarga() && termoPesquisa() && pacientesFiltrados().length === 0) {
         <div class="search-no-results">
           <i class="pi pi-search"></i>
           <span>Nenhum paciente encontrado com o termo "{{ termoPesquisa() }}"</span>
@@ -124,6 +127,9 @@
       }
     </div>
 
+    @if (carregando() || erroCarga()) {
+      <app-page-state [loading]="carregando()" [error]="erroCarga()" (retry)="carregarPacientes()" />
+    } @else {
     @if (isMobile()) {
       <!-- Lista sem paginação em mobile (paginação do PrimeNG só existe dentro de p-table) -->
       <div class="mobile-card-list">
@@ -257,6 +263,8 @@
         </ng-template>
       </p-table>
     }
+    }
+
     }
 
     <!-- Modal Criar/Editar Paciente -->

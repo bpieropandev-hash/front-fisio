@@ -6,8 +6,10 @@
         <div class="serv-mobile__resumo">{{ servicos().length }} serviço{{ servicos().length === 1 ? '' : 's' }} · {{ totalAtivosServicos() }} ativo{{ totalAtivosServicos() === 1 ? '' : 's' }}</div>
 
         @if (carregando()) {
-          <div class="serv-mobile__vazio">Carregando…</div>
-        } @else if (servicos().length === 0) {
+          <app-page-state [loading]="true" loadingLabel="Carregando serviços…" />
+        } @else if (erroCarga()) {
+            <app-page-state [error]="erroCarga()" (retry)="carregarServicos()" />
+          } @else if (servicos().length === 0) {
           <div class="serv-mobile__vazio">Nenhum serviço cadastrado.</div>
         } @else {
           <div class="serv-mobile__lista">
@@ -48,6 +50,9 @@
       />
     </div>
 
+    @if (carregando() || erroCarga()) {
+      <app-page-state [loading]="carregando()" [error]="erroCarga()" (retry)="carregarServicos()" />
+    } @else {
     @if (isMobile()) {
       <div class="mobile-card-list">
         @if (carregando()) {
@@ -55,7 +60,9 @@
             <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem"></i>
             <span>Carregando serviços...</span>
           </div>
-        } @else if (servicos().length === 0) {
+        } @else if (erroCarga()) {
+            <app-page-state [error]="erroCarga()" (retry)="carregarServicos()" />
+          } @else if (servicos().length === 0) {
           <div class="mobile-card-empty">
             <i class="pi pi-briefcase" style="font-size: 1.5rem"></i>
             <span>Nenhum serviço cadastrado</span>
@@ -173,6 +180,8 @@
         </ng-template>
       </p-table>
     }
+    }
+
     }
 
     <p-dialog
