@@ -78,7 +78,7 @@ describe('FotosPacienteComponent', () => {
     const file = new File(['imagem'], 'foto.png', { type: 'image/png' });
     fixture.componentInstance.selecionarArquivo({ target: { files: [file] } } as unknown as Event);
     const data = fixture.nativeElement.querySelector('[name="dataCaptura"]') as HTMLInputElement;
-    data.value = '2026-10-01'; data.dispatchEvent(new Event('input'));
+    data.value = '01/10/2026'; data.dispatchEvent(new Event('input'));
     const regiao = fixture.nativeElement.querySelector('[name="regiao"]') as HTMLInputElement;
     regiao.value = 'Coluna'; regiao.dispatchEvent(new Event('input'));
     fixture.componentInstance.enviar();

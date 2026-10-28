@@ -60,12 +60,12 @@
       <div class="lote-periodo">
         <div class="form-group">
           <label for="inicio-lote">Data inicial *</label>
-          <p-datepicker inputId="inicio-lote" [(ngModel)]="dataInicioLote" (ngModelChange)="aoSelecionarPacienteLote()"
+          <p-datepicker [showOnFocus]="false" inputId="inicio-lote" [(ngModel)]="dataInicioLote" (ngModelChange)="aoSelecionarPacienteLote()"
             [disabled]="salvandoLote()" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="full-width" />
         </div>
         <div class="form-group">
           <label for="fim-lote">Data final *</label>
-          <p-datepicker inputId="fim-lote" [(ngModel)]="dataFimLote" (ngModelChange)="aoSelecionarPacienteLote()"
+          <p-datepicker [showOnFocus]="false" inputId="fim-lote" [(ngModel)]="dataFimLote" (ngModelChange)="aoSelecionarPacienteLote()"
             [disabled]="salvandoLote()" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="full-width" />
         </div>
       </div>
@@ -215,7 +215,7 @@
 
           <div class="filter-group">
             <label>Data Início</label>
-            <p-datepicker
+            <p-datepicker [showOnFocus]="false"
               [(ngModel)]="filtros.dataInicio"
               dateFormat="dd/mm/yy"
               [showTime]="false"
@@ -229,7 +229,7 @@
 
           <div class="filter-group">
             <label>Data Fim</label>
-            <p-datepicker
+            <p-datepicker [showOnFocus]="false"
               [(ngModel)]="filtros.dataFim"
               dateFormat="dd/mm/yy"
               [showTime]="false"
@@ -397,14 +397,14 @@
         <div class="form-group">
           <label>Data/Hora</label>
           <div class="datetime-selector">
-            <p-datepicker
+            <p-datepicker [showOnFocus]="false"
               [(ngModel)]="dataEdit"
               dateFormat="dd/mm/yy"
               styleClass="full-width date-input"
               [appendTo]="'body'"
               [showIcon]="true"
               [showButtonBar]="true"
-              (onSelect)="atualizarDataHoraEdit()"
+              (ngModelChange)="atualizarDataHoraEdit()"
             />
             <p-select
               [(ngModel)]="horaEdit"
@@ -474,7 +474,7 @@
           </div>
           <div class="form-group">
             <label for="data-recebimento">Data do recebimento</label>
-            <p-datepicker inputId="data-recebimento" [(ngModel)]="dataPagamentoEdit" dateFormat="dd/mm/yy" [appendTo]="'body'" [showIcon]="true" />
+            <p-datepicker [showOnFocus]="false" inputId="data-recebimento" [(ngModel)]="dataPagamentoEdit" dateFormat="dd/mm/yy" [appendTo]="'body'" [showIcon]="true" />
             <small>Preencha recebedor, forma e data para confirmar o pagamento. Sem recebimento, a conclusão fica pendente.</small>
           </div>
           @if (podeEmitirRecibo(atendimentoSelecionado())) {
@@ -541,14 +541,14 @@
         <div class="form-group">
           <label>Data/Hora *</label>
           <div class="datetime-selector">
-            <p-datepicker
+            <p-datepicker [showOnFocus]="false"
               [(ngModel)]="dataNovoAgendamento"
               dateFormat="dd/mm/yy"
               styleClass="full-width date-input"
               [appendTo]="'body'"
               [showIcon]="true"
               [showButtonBar]="true"
-              (onSelect)="atualizarDataHoraNovoAgendamento()"
+              (ngModelChange)="atualizarDataHoraNovoAgendamento()"
             />
             <p-select
               [(ngModel)]="horaNovoAgendamento"
@@ -573,7 +573,7 @@
         @if (repetirAgendamento) {
           <div class="form-group">
             <label>Repetir até *</label>
-            <p-datepicker
+            <p-datepicker [showOnFocus]="false"
               [(ngModel)]="dataFimRecorrencia"
               [showTime]="false"
               dateFormat="dd/mm/yy"

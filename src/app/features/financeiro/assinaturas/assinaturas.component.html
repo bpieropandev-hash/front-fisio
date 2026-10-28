@@ -579,7 +579,7 @@
         <label for="nova-data">Data de início</label>
         <input
           id="nova-data"
-          type="date"
+          appDateInput
           pInputText
           [(ngModel)]="novaAssinatura.dataInicio"
           [disabled]="salvando()"
@@ -894,7 +894,7 @@
           <label for="trocar-data">Data de início</label>
           <input
             id="trocar-data"
-            type="date"
+            appDateInput
             pInputText
             [(ngModel)]="trocaPlano.dataInicio"
             [disabled]="salvando()"
