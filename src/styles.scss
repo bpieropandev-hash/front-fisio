@@ -992,3 +992,53 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
   .p-select-option, .p-multiselect-option { min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
   .p-select-list-container, .p-multiselect-list-container { max-height: min(240px, 40dvh); overflow-y: auto; }
 }
+
+/* Acões mobile: dimensionar tanto o host Angular quanto o botão interno. */
+@media (max-width: 768px) {
+  .header-actions,
+  .filter-actions,
+  .dialog-footer,
+  .p-dialog-footer {
+    flex-wrap: wrap;
+    gap: .75rem;
+  }
+
+  .header-actions > p-button,
+  .filter-actions > p-button,
+  .dialog-footer > p-button,
+  .p-dialog-footer > p-button {
+    display: flex;
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .header-actions .p-button,
+  .filter-actions .p-button,
+  .dialog-footer .p-button,
+  .p-dialog-footer .p-button {
+    width: 100%;
+    height: auto !important;
+    min-height: 44px !important;
+    justify-content: center;
+  }
+
+  .p-button {
+    height: auto !important;
+    min-height: 44px !important;
+    max-width: 100%;
+  }
+
+  .p-button-label {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* O mínimo anterior de 300px transbordava em formulários estreitos. */
+  .p-datepicker {
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+
+  input[appDateInput] { font-size: 16px; min-height: 44px; }
+}

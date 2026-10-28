@@ -1,3 +1,4 @@
+import { DateInputDirective } from '../../shared/directives/date-input.directive';
 import { Component,Input,Output,EventEmitter,OnInit,inject,signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +8,7 @@ import { AtendimentoResponseDTO } from '../../core/interfaces/agendamento.interf
 
 interface Sessao { id:number; inicio:string; fim:string; protecao:string|null; }
 interface Previa { operacaoId:string; origens:Sessao[]; destinos:{origemId:number|null;inicio:string;fim:string;modalidade:string;valor:number}[]; conflitos:{inicio:string;motivo:string}[]; elegiveis:number; protegidos:number; mantidos:number; cancelados:number; criados:number; adicionais:number; frequenciaAnterior:number;frequenciaNova:number;novasAvulsas:number;valorNovasAvulsas:number; }
-@Component({selector:'app-remarcacao-recorrente',standalone:true,imports:[CommonModule,FormsModule],templateUrl:'./remarcacao-recorrente.component.html',styleUrl:'./remarcacao-recorrente.component.scss'})
+@Component({selector:'app-remarcacao-recorrente',standalone:true,imports: [DateInputDirective, CommonModule,FormsModule],templateUrl:'./remarcacao-recorrente.component.html',styleUrl:'./remarcacao-recorrente.component.scss'})
 export class RemarcacaoRecorrenteComponent implements OnInit {
  @Input({required:true}) atendimento!:AtendimentoResponseDTO;
  @Input() pacienteNome=''; @Input() servicoNome='';

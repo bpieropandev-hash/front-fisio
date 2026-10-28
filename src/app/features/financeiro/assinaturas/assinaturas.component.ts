@@ -1,3 +1,4 @@
+import { DateInputDirective } from '../../../shared/directives/date-input.directive';
 import { ConfiguracaoClinicaService } from "../../../core/services/configuracao-clinica.service";
 import {
   Component,
@@ -46,7 +47,7 @@ import { BreakpointService } from "../../../core/services/breakpoint.service";
 
 @Component({
   selector: "app-assinaturas",
-  imports: [
+  imports: [DateInputDirective,
     CommonModule,
     FormsModule,
     RouterLink,

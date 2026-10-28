@@ -4,8 +4,8 @@
  @else {
  <fieldset [disabled]="enviando()"><legend>1. Período e sessões de origem</legend>
  <div class="campos">
-  <label>A partir de<input type="date" [(ngModel)]="inicio" (ngModelChange)="periodoMudou()" [attr.aria-invalid]="!!camposErro()['inicio']" aria-describedby="erro-inicio"><small id="erro-inicio" class="campo-erro">{{camposErro()['inicio']}}</small></label>
-  <label>Até a data<input type="date" [(ngModel)]="fim" (ngModelChange)="periodoMudou()" [attr.aria-invalid]="!!camposErro()['fim']" aria-describedby="erro-fim"><small id="erro-fim" class="campo-erro">{{camposErro()['fim']}}</small></label>
+  <label>A partir de<input appDateInput [(ngModel)]="inicio" (ngModelChange)="periodoMudou()" [attr.aria-invalid]="!!camposErro()['inicio']" aria-describedby="erro-inicio"><small id="erro-inicio" class="campo-erro">{{camposErro()['inicio']}}</small></label>
+  <label>Até a data<input appDateInput [(ngModel)]="fim" (ngModelChange)="periodoMudou()" [attr.aria-invalid]="!!camposErro()['fim']" aria-describedby="erro-fim"><small id="erro-fim" class="campo-erro">{{camposErro()['fim']}}</small></label>
  </div><p>Até 366 dias. Confira cada sessão: registros antigos não possuem vínculo de série.</p><button type="button" (click)="carregar()" [disabled]="carregando()">{{ carregando() ? 'Consultando sessões…' : 'Consultar sessões' }}</button>
  @if(carregando()){<div class="consulta-loading" role="status">Carregando as sessões do período…</div>}
  @else if(consultou() && !candidatos().length){<p role="status">Nenhuma sessão deste paciente e serviço no período. Ajuste as datas e consulte novamente.</p>}

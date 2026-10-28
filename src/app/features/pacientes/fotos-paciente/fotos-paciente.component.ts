@@ -1,3 +1,4 @@
+import { DateInputDirective } from '../../../shared/directives/date-input.directive';
 import { ConfiguracaoClinicaService } from '../../../core/services/configuracao-clinica.service';
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -15,7 +16,7 @@ function dataValida(control: AbstractControl) {
 
 @Component({
   selector: 'app-fotos-paciente',
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [DateInputDirective, ReactiveFormsModule, DatePipe],
   templateUrl: './fotos-paciente.component.html',
   styleUrl: './fotos-paciente.component.scss'
 })

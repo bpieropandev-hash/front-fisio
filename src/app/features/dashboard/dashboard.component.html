@@ -102,7 +102,7 @@
         <div class="filters-grid">
           <div class="filter-group">
             <label>Data Início</label>
-            <p-datepicker
+            <p-datepicker [showOnFocus]="false"
               [(ngModel)]="filtros.dataInicio"
               dateFormat="dd/mm/yy"
               [showTime]="false"
@@ -116,7 +116,7 @@
 
           <div class="filter-group">
             <label>Data Fim</label>
-            <p-datepicker
+            <p-datepicker [showOnFocus]="false"
               [(ngModel)]="filtros.dataFim"
               dateFormat="dd/mm/yy"
               [showTime]="false"
