@@ -26,6 +26,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { SearchInputComponent } from '../../shared/components/search-input/search-input.component';
 import { BreakpointService } from '../../core/services/breakpoint.service';
 import { FotosPacienteComponent } from './fotos-paciente/fotos-paciente.component';
+import { AvaliacoesPacienteComponent } from './avaliacoes-paciente/avaliacoes-paciente.component';
 import { AgendamentoService } from '../../core/services/agendamento.service';
 
 @Component({
@@ -47,7 +48,8 @@ import { AgendamentoService } from '../../core/services/agendamento.service';
     ToastModule,
     ConfirmDialogModule,
     SearchInputComponent,
-    FotosPacienteComponent
+    FotosPacienteComponent,
+    AvaliacoesPacienteComponent
 ],
     providers: [MessageService, ConfirmationService],
     templateUrl: './pacientes.component.html',
@@ -67,6 +69,8 @@ export class PacientesComponent implements OnInit {
   modalVisivel = false;
   modalFotosVisivel = false;
   pacienteFotos: PacienteResponseDTO | null = null;
+  modalAvaliacoesVisivel = false;
+  pacienteAvaliacoes: PacienteResponseDTO | null = null;
   pacienteEmEdicao: PacienteResponseDTO | null = null;
   pacienteForm: FormGroup;
 
@@ -306,6 +310,12 @@ export class PacientesComponent implements OnInit {
     this.fecharModal();
     this.pacienteFotos = paciente;
     this.modalFotosVisivel = true;
+  }
+
+  abrirAvaliacoes(paciente: PacienteResponseDTO): void {
+    this.fecharModal();
+    this.pacienteAvaliacoes = paciente;
+    this.modalAvaliacoesVisivel = true;
   }
 
   abrirModalNovoPaciente(): void {

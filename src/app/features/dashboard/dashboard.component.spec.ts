@@ -33,6 +33,22 @@ describe('Dashboard: erro distinto de lista vazia', () => {
   http.match(r=>r.method==='GET').forEach(req=>req.flush([]));
   expect(component.proximosAtendimentos()).toEqual([]);expect(component.erroProximos()).toBe('');http.verify();
  });
+ it('alternar valores persiste a preferência e inverte o estado', () => {
+  localStorage.removeItem('dashboard_valores_ocultos');
+  expect(component.valoresOcultos()).toBe(false);
+  component.alternarValores();
+  expect(component.valoresOcultos()).toBe(true);
+  expect(localStorage.getItem('dashboard_valores_ocultos')).toBe('1');
+  component.alternarValores();
+  expect(component.valoresOcultos()).toBe(false);
+  expect(localStorage.getItem('dashboard_valores_ocultos')).toBe('0');
+ });
+ it('alternar valores não quebra se o localStorage falhar', () => {
+  const original = Storage.prototype.setItem;
+  Storage.prototype.setItem = () => { throw new Error('bloqueado'); };
+  try { expect(() => component.alternarValores()).not.toThrow(); expect(component.valoresOcultos()).toBe(true); }
+  finally { Storage.prototype.setItem = original; }
+ });
  it('expõe erro do resumo sem inventar totais de zero', () => {
   component.carregarDados();http.expectOne(r=>r.method==='GET').flush({}, {status:500,statusText:'Falha'});
   expect(component.erroCarga()).toBeTruthy();expect(component.resumo()).toBeNull();expect(component.carregando()).toBe(false);http.verify();

@@ -9,7 +9,12 @@
 
         <div class="mobile-dashboard__stats">
           <div class="mobile-dashboard__stats-label">
-            {{ periodoLabel() === 'Mês atual' ? 'Este mês' : periodoLabel() }}
+            <span>{{ periodoLabel() === 'Mês atual' ? 'Este mês' : periodoLabel() }}</span>
+            <button type="button" class="valores-toggle" (click)="alternarValores()"
+              [attr.aria-pressed]="valoresOcultos()"
+              [attr.aria-label]="valoresOcultos() ? 'Mostrar valores' : 'Ocultar valores'">
+              <i class="pi" [class.pi-eye]="valoresOcultos()" [class.pi-eye-slash]="!valoresOcultos()"></i>
+            </button>
           </div>
           @if (carregando()) {
             <app-page-state [loading]="true" loadingLabel="Carregando resumo…" />
@@ -18,17 +23,17 @@
           } @else {
             <div class="mobile-dashboard__stats-row">
               <div class="mobile-dashboard__stat">
-                <div class="mobile-dashboard__stat-value">{{ resumo()?.totalAtendimentos ?? 0 }}</div>
+                <div class="mobile-dashboard__stat-value">{{ valoresOcultos() ? mascara : (resumo()?.totalAtendimentos ?? 0) }}</div>
                 <div class="mobile-dashboard__stat-label">Atendimentos</div>
               </div>
               <div class="mobile-dashboard__stat-divider"></div>
               <div class="mobile-dashboard__stat">
-                <div class="mobile-dashboard__stat-value">{{ resumo()?.atendimentosPagamentoPendente ?? 0 }}</div>
+                <div class="mobile-dashboard__stat-value">{{ valoresOcultos() ? mascara : (resumo()?.atendimentosPagamentoPendente ?? 0) }}</div>
                 <div class="mobile-dashboard__stat-label">Pendentes</div>
               </div>
               <div class="mobile-dashboard__stat-divider"></div>
               <div class="mobile-dashboard__stat mobile-dashboard__stat--wide">
-                <div class="mobile-dashboard__stat-value mobile-dashboard__stat-value--money">{{ (resumo()?.faturamentoProfissional ?? 0) | currency: 'BRL' }}</div>
+                <div class="mobile-dashboard__stat-value mobile-dashboard__stat-value--money">{{ valoresOcultos() ? mascara : ((resumo()?.faturamentoProfissional ?? 0) | currency: 'BRL') }}</div>
                 <div class="mobile-dashboard__stat-label">Faturamento</div>
               </div>
             </div>
@@ -81,12 +86,19 @@
         <h2>Dashboard</h2>
         <p class="subtitle">Visão geral e alertas do mês atual</p>
       </div>
-      <p-button
-        [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
-        [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
-        (onClick)="toggleFiltros()"
-        [outlined]="!filtrosVisiveis()"
-      />
+      <div class="dashboard-header__acoes">
+        <button type="button" class="valores-toggle" (click)="alternarValores()"
+              [attr.aria-pressed]="valoresOcultos()"
+              [attr.aria-label]="valoresOcultos() ? 'Mostrar valores' : 'Ocultar valores'">
+              <i class="pi" [class.pi-eye]="valoresOcultos()" [class.pi-eye-slash]="!valoresOcultos()"></i>
+            </button>
+        <p-button
+          [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
+          [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
+          (onClick)="toggleFiltros()"
+          [outlined]="!filtrosVisiveis()"
+        />
+      </div>
     </div>
 
     <!-- Painel de Filtros (Oculto por padrão) -->
@@ -159,7 +171,7 @@
             </div>
             <div class="card-info">
               <h3>Total de Atendimentos Concluídos</h3>
-              <p class="card-value">{{ resumo()?.totalAtendimentos || 0 }}</p>
+              <p class="card-value">{{ valoresOcultos() ? mascara : (resumo()?.totalAtendimentos || 0) }}</p>
               <small class="card-label">{{ periodoLabel() }}</small>
             </div>
           </div>
@@ -172,7 +184,7 @@
             </div>
             <div class="card-info">
               <h3>Faturamento Profissional</h3>
-              <p class="card-value">{{ (resumo()?.faturamentoProfissional || 0) | currency: 'BRL' }}</p>
+              <p class="card-value">{{ valoresOcultos() ? mascara : ((resumo()?.faturamentoProfissional || 0) | currency: 'BRL') }}</p>
               <small class="card-label">{{ periodoLabel() }}</small>
             </div>
           </div>

@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_CONFIG } from '../config/api.config';
-import { EvolucaoClinica, EvolucaoClinicaRequest, FotoClinica, FotoClinicaUpload } from '../interfaces/clinica.interface';
+import { AvaliacaoFisica, AvaliacaoFisicaUpload, EvolucaoClinica, EvolucaoClinicaRequest, FotoClinica, FotoClinicaUpload } from '../interfaces/clinica.interface';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicaService {
   private readonly http = inject(HttpClient);
   private evolucaoUrl(id: number): string { return `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.agendamentos}/${id}/evolucao-estruturada`; }
   private fotosUrl(id: number): string { return `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.pacientes}/${id}/fotos`; }
+  private avaliacoesUrl(id: number): string { return `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.pacientes}/${id}/avaliacoes`; }
 
   buscarEvolucao(id: number): Observable<EvolucaoClinica> { return this.http.get<EvolucaoClinica>(this.evolucaoUrl(id)); }
   salvarEvolucao(id: number, dto: EvolucaoClinicaRequest): Observable<EvolucaoClinica> { return this.http.put<EvolucaoClinica>(this.evolucaoUrl(id), dto); }
@@ -24,4 +25,16 @@ export class ClinicaService {
   }
   imagemFoto(id: number, fotoId: number): Observable<Blob> { return this.http.get(`${this.fotosUrl(id)}/${fotoId}/imagem`, { responseType: 'blob' }); }
   excluirFoto(id: number, fotoId: number): Observable<void> { return this.http.delete<void>(`${this.fotosUrl(id)}/${fotoId}`); }
+
+  listarAvaliacoes(id: number): Observable<AvaliacaoFisica[]> { return this.http.get<AvaliacaoFisica[]>(this.avaliacoesUrl(id)); }
+  enviarAvaliacao(id: number, dto: AvaliacaoFisicaUpload): Observable<AvaliacaoFisica> {
+    const body = new FormData();
+    body.append('arquivo', dto.arquivo);
+    body.append('dataAvaliacao', dto.dataAvaliacao);
+    body.append('titulo', dto.titulo);
+    body.append('observacao', dto.observacao);
+    return this.http.post<AvaliacaoFisica>(this.avaliacoesUrl(id), body);
+  }
+  arquivoAvaliacao(id: number, avaliacaoId: number): Observable<Blob> { return this.http.get(`${this.avaliacoesUrl(id)}/${avaliacaoId}/arquivo`, { responseType: 'blob' }); }
+  excluirAvaliacao(id: number, avaliacaoId: number): Observable<void> { return this.http.delete<void>(`${this.avaliacoesUrl(id)}/${avaliacaoId}`); }
 }

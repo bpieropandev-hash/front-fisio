@@ -7,3 +7,10 @@
   RewriteRule . /index.html [L]
 </IfModule>
 
+
+# Arquivos que o service worker/PWA precisa revalidar a cada abertura; sem isso uma versão nova não chega.
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|ngsw\.json|ngsw-worker\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

@@ -86,7 +86,9 @@
   padding: 0 20px;
 }
 
-.main-content--bottom-nav {
+// Seletor composto: os @media (max-width) de .main-content, declarados depois, têm a mesma
+// especificidade de uma classe única e anulavam este padding (conteúdo ficava atrás da nav).
+.main-content.main-content--bottom-nav {
   @include bp.safe-area-bottom(bp.$bottom-nav-height + 16px);
 }
 

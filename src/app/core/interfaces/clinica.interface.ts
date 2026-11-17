@@ -23,6 +23,23 @@ export interface FotoClinica {
   criadoEm: string;
   autor: string;
 }
+export interface AvaliacaoFisica {
+  id: number;
+  pacienteId: number;
+  dataAvaliacao: string;
+  titulo: string;
+  observacao: string;
+  criadoEm: string;
+  autor: string;
+  nomeArquivo: string;
+  tipoConteudo: 'image/jpeg' | 'image/png' | 'application/pdf';
+}
+export interface AvaliacaoFisicaUpload {
+  arquivo: File;
+  dataAvaliacao: string;
+  titulo: string;
+  observacao: string;
+}
 export interface FotoClinicaUpload {
   imagem: File;
   dataCaptura: string;

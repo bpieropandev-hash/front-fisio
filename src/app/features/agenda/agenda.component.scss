@@ -534,6 +534,14 @@
   flex-direction: column;
   gap: 14px;
   position: relative;
+  /* O FAB fixo ocupa 58px a partir de (nav + 20px) do rodapé. Em tablet o <main> só tem 16px de
+     padding; reserva o resto para o último card não ficar sob o botão. */
+  padding-bottom: calc(#{bp.$bottom-nav-height} + 20px + 58px);
+
+  /* Em celular (<=640px) o <main> já reserva nav + 16px: falta só o espaço do FAB. */
+  @media (max-width: 640px) {
+    padding-bottom: calc(20px + 58px);
+  }
 }
 
 .agenda-mobile__semana-nav {

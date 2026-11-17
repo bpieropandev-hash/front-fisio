@@ -18,6 +18,7 @@ import { Router } from '@angular/router';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
 import { MaisSheetComponent } from './shared/components/mais-sheet/mais-sheet.component';
 import { AppSidebarComponent } from './shared/components/app-sidebar/app-sidebar.component';
+import { AtualizacaoPwaComponent } from './shared/components/atualizacao-pwa/atualizacao-pwa.component';
 
 /** Título exibido no header mobile (spec 10) por prefixo de rota */
 const ROUTE_TITLES: { prefix: string; title: string }[] = [
@@ -35,7 +36,7 @@ const ROTAS_SECUNDARIAS_MOBILE = ['/servicos', '/relatorios', '/perfil'];
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, ButtonModule, MenuModule, BottomNavComponent, MaisSheetComponent, AppSidebarComponent],
+    imports: [RouterOutlet, ButtonModule, MenuModule, BottomNavComponent, MaisSheetComponent, AppSidebarComponent, AtualizacaoPwaComponent],
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss']
 })

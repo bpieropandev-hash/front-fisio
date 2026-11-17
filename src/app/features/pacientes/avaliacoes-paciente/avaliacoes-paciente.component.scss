@@ -1,0 +1,32 @@
+:host { display: block; max-width: 900px; margin-inline: auto; color: var(--text-primary); }
+h3 { margin: 1rem 0 .75rem; font-family: var(--font-display); }
+.intro { color: var(--text-secondary); }
+.upload, .confirmacao { padding: 1rem; margin: 1rem 0; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-primary); }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+label { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .75rem; }
+input, textarea { box-sizing: border-box; width: 100%; padding: .65rem; color: inherit; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; font: inherit; }
+textarea { resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+.campos { display: grid; grid-template-columns: 1fr 2fr; gap: .75rem; }
+button { min-height: 44px; cursor: pointer; padding: .65rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font: inherit; color: inherit; background: var(--bg-primary); }
+button:disabled { opacity: .55; cursor: default; }
+button.primario { display: block; margin-top: .75rem; background: var(--accent-color); border-color: var(--accent-color); color: var(--on-accent); }
+.perigo { color: var(--status-err-fg); }
+.erro { color: var(--status-err-fg); background: var(--status-err-bg); padding: .75rem; border-radius: 8px; }
+.sucesso { color: var(--text-secondary); }
+small { display: block; color: var(--text-secondary); overflow-wrap: anywhere; }
+.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .75rem; align-items: center; padding: .75rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-primary); }
+.tipo { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; background: var(--bg-tertiary); color: var(--text-secondary); font-size: 1.25rem; }
+.tipo--pdf { color: var(--accent-ink); }
+.detalhes { min-width: 0; }
+.detalhes p { margin: .25rem 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.acoes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.vazio { padding: 1rem; text-align: center; color: var(--text-secondary); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 600px) {
+  .campos { grid-template-columns: 1fr; gap: 0; }
+  .item { grid-template-columns: auto minmax(0, 1fr); }
+  .item .acoes { grid-column: 1 / -1; }
+  .item .acoes button { flex: 1; }
+}

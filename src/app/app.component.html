@@ -36,6 +36,8 @@
   </div>
 </div>
 
+<app-atualizacao-pwa />
+
 @if (usaBottomNav()) {
   <app-bottom-nav (abrirMais)="maisSheetAberto.set(true)" />
   <app-mais-sheet [aberto]="maisSheetAberto()" (fechar)="maisSheetAberto.set(false)" />

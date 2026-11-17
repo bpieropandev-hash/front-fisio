@@ -1,0 +1,53 @@
+<section class="avaliacoes" aria-label="Avaliações físicas do paciente" [attr.aria-busy]="carregando() || enviando() || excluindo()">
+  <p class="intro">Avaliações físicas de {{ pacienteNome }}: anexe a foto da ficha ou o PDF da avaliação.</p>
+  @if (erro()) { <p class="erro" role="alert">{{ erro() }}</p> }
+  @if (sucesso()) { <p class="sucesso" role="status">{{ sucesso() }}</p> }
+  @if (carregando()) { <p role="status">Carregando avaliações…</p> }
+  @if (!carregado() && !carregando()) { <button type="button" (click)="carregar()">Tentar novamente</button> }
+  @if (carregado()) {
+    <form [formGroup]="form" (ngSubmit)="enviar()" class="upload">
+      <h3>Nova avaliação</h3>
+      <fieldset [disabled]="enviando() || excluindo()">
+        <legend class="sr-only">Dados da nova avaliação</legend>
+        <label>Arquivo (imagem JPEG/PNG ou PDF, até {{ limiteMiB }} MiB)
+          <input #arquivoInput type="file" accept="image/jpeg,image/png,application/pdf" (change)="selecionarArquivo($event)" aria-describedby="avaliacao-privacidade" />
+        </label>
+        @if (nomeArquivo()) { <small class="arquivo-escolhido">{{ nomeArquivo() }}</small> }
+        <div class="campos">
+          <label>Data da avaliação<input appDateInput name="dataAvaliacao" formControlName="dataAvaliacao" required /></label>
+          <label>Título<input type="text" name="titulo" formControlName="titulo" maxlength="120" required placeholder="Ex.: Avaliação inicial" /></label>
+        </div>
+        <label>Observação (opcional)<textarea formControlName="observacao" rows="2" maxlength="2000"></textarea></label>
+        <small id="avaliacao-privacidade">Documentos privados do prontuário. Utilize conforme a autorização clínica aplicável.</small>
+        <button type="submit" class="primario" [disabled]="enviando()">{{ enviando() ? 'Enviando…' : 'Enviar avaliação' }}</button>
+      </fieldset>
+    </form>
+    @if (exclusao(); as item) {
+      <div role="alertdialog" aria-label="Confirmar exclusão da avaliação" aria-describedby="exclusao-avaliacao-aviso" class="confirmacao">
+        <p id="exclusao-avaliacao-aviso">Excluir a avaliação "{{ item.titulo }}" de {{ item.dataAvaliacao | date:'dd/MM/yyyy' }} do prontuário? Esta ação remove o arquivo.</p>
+        <div class="acoes">
+          <button type="button" data-confirmar-exclusao class="perigo" [disabled]="excluindo()" (click)="confirmarExclusao()">{{ excluindo() ? 'Excluindo…' : 'Sim, excluir avaliação' }}</button>
+          <button type="button" [disabled]="excluindo()" (click)="exclusao.set(null)">Cancelar</button>
+        </div>
+      </div>
+    }
+    <h3>Histórico · {{ avaliacoes().length }} avaliação(ões)</h3>
+    <ul class="lista">
+      @for (item of avaliacoes(); track item.id) {
+        <li class="item">
+          <span class="tipo" [class.tipo--pdf]="ehPdf(item)" aria-hidden="true"><i class="pi" [class.pi-file-pdf]="ehPdf(item)" [class.pi-image]="!ehPdf(item)"></i></span>
+          <div class="detalhes">
+            <strong>{{ item.titulo }}</strong>
+            <small>{{ item.dataAvaliacao | date:'dd/MM/yyyy' }} · {{ ehPdf(item) ? 'PDF' : 'Imagem' }} · {{ item.nomeArquivo }}</small>
+            @if (item.observacao) { <p>{{ item.observacao }}</p> }
+            <small>{{ item.autor }} · inclusão em {{ item.criadoEm | date:'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+          <div class="acoes">
+            <button type="button" [disabled]="abrindoId() !== null" [attr.aria-label]="'Abrir avaliação ' + item.titulo" (click)="abrir(item)">{{ abrindoId() === item.id ? 'Abrindo…' : 'Abrir' }}</button>
+            <button type="button" class="perigo" [attr.aria-label]="'Excluir avaliação ' + item.titulo" [disabled]="enviando() || excluindo()" (click)="pedirExclusao(item)">Excluir</button>
+          </div>
+        </li>
+      } @empty { <li class="vazio">Nenhuma avaliação física cadastrada.</li> }
+    </ul>
+  }
+</section>

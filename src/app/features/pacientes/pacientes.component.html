@@ -62,6 +62,7 @@
                       <div class="pac-mobile__item-proximo">{{ rotuloProximoAtendimento(paciente.id) }}</div>
                     </div>
                     <p-button icon="pi pi-images" [text]="true" [ariaLabel]="'Fotos clínicas de ' + paciente.nome" (onClick)="$event.stopPropagation(); abrirFotos(paciente)" />
+                    <p-button icon="pi pi-clipboard" [text]="true" [ariaLabel]="'Avaliações físicas de ' + paciente.nome" (onClick)="$event.stopPropagation(); abrirAvaliacoes(paciente)" />
                     <i class="pi pi-chevron-right pac-mobile__chevron"></i>
                   </div>
                 }
@@ -162,6 +163,7 @@
               </div>
               <div class="mobile-card-actions">
                 <p-button icon="pi pi-images" label="Fotos clínicas" (onClick)="abrirFotos(paciente)" severity="secondary" [outlined]="true" />
+                <p-button icon="pi pi-clipboard" label="Avaliações" [ariaLabel]="'Avaliações físicas de ' + paciente.nome" (onClick)="abrirAvaliacoes(paciente)" severity="secondary" [outlined]="true" />
                 <p-button
                   icon="pi pi-file-pdf"
                   label="Prontuário PDF"
@@ -228,6 +230,7 @@
             <td style="display: flex; justify-content: center;">
               <div class="action-buttons">
                 <p-button icon="pi pi-images" label="Fotos" [ariaLabel]="'Fotos clínicas de ' + paciente.nome" (onClick)="abrirFotos(paciente)" styleClass="p-button-sm" severity="secondary" />
+                <p-button icon="pi pi-clipboard" label="Avaliações" [ariaLabel]="'Avaliações físicas de ' + paciente.nome" (onClick)="abrirAvaliacoes(paciente)" styleClass="p-button-sm" severity="secondary" />
                 <p-button
                   icon="pi pi-file-pdf"
                   label="Prontuário PDF"
@@ -451,6 +454,7 @@
         @if (isTablet() && pacienteEmEdicao) {
           <div class="pac-mobile__modal-acoes">
             <p-button icon="pi pi-images" label="Fotos clínicas" (onClick)="abrirFotos(pacienteEmEdicao)" severity="secondary" [outlined]="true" />
+            <p-button icon="pi pi-clipboard" label="Avaliações" (onClick)="abrirAvaliacoes(pacienteEmEdicao)" severity="secondary" [outlined]="true" />
             <p-button
               icon="pi pi-file-pdf"
               label="Prontuário PDF"
@@ -508,5 +512,20 @@
     >
       @if (modalFotosVisivel && pacienteFotos) {
         <app-fotos-paciente [pacienteId]="pacienteFotos.id" [pacienteNome]="pacienteFotos.nome" />
+      }
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="modalAvaliacoesVisivel"
+      [header]="'Avaliações físicas · ' + (pacienteAvaliacoes?.nome || '')"
+      [modal]="true"
+      [style]="{ width: '95vw', maxWidth: '900px', maxHeight: '95vh' }"
+      [draggable]="false"
+      [resizable]="false"
+      styleClass="dialog-fullscreen-mobile"
+      (onHide)="pacienteAvaliacoes = null"
+    >
+      @if (modalAvaliacoesVisivel && pacienteAvaliacoes) {
+        <app-avaliacoes-paciente [pacienteId]="pacienteAvaliacoes.id" [pacienteNome]="pacienteAvaliacoes.nome" />
       }
     </p-dialog>

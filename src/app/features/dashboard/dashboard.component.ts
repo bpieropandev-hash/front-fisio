@@ -60,6 +60,21 @@ export class DashboardComponent implements OnInit {
   filtrosVisiveis = signal(false);
   periodoLabel = signal('Mês atual');
 
+  private static readonly CHAVE_VALORES_OCULTOS = 'dashboard_valores_ocultos';
+  /** Estilo app bancário: mascara valores dos cards; preferência persiste por navegador. */
+  valoresOcultos = signal(DashboardComponent.lerPreferenciaOcultar());
+  readonly mascara = '••••';
+
+  private static lerPreferenciaOcultar(): boolean {
+    try { return localStorage.getItem(DashboardComponent.CHAVE_VALORES_OCULTOS) === '1'; } catch { return false; }
+  }
+
+  alternarValores(): void {
+    const proximo = !this.valoresOcultos();
+    this.valoresOcultos.set(proximo);
+    try { localStorage.setItem(DashboardComponent.CHAVE_VALORES_OCULTOS, proximo ? '1' : '0'); } catch { /* storage indisponível: vale só na sessão */ }
+  }
+
   // --- Shell mobile (spec 10) ---
   nomeUsuario = signal<string | null>(null);
   carregandoProximos = signal(true);
