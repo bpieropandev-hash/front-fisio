@@ -12,24 +12,25 @@
   --subscription-danger-soft: rgba(229, 72, 77, 0.1);
   --subscription-backdrop: rgba(9, 15, 20, 0.45);
   --primary-gradient: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-color-light) 100%);
-  --surface-soft: #f8fbff;
-  --surface-border: #e2e8f0; /* adicionado para consistência */
+  --surface-soft: #f3f6f6;
+  --surface-border: #d8e2e0;
   --surface-hover: color-mix(in srgb, var(--accent-color) 6%, transparent); /* adicionado para hover consistente */
 
   /* Cores do modo claro */
   --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
-  --border-color: #e2e8f0;
+  --bg-secondary: #f3f6f6;
+  --bg-tertiary: #e9efee;
+  --text-primary: #142120;
+  --text-secondary: #51625f;
+  --text-tertiary: #5f716e;
+  --border-color: #d8e2e0;
   --shadow: rgba(0, 0, 0, 0.1);
 
   /* Tema personalizado por usuário (spec 09) — defaults, sobrescritos em runtime por AccentThemeService */
-  --accent-color: #4cc9f0;
-  --accent-color-hover: #3ab8d9;
-  --accent-color-light: #90f7ec;
+  --accent-color: #0f766e;
+  --accent-color-hover: #0c5f58;
+  --accent-color-light: #5eead4;
+  --on-accent: #ffffff;
   --font-display: 'Sora', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-body: 'Work Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
@@ -48,17 +49,40 @@
   --status-err-fg: #b22128;
   --status-neutral-bg: var(--bg-tertiary);
   --status-neutral-fg: var(--text-secondary);
+
+  /* Design system (spec 12): espaçamento, raios, foco e shell. Cores do shell derivam do acento da usuária. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --focus-ring: 2px solid var(--accent-ink);
+  --shell-largura: 232px;
+  --shell-bg: color-mix(in srgb, var(--accent-color) 18%, #0a0f0f);
+  --shell-sel: color-mix(in srgb, var(--accent-color) 32%, #0a0f0f);
+  --shell-linha: rgba(255, 255, 255, 0.12);
+  --shell-ink: #d6e6e3;
+  --shell-ink-forte: #ffffff;
+  --shell-ink-suave: #9fb8b4;
+  --shell-foco: #ffffff;
 }
 
 /* Modo escuro */
 html.dark-mode {
-  --bg-primary: #1e293b;
-  --bg-secondary: #0f172a;
-  --bg-tertiary: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --border-color: #334155;
+  --bg-primary: #111c1b;
+  --bg-secondary: #0a1211;
+  --bg-tertiary: #162524;
+  --text-primary: #e6f1ef;
+  --text-secondary: #9db3af;
+  --text-tertiary: #86a09b;
+  --border-color: #223533;
+  --accent-ink: var(--accent-color-light);
   --shadow: rgba(0, 0, 0, 0.3);
 
   --status-ok-bg: rgba(31, 169, 113, .22);
@@ -103,7 +127,8 @@ html.dark-mode {
 
 body {
   font-family: var(--font-body);
-  background: var(--primary-gradient);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   min-height: 100vh;
 }
 
@@ -816,118 +841,81 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
   }
 }
 
-/* Padronização de tamanho dos botões */
+/* Botões (spec 12): um vocabulário só, todo em tokens — primário preenchido, secundário (outlined) e texto.
+   Sem cores literais e sem [ng-reflect-*] (esses atributos não existem no build de produção). */
 .p-button {
   height: 2.5rem !important;
   min-height: 2.5rem !important;
   padding: 0.625rem 1.25rem !important;
   font-size: 0.875rem !important;
   line-height: 1.25rem !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
 
-/* Melhorar visibilidade dos botões outlined (brancos com bordas) */
-.p-button.p-button-outlined,
-.p-button[ng-reflect-outlined="true"] {
-  background-color: #ffffff !important;
-  border: 2px solid var(--accent-color) !important;
-  color: var(--accent-color) !important;
+.p-button:focus-visible {
+  outline: var(--focus-ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Secundário: contorno neutro, texto na cor de tinta do acento; nunca fundo branco fixo */
+.p-button.p-button-outlined {
+  background-color: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--accent-ink) !important;
   font-weight: 500 !important;
-  transition: all 0.2s ease !important;
 }
 
-.p-button.p-button-outlined:hover,
-.p-button[ng-reflect-outlined="true"]:hover {
-  background-color: var(--accent-color) !important;
-  border-color: var(--accent-color) !important;
-  color: #ffffff !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-color) 30%, transparent) !important;
+.p-button.p-button-outlined:hover {
+  background-color: var(--accent-soft) !important;
+  border-color: var(--accent-ink) !important;
+  color: var(--accent-ink) !important;
 }
 
-.p-button.p-button-outlined:active,
-.p-button[ng-reflect-outlined="true"]:active {
-  background-color: var(--accent-color-hover) !important;
-  border-color: var(--accent-color-hover) !important;
-  transform: translateY(0) !important;
+.p-button.p-button-outlined.p-button-danger {
+  border-color: var(--status-err-fg) !important;
+  color: var(--status-err-fg) !important;
 }
 
-.p-button.p-button-outlined:focus,
-.p-button[ng-reflect-outlined="true"]:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent) !important;
+.p-button.p-button-outlined.p-button-danger:hover {
+  background-color: var(--status-err-bg) !important;
 }
 
-/* Botões outlined com severity danger (vermelho) */
-.p-button.p-button-outlined.p-button-danger,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="danger"] {
-  border-color: #ef4444 !important;
-  color: #ef4444 !important;
+.p-button.p-button-outlined.p-button-secondary {
+  color: var(--text-primary) !important;
 }
 
-.p-button.p-button-outlined.p-button-danger:hover,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="danger"]:hover {
-  background-color: #ef4444 !important;
-  border-color: #ef4444 !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+.p-button.p-button-outlined.p-button-secondary:hover {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--text-secondary) !important;
 }
 
-/* Botões outlined com severity secondary (cinza) */
-.p-button.p-button-outlined.p-button-secondary,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="secondary"] {
-  border-color: #64748b !important;
-  color: #64748b !important;
-}
-
-.p-button.p-button-outlined.p-button-secondary:hover,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="secondary"]:hover {
-  background-color: #64748b !important;
-  border-color: #64748b !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3) !important;
-}
-
-/* Melhorar visibilidade dos botões text */
+/* Texto */
 .p-button.p-button-text {
-  color: var(--accent-color) !important;
+  color: var(--accent-ink) !important;
   background-color: transparent !important;
   border: none !important;
   font-weight: 500 !important;
-  transition: all 0.2s ease !important;
 }
 
 .p-button.p-button-text:hover {
-  background-color: color-mix(in srgb, var(--accent-color) 10%, transparent) !important;
-  color: var(--accent-color-hover) !important;
+  background-color: var(--accent-soft) !important;
 }
 
-.p-button.p-button-text:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent) !important;
+.p-button.p-button-text.p-button-danger {
+  color: var(--status-err-fg) !important;
 }
 
-/* Botões text com severity danger */
-.p-button.p-button-text.p-button-danger,
-.p-button.p-button-text[ng-reflect-severity="danger"] {
-  color: #ef4444 !important;
+.p-button.p-button-text.p-button-danger:hover {
+  background-color: var(--status-err-bg) !important;
 }
 
-.p-button.p-button-text.p-button-danger:hover,
-.p-button.p-button-text[ng-reflect-severity="danger"]:hover {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  color: #dc2626 !important;
+.p-button.p-button-text.p-button-secondary {
+  color: var(--text-secondary) !important;
 }
 
-/* Botões text com severity secondary */
-.p-button.p-button-text.p-button-secondary,
-.p-button.p-button-text[ng-reflect-severity="secondary"] {
-  color: #64748b !important;
-}
-
-.p-button.p-button-text.p-button-secondary:hover,
-.p-button.p-button-text[ng-reflect-severity="secondary"]:hover {
-  background-color: rgba(100, 116, 139, 0.1) !important;
-  color: #475569 !important;
+.p-button.p-button-text.p-button-secondary:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
 }
 
 .p-button.p-button-sm,

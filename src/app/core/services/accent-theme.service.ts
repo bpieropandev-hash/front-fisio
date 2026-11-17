@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { updatePrimaryPalette } from '@primeuix/themes';
 import { FonteTema, TamanhoFonte } from '../interfaces/usuario.interface';
 
-const DEFAULT_ACCENT = '#4cc9f0';
+const DEFAULT_ACCENT = '#0f766e';
 const DEFAULT_FONTE: FonteTema = 'moderno';
 const DEFAULT_TAMANHO: TamanhoFonte = 'medio';
 const ACCENT_STORAGE_KEY = 'accent-color';

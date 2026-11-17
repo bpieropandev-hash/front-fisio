@@ -1,0 +1,48 @@
+<aside class="sidebar" [class.sidebar--compacto]="compacto()">
+  <a class="sidebar__marca" routerLink="/dashboard" aria-label="Physio Manager — início">
+    <span class="sidebar__logo" aria-hidden="true">P</span>
+    <span class="sidebar__nome">Physio Manager</span>
+  </a>
+
+  <nav class="sidebar__nav" aria-label="Principal">
+    @for (item of principais; track item.rota) {
+      <a class="sidebar__item" [routerLink]="item.rota" routerLinkActive="sidebar__item--ativo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? item.rotulo : null">
+        <i class="pi" [class]="item.icone" aria-hidden="true"></i>
+        <span class="sidebar__rotulo">{{ item.rotulo }}</span>
+      </a>
+    }
+
+    <div class="sidebar__grupo" role="presentation">Financeiro</div>
+    @for (item of financeiro; track item.rota) {
+      <a class="sidebar__item" [routerLink]="item.rota" routerLinkActive="sidebar__item--ativo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? item.rotulo : null">
+        <i class="pi" [class]="item.icone" aria-hidden="true"></i>
+        <span class="sidebar__rotulo">{{ item.rotulo }}</span>
+      </a>
+    }
+
+    <div class="sidebar__grupo sidebar__grupo--vazio" role="presentation"></div>
+    <a class="sidebar__item" [routerLink]="relatorios.rota" routerLinkActive="sidebar__item--ativo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? relatorios.rotulo : null">
+      <i class="pi" [class]="relatorios.icone" aria-hidden="true"></i>
+      <span class="sidebar__rotulo">{{ relatorios.rotulo }}</span>
+    </a>
+  </nav>
+
+  <div class="sidebar__rodape">
+    <button type="button" class="sidebar__item" (click)="alternarTema()" [attr.aria-label]="escuro() ? 'Usar tema claro' : 'Usar tema escuro'" [attr.title]="compacto() ? 'Alternar tema' : null">
+      <i class="pi" [class]="escuro() ? 'pi-sun' : 'pi-moon'" aria-hidden="true"></i>
+      <span class="sidebar__rotulo">{{ escuro() ? 'Tema claro' : 'Tema escuro' }}</span>
+    </button>
+    <a class="sidebar__item sidebar__perfil" routerLink="/perfil" routerLinkActive="sidebar__item--ativo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? 'Perfil e configurações' : null">
+      @if (usuario()?.fotoBase64) {
+        <img class="sidebar__avatar" [src]="usuario()?.fotoBase64" alt="" />
+      } @else {
+        <span class="sidebar__avatar sidebar__avatar--inicial" aria-hidden="true">{{ inicial() }}</span>
+      }
+      <span class="sidebar__rotulo">{{ nome() }}</span>
+    </a>
+    <button type="button" class="sidebar__item" (click)="sair()" [attr.title]="compacto() ? 'Sair' : null">
+      <i class="pi pi-sign-out" aria-hidden="true"></i>
+      <span class="sidebar__rotulo">Sair</span>
+    </button>
+  </div>
+</aside>

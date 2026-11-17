@@ -1,53 +1,42 @@
 @if(authService.isAuthenticated() && configuracoes.indisponivel()) {<div role="alert" style="padding:1rem">Não foi possível carregar as configurações da clínica. <button type="button" (click)="configuracoes.carregar()">Tentar novamente</button></div>}
-@if (authService.isAuthenticated() && !isMobileShell()) {
-  <div class="top-shell">
-    <p-menubar [model]="menuItems">
-      <ng-template pTemplate="end">
-        <div class="avatar-trigger" (click)="avatarMenu.toggle($event)">
-          @if (usuarioAtual()?.fotoBase64) {
-            <img [src]="usuarioAtual()?.fotoBase64" alt="Foto de perfil" class="avatar-foto" />
-          } @else {
-            <div class="avatar-placeholder">
-              <i class="pi pi-user"></i>
-            </div>
-          }
-        </div>
+<div class="layout" [class.layout--sidebar]="usaSidebar()">
+  @if (usaSidebar()) {
+    <app-sidebar [compacto]="breakpointService.isRail()" />
+  }
+
+  <div class="layout__conteudo">
+    @if (mostrarHeaderMobile()) {
+      <header class="mobile-header">
+        @if (isRotaSecundariaMobile()) {
+          <div class="mobile-header__row mobile-header__row--subtela">
+            <button type="button" class="mobile-header__voltar" (click)="voltar()" aria-label="Voltar">
+              <i class="pi pi-chevron-left"></i>
+            </button>
+            <div class="mobile-header__title mobile-header__title--subtela">{{ currentRouteTitle() }}</div>
+          </div>
+        } @else {
+          <div class="mobile-header__row">
+            <div class="mobile-header__title">{{ currentRouteTitle() }}</div>
+            <button type="button" class="mobile-header__avatar" (click)="avatarMenu.toggle($event)" aria-label="Menu do usuário">
+              @if (usuarioAtual()?.fotoBase64) {
+                <img [src]="usuarioAtual()?.fotoBase64" alt="" class="avatar-foto" />
+              } @else {
+                <div class="avatar-placeholder">{{ (usuarioAtual()?.nome || '?').charAt(0).toUpperCase() }}</div>
+              }
+            </button>
+          </div>
+        }
         <p-menu #avatarMenu [model]="avatarMenuItems" [popup]="true" [appendTo]="'body'" />
-      </ng-template>
-    </p-menubar>
-  </div>
-}
-
-@if (isMobileShell()) {
-  <header class="mobile-header">
-    @if (isRotaSecundariaMobile()) {
-      <div class="mobile-header__row mobile-header__row--subtela">
-        <button type="button" class="mobile-header__voltar" (click)="voltar()" aria-label="Voltar">
-          <i class="pi pi-chevron-left"></i>
-        </button>
-        <div class="mobile-header__title mobile-header__title--subtela">{{ currentRouteTitle() }}</div>
-      </div>
-    } @else {
-      <div class="mobile-header__row">
-        <div class="mobile-header__title">{{ currentRouteTitle() }}</div>
-        <div class="mobile-header__avatar" (click)="avatarMenu.toggle($event)">
-          @if (usuarioAtual()?.fotoBase64) {
-            <img [src]="usuarioAtual()?.fotoBase64" alt="Foto de perfil" class="avatar-foto" />
-          } @else {
-            <div class="avatar-placeholder">{{ (usuarioAtual()?.nome || '?').charAt(0).toUpperCase() }}</div>
-          }
-        </div>
-      </div>
+      </header>
     }
-    <p-menu #avatarMenu [model]="avatarMenuItems" [popup]="true" [appendTo]="'body'" />
-  </header>
-}
 
-<main class="main-content" [class.main-content--mobile-shell]="isMobileShell()">
-  <router-outlet />
-</main>
+    <main class="main-content" [class.main-content--mobile-shell]="mostrarHeaderMobile()" [class.main-content--bottom-nav]="usaBottomNav()">
+      <router-outlet />
+    </main>
+  </div>
+</div>
 
-@if (isMobileShell()) {
+@if (usaBottomNav()) {
   <app-bottom-nav (abrirMais)="maisSheetAberto.set(true)" />
   <app-mais-sheet [aberto]="maisSheetAberto()" (fechar)="maisSheetAberto.set(false)" />
 }

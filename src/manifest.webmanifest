@@ -2,12 +2,11 @@
   "name": "Physio Manager",
   "short_name": "Physio Manager",
   "description": "Gestão de clínica de fisioterapia — agenda, pacientes, financeiro",
-  "theme_color": "#4cc9f0",
+  "theme_color": "#0f766e",
   "background_color": "#0e1116",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "assets/icons/icon-72.png",

@@ -5,7 +5,6 @@ import { filter, map } from 'rxjs';
 
 import { RouterOutlet, NavigationEnd } from '@angular/router';
 import { Location } from '@angular/common';
-import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
@@ -18,6 +17,7 @@ import { UsuarioMeResponseDTO } from './core/interfaces/usuario.interface';
 import { Router } from '@angular/router';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
 import { MaisSheetComponent } from './shared/components/mais-sheet/mais-sheet.component';
+import { AppSidebarComponent } from './shared/components/app-sidebar/app-sidebar.component';
 
 /** Título exibido no header mobile (spec 10) por prefixo de rota */
 const ROUTE_TITLES: { prefix: string; title: string }[] = [
@@ -35,7 +35,7 @@ const ROTAS_SECUNDARIAS_MOBILE = ['/servicos', '/relatorios', '/perfil'];
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, MenubarModule, ButtonModule, MenuModule, BottomNavComponent, MaisSheetComponent],
+    imports: [RouterOutlet, ButtonModule, MenuModule, BottomNavComponent, MaisSheetComponent, AppSidebarComponent],
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss']
 })
@@ -45,7 +45,10 @@ export class AppComponent {
   readonly usuarioAtual: Signal<UsuarioMeResponseDTO | null>;
   maisSheetAberto = signal(false);
 
-  isMobileShell = computed(() => this.breakpointService.isTablet() && this.authService.isAuthenticated());
+  /** Shell (spec 12): ≤640 bottom-nav; ≤768 também ganha o cabeçalho com título; >640 sidebar (rail até 1100). */
+  usaBottomNav = computed(() => this.breakpointService.isPhone() && this.authService.isAuthenticated());
+  mostrarHeaderMobile = computed(() => this.breakpointService.isTablet() && this.authService.isAuthenticated());
+  usaSidebar = computed(() => !this.breakpointService.isPhone() && this.authService.isAuthenticated());
 
   /** Atribuído no constructor (não no field initializer): parameter properties como
    * `this.router` só ficam disponíveis depois que o construtor começa a rodar. */
@@ -83,50 +86,6 @@ export class AppComponent {
       command: () => this.logout()
     }
   ];
-  menuItems = [
-    {
-      label: 'Dashboard',
-      icon: 'pi pi-home',
-      routerLink: '/dashboard'
-    },
-    {
-      label: 'Agenda',
-      icon: 'pi pi-calendar',
-      routerLink: '/agenda'
-    },
-    {
-      label: 'Pacientes',
-      icon: 'pi pi-users',
-      routerLink: '/pacientes'
-    },
-    {
-      label: 'Serviços',
-      icon: 'pi pi-briefcase',
-      routerLink: '/servicos'
-    },
-    {
-      label: 'Financeiro',
-      icon: 'pi pi-dollar',
-      items: [
-        {
-          label: 'Assinaturas',
-          icon: 'pi pi-id-card',
-          routerLink: '/financeiro/assinaturas'
-        },
-        {
-          label: 'Cobranças',
-          icon: 'pi pi-money-bill',
-          routerLink: '/financeiro/cobrancas'
-        }
-      ]
-    },
-    {
-      label: 'Relatórios',
-      icon: 'pi pi-file-pdf',
-      routerLink: '/relatorios'
-    }
-  ];
-
   constructor(
     public authService: AuthService,
     public themeService: ThemeService,

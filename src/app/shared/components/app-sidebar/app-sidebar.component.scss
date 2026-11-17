@@ -1,0 +1,177 @@
+// Sidebar/rail (spec 12, direção B). Cores vêm dos tokens --shell-* (derivados do acento da usuária).
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100dvh;
+}
+
+.sidebar {
+  height: 100%;
+  width: var(--shell-largura);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-3);
+  background: var(--shell-bg);
+  color: var(--shell-ink);
+  overflow-y: auto;
+}
+
+.sidebar__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-4);
+  color: var(--shell-ink-forte);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sidebar__logo {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  background: var(--accent-color);
+  color: var(--on-accent);
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.sidebar__grupo {
+  margin: var(--space-4) var(--space-3) var(--space-1);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--shell-ink-suave);
+}
+
+.sidebar__grupo--vazio {
+  margin: var(--space-2) 0 0;
+  border-top: 1px solid var(--shell-linha);
+}
+
+.sidebar__rodape {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--shell-linha);
+}
+
+.sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  .pi {
+    flex: none;
+    width: 20px;
+    font-size: 1.05rem;
+    text-align: center;
+  }
+
+  &:hover {
+    background: var(--shell-sel);
+    color: var(--shell-ink-forte);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--shell-foco);
+    outline-offset: 2px;
+  }
+}
+
+.sidebar__item--ativo {
+  background: var(--shell-sel);
+  color: var(--shell-ink-forte);
+  font-weight: 600;
+}
+
+.sidebar__rotulo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar__avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.sidebar__avatar--inicial {
+  display: grid;
+  place-items: center;
+  background: var(--shell-sel);
+  color: var(--shell-ink-forte);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+// Rail: só ícones, itens centralizados
+.sidebar--compacto {
+  padding: var(--space-3) var(--space-2);
+  align-items: center;
+
+  .sidebar__nome,
+  .sidebar__rotulo,
+  .sidebar__grupo:not(.sidebar__grupo--vazio) {
+    display: none;
+  }
+
+  .sidebar__marca {
+    padding: 0;
+    justify-content: center;
+  }
+
+  .sidebar__nav,
+  .sidebar__rodape {
+    align-items: center;
+    width: 100%;
+  }
+
+  .sidebar__item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebar__grupo--vazio {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar__item {
+    transition: none;
+  }
+}

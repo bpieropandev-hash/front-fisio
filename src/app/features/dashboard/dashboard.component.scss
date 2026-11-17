@@ -334,19 +334,22 @@
       align-items: center;
       justify-content: center;
       font-size: 1.75rem;
-      color: white;
     }
 
+    // Ícones tonais (spec 12): fundo suave + tinta do mesmo matiz; sem gradientes
     .card-icon.total {
-      background: linear-gradient(135deg, #4cc9f0 0%, #90f7ec 100%);
+      background: var(--accent-soft);
+      color: var(--accent-ink);
     }
 
     .card-icon.revenue {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--status-ok-bg);
+      color: var(--status-ok-fg);
     }
 
     .card-icon.alerts {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      background: var(--status-warn-bg);
+      color: var(--status-warn-fg);
     }
 
     .card-info {

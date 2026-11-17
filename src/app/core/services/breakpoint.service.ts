@@ -6,6 +6,9 @@ import { map } from 'rxjs';
 export const BREAKPOINT_MOBILE = '(max-width: 480px)';
 export const BREAKPOINT_TABLET = '(max-width: 768px)';
 export const BREAKPOINT_NAV_COLLAPSE = '(max-width: 960px)';
+/** Shell (spec 12): ≤640 bottom-nav, ≤1100 rail de ícones, acima sidebar completa. */
+export const BREAKPOINT_PHONE = '(max-width: 640px)';
+export const BREAKPOINT_RAIL = '(max-width: 1100px)';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +31,16 @@ export class BreakpointService {
     { initialValue: this.breakpointObserver.isMatched(BREAKPOINT_NAV_COLLAPSE) }
   );
 
+  private readonly phoneMatch = toSignal(
+    this.breakpointObserver.observe(BREAKPOINT_PHONE).pipe(map(result => result.matches)),
+    { initialValue: this.breakpointObserver.isMatched(BREAKPOINT_PHONE) }
+  );
+
+  private readonly railMatch = toSignal(
+    this.breakpointObserver.observe(BREAKPOINT_RAIL).pipe(map(result => result.matches)),
+    { initialValue: this.breakpointObserver.isMatched(BREAKPOINT_RAIL) }
+  );
+
   // <=480px: tabelas viram cards, calendário abre em view diária
   isMobile = computed(() => this.mobileMatch());
 
@@ -38,4 +51,10 @@ export class BreakpointService {
   isNavCollapsed = computed(() => this.navCollapseMatch());
 
   isDesktop = computed(() => !this.tabletMatch());
+
+  // <=640px: navegação por bottom-nav
+  isPhone = computed(() => this.phoneMatch());
+
+  // <=1100px: sidebar vira rail de ícones
+  isRail = computed(() => this.railMatch());
 }
