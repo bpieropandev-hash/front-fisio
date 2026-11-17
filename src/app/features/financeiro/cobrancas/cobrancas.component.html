@@ -77,11 +77,15 @@
                       }
                     </div>
                   </div>
-                  @if (cobranca.status === 'PAGO') { <p-button label="Estornar baixa" icon="pi pi-undo" severity="warn" (onClick)="$event.stopPropagation(); abrirModalEstorno(cobranca)" /> }
-                  @if (cobranca.status === 'PAGO' && cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" (onClick)="$event.stopPropagation(); abrirRecibo(cobranca)" /> }
                   <div class="fin-mobile__item-valor" [class.fin-mobile__item-valor--pendente]="cobranca.status === 'PENDENTE'">
                     {{ cobranca.status === 'PAGO' ? '+ ' : '' }}{{ cobranca.valor | currency: 'BRL' }}
                   </div>
+                  @if (cobranca.status === 'PAGO') {
+                    <div class="fin-mobile__item-acoes">
+                      <p-button label="Estornar baixa" icon="pi pi-undo" severity="warn" [fluid]="true" [style]="{ minHeight: '44px' }" (onClick)="$event.stopPropagation(); abrirModalEstorno(cobranca)" />
+                      @if (cobranca.valor > 0) { <p-button label="Recibo" icon="pi pi-file-pdf" [fluid]="true" [style]="{ minHeight: '44px' }" (onClick)="$event.stopPropagation(); abrirRecibo(cobranca)" /> }
+                    </div>
+                  }
                 </div>
               }
             </div>

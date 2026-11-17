@@ -421,7 +421,6 @@ html.dark-mode body.login-page {
 /* Garantir que os selects não fiquem escondidos */
 .p-select-overlay,
 .p-select-panel {
-  z-index: 10000 !important;
   pointer-events: auto !important;
 }
 
@@ -440,13 +439,12 @@ html.dark-mode body.login-page {
   background-color: var(--surface-hover) !important;
 }
 
-/* Melhorias para DatePicker */
-.p-datepicker {
-  z-index: 10000 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-  border-radius: 8px !important;
-  overflow: visible !important;
-  min-width: 300px !important;
+/* DatePicker: só aparência do painel. A classe .p-datepicker também está no host <p-datepicker>, então
+   z-index/min-width/overflow aqui vazavam para os campos (ficavam acima de modais). O empilhamento é
+   do PrimeNG (providePrimeNG → zIndex, em main.ts). */
+.p-datepicker-panel {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
 }
 
 /* DatePicker com hora - melhor layout */
@@ -541,10 +539,6 @@ html.dark-mode body.login-page {
   color: var(--text-primary) !important;
   background: var(--surface-hover) !important;
   border-radius: 4px !important;
-}
-
-.p-overlaypanel {
-  z-index: 10000 !important;
 }
 
 /* Garantir que o overlay do select funcione corretamente */

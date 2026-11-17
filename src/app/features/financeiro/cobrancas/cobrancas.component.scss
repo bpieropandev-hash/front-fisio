@@ -384,10 +384,12 @@
   overflow: hidden;
 }
 
+/* Linha 1: informação + valor. Linha 2 (só cobrança paga): ações, que quebram de linha em vez de espremer o valor. */
 .fin-mobile__item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px 12px;
   padding: 14px 16px;
 
   & + & {
@@ -430,6 +432,18 @@
 
 .fin-mobile__item-valor--pendente {
   color: var(--text-secondary);
+}
+
+.fin-mobile__item-acoes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  p-button {
+    /* 180px: em ~360px cada ação ocupa a linha inteira; em tablet ficam lado a lado. */
+    flex: 1 1 180px;
+  }
 }
 
 :host { display:block; max-width:1600px; margin-inline:auto; }
