@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-17T16:50:20.342Z",
+  "title": "Design System: Physio Manager",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Teal Clínico",
+        "canonical": "#0f766e",
+        "tonalRamp": [
+          "#042f2c",
+          "#064e48",
+          "#0a6a63",
+          "#0f766e",
+          "#2a9a91",
+          "#5eead4",
+          "#a7f3e8",
+          "#e1faf6"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Superfície",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0a1211",
+          "#111c1b",
+          "#223533",
+          "#51625f",
+          "#9db3af",
+          "#d8e2e0",
+          "#e9efee",
+          "#ffffff"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#142120",
+        "tonalRamp": [
+          "#0a1211",
+          "#142120",
+          "#223533",
+          "#3a4a47",
+          "#51625f",
+          "#5f716e",
+          "#9db3af",
+          "#d8e2e0"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Títulos de página e valores de destaque."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Títulos de card e nomes de paciente."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Conteúdo corrente."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Rótulos de navegação, pílulas, metadados."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 4px 20px rgba(0,0,0,0.15)",
+        "purpose": "Menus e painéis de data."
+      }
+    ],
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "bottom-nav",
+        "value": "640px"
+      },
+      {
+        "name": "mobile-layout",
+        "value": "768px"
+      },
+      {
+        "name": "rail",
+        "value": "1100px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "description": "Ação principal; acento da usuária, 44px no toque.",
+      "html": "<button class=\"ds-btn\">Salvar</button>",
+      "css": ".ds-btn{background:var(--accent-color,#0f766e);color:var(--on-accent,#fff);min-height:44px;padding:0 20px;border:0;border-radius:6px;font-weight:600;cursor:pointer}.ds-btn:hover{background:var(--accent-color-hover,#0c5f58)}.ds-btn:focus-visible{outline:2px solid var(--accent-ink,#0c5f58);outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "description": "Contorno neutro; tinta do acento.",
+      "html": "<button class=\"ds-btn2\">Filtros</button>",
+      "css": ".ds-btn2{background:transparent;color:var(--accent-ink,#0c5f58);min-height:44px;padding:0 20px;border:1px solid var(--border-color,#d8e2e0);border-radius:6px;font-weight:500;cursor:pointer}.ds-btn2:hover{background:var(--accent-soft,rgba(15,118,110,.14))}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "description": "Superfície plana com borda de 1px.",
+      "html": "<div class=\"ds-card\"><b>Maria Souza</b><br><span>Pilates mensal</span></div>",
+      "css": ".ds-card{background:var(--bg-primary,#fff);border:1px solid var(--border-color,#d8e2e0);border-radius:10px;padding:16px;color:var(--text-primary,#142120)}.ds-card span{color:var(--text-secondary,#51625f);font-size:.875rem}"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "description": "Estado tonal.",
+      "html": "<span class=\"ds-pill\">Pago</span>",
+      "css": ".ds-pill{display:inline-flex;padding:5px 10px;border-radius:999px;font-size:11.5px;font-weight:600;background:rgba(31,169,113,.12);color:#12744d}"
+    },
+    {
+      "name": "Sidebar Item",
+      "kind": "nav",
+      "description": "Item da sidebar; ativo em fundo selecionado.",
+      "html": "<div class=\"ds-nav\">Agenda</div>",
+      "css": ".ds-nav{background:color-mix(in srgb,var(--accent-color,#0f766e) 32%,#0a0f0f);color:#fff;min-height:44px;padding:0 12px;border-radius:6px;display:flex;align-items:center;font-weight:600}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Workbench",
+    "overview": "Uma bancada de trabalho para uma profissional que alterna entre o balcão, o tablet e o celular. Navegação sempre à mão, conteúdo denso e ordenado, cor para ação e estado.",
+    "keyCharacteristics": [
+      "Shell em três modos: sidebar, rail e bottom-nav.",
+      "Superfícies planas com borda de 1px.",
+      "Acento único e substituível; status tonal.",
+      "Alvos de toque de 44px; foco visível.",
+      "Detalhe em gaveta (desktop) ou bottom-sheet (celular)."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "Um único acento por usuária; cor extra só para status.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tinted Status Rule",
+        "body": "Status em fundo suave com tinta do mesmo matiz.",
+        "section": "colors"
+      },
+      {
+        "name": "The Token Rule",
+        "body": "Nenhuma cor literal em componente.",
+        "section": "colors"
+      },
+      {
+        "name": "The Variable Font Rule",
+        "body": "Famílias só de --font-display/--font-body.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Superfícies em repouso sem sombra.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Global-Z Rule",
+        "body": "Sem z-index global >= 1000 nem !important em .p-* para empilhamento.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do usar tokens.",
+      "Do manter alvos >= 44px e foco visível.",
+      "Do rodar npm run e2e antes de concluir uma tela.",
+      "Do dar estados de loading, erro e vazio."
+    ],
+    "donts": [
+      "Don't usar gradientes decorativos nem segunda cor de marca.",
+      "Don't fixar cores/fontes em componentes nem z-index >= 1000.",
+      "Don't usar border-radius > 16px em cards.",
+      "Don't depender de ::ng-deep novo ou !important para empilhamento."
+    ]
+  }
+}
