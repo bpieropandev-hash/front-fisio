@@ -8,7 +8,7 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { DatePickerModule } from 'primeng/datepicker';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { forkJoin } from 'rxjs';
@@ -41,7 +41,7 @@ export interface ProximoAtendimentoUI {
         ButtonModule,
         TagModule,
         ProgressSpinnerModule,
-        DatePickerModule,
+        DateFieldComponent,
         ToastModule
     ],
     providers: [MessageService],

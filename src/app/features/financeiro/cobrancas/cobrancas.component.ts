@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/r
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DatePickerModule } from 'primeng/datepicker';
+import { DateFieldComponent } from '../../../shared/components/date-field/date-field.component';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -36,7 +36,7 @@ import { BreakpointService } from '../../../core/services/breakpoint.service';
         TableModule,
         ButtonModule,
         DialogModule,
-        DatePickerModule,
+        DateFieldComponent,
         SelectModule,
         TagModule,
         TooltipModule,

@@ -99,15 +99,7 @@
       <h2>Cobranças Mensais</h2>
       <div class="header-actions">
         <div class="gerar-mes-group">
-          <p-datepicker [showOnFocus]="false"
-            [(ngModel)]="mesAnoGerar"
-            view="month"
-            dateFormat="mm/yy"
-            [readonlyInput]="false" [showIcon]="true"
-            placeholder="Mês/Ano"
-            styleClass="mes-ano-input"
-            [appendTo]="'body'"
-          />
+          <app-date-field [(ngModel)]="mesAnoGerar" modo="mes" placeholder="Mês/Ano" class="mes-ano-input" />
           <p-button
             label="Gerar Mês"
             icon="pi pi-calendar-plus"
@@ -121,17 +113,7 @@
     <div class="filtros-linha">
       <div class="filtro-campo">
         <label>Mês/Ano</label>
-        <p-datepicker [showOnFocus]="false"
-          [ngModel]="filtroMesAno()"
-          (ngModelChange)="aoMudarFiltroMesAno($event)"
-          view="month"
-          dateFormat="mm/yy"
-          [readonlyInput]="false" [showIcon]="true"
-          placeholder="Todos os meses"
-          [showButtonBar]="true"
-          styleClass="mes-ano-input"
-          [appendTo]="'body'"
-        />
+        <app-date-field [ngModel]="filtroMesAno()" (ngModelChange)="aoMudarFiltroMesAno($event)" modo="mes" placeholder="Todos os meses" class="mes-ano-input" />
       </div>
 
       <div class="filtro-campo">
@@ -282,14 +264,7 @@
     >
       <div class="form-group">
         <label>Data de Pagamento *</label>
-        <p-datepicker [showOnFocus]="false"
-          [(ngModel)]="baixaData.dataPagamento"
-          dateFormat="dd/mm/yy"
-          styleClass="full-width"
-          [appendTo]="'body'"
-          [showIcon]="true"
-          [showButtonBar]="true"
-        />
+        <app-date-field [(ngModel)]="baixaData.dataPagamento" class="full-width" />
       </div>
 
       <div class="form-group">

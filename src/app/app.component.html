@@ -1,7 +1,7 @@
 @if(authService.isAuthenticated() && configuracoes.indisponivel()) {<div role="alert" style="padding:1rem">Não foi possível carregar as configurações da clínica. <button type="button" (click)="configuracoes.carregar()">Tentar novamente</button></div>}
-<div class="layout" [class.layout--sidebar]="usaSidebar()">
+<div class="layout" [class.layout--sidebar]="usaSidebar()" [class.layout--recolhida]="usaSidebar() && sidebar.recolhida()">
   @if (usaSidebar()) {
-    <app-sidebar [compacto]="breakpointService.isRail()" />
+    <app-sidebar [compacto]="breakpointService.isRail() || sidebar.recolhida()" [recolhivel]="!breakpointService.isRail()" />
   }
 
   <div class="layout__conteudo">

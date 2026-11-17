@@ -43,6 +43,11 @@
   color: var(--on-accent);
 }
 
+.sidebar__recolher {
+  color: var(--shell-ink-suave);
+  margin-bottom: var(--space-2);
+}
+
 .sidebar__nav {
   display: flex;
   flex-direction: column;

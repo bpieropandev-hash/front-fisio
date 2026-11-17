@@ -4,7 +4,7 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import { DatePickerModule } from 'primeng/datepicker';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
@@ -19,7 +19,7 @@ import { BreakpointService } from '../../core/services/breakpoint.service';
     FormsModule,
     CardModule,
     ButtonModule,
-    DatePickerModule,
+    DateFieldComponent,
     MultiSelectModule,
     ToastModule
 ],

@@ -31,7 +31,7 @@
         </div>
       </div>
     }
-    <h3>Histórico · {{ avaliacoes().length }} avaliação(ões)</h3>
+    <h3>Histórico · {{ avaliacoes().length }} {{ avaliacoes().length === 1 ? 'avaliação' : 'avaliações' }}</h3>
     <ul class="lista">
       @for (item of avaliacoes(); track item.id) {
         <li class="item">

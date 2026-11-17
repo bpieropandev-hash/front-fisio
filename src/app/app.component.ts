@@ -1,5 +1,5 @@
 import { ConfiguracaoClinicaService } from './core/services/configuracao-clinica.service';
-import { Component, signal, computed, effect, Signal } from '@angular/core';
+import { Component, signal, computed, effect, inject, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 
@@ -18,6 +18,7 @@ import { Router } from '@angular/router';
 import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
 import { MaisSheetComponent } from './shared/components/mais-sheet/mais-sheet.component';
 import { AppSidebarComponent } from './shared/components/app-sidebar/app-sidebar.component';
+import { SidebarService } from './core/services/sidebar.service';
 import { AtualizacaoPwaComponent } from './shared/components/atualizacao-pwa/atualizacao-pwa.component';
 
 /** Título exibido no header mobile (spec 10) por prefixo de rota */
@@ -45,6 +46,7 @@ export class AppComponent {
   private usuarioCarregado = false;
   readonly usuarioAtual: Signal<UsuarioMeResponseDTO | null>;
   maisSheetAberto = signal(false);
+  readonly sidebar = inject(SidebarService);
 
   /** Shell (spec 12): ≤640 bottom-nav; ≤768 também ganha o cabeçalho com título; >640 sidebar (rail até 1100). */
   usaBottomNav = computed(() => this.breakpointService.isPhone() && this.authService.isAuthenticated());

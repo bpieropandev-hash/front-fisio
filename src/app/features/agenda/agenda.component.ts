@@ -15,7 +15,7 @@ import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
 import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
-import { DatePicker } from 'primeng/datepicker';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MultiSelect } from 'primeng/multiselect';
 import { Checkbox } from 'primeng/checkbox';
@@ -83,7 +83,7 @@ interface ItemLoteUI {
     Button,
     Textarea,
     Select,
-    DatePicker,
+    DateFieldComponent,
     ToggleSwitchModule,
     MultiSelect,
     Checkbox,

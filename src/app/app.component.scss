@@ -15,6 +15,10 @@
   grid-template-columns: var(--shell-largura) minmax(0, 1fr);
 }
 
+.layout--sidebar.layout--recolhida {
+  --shell-largura: 64px;
+}
+
 .layout__conteudo {
   min-width: 0;
 }

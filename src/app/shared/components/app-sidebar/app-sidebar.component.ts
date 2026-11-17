@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
+import { SidebarService } from '../../../core/services/sidebar.service';
 
 interface ItemNav {
   rotulo: string;
@@ -22,7 +23,16 @@ export class AppSidebarComponent {
   private readonly themeService = inject(ThemeService);
   private readonly usuarioService = inject(UsuarioService);
 
+  private readonly sidebarService = inject(SidebarService);
+
   readonly compacto = input(false);
+  /** Mostra o botão de recolher/expandir (no tablet o menu já é sempre só ícones). */
+  readonly recolhivel = input(false);
+  readonly recolhida = this.sidebarService.recolhida;
+
+  alternarRecolhimento(): void {
+    this.sidebarService.alternar();
+  }
 
   readonly principais: ItemNav[] = [
     { rotulo: 'Dashboard', icone: 'pi-home', rota: '/dashboard' },

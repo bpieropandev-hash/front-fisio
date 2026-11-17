@@ -8,7 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputMaskModule } from 'primeng/inputmask';
-import { DatePickerModule } from 'primeng/datepicker';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { TextareaModule } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -39,7 +39,7 @@ import { AgendamentoService } from '../../core/services/agendamento.service';
     DialogModule,
     InputTextModule,
     InputMaskModule,
-    DatePickerModule,
+    DateFieldComponent,
     TextareaModule,
     TagModule,
     TooltipModule,

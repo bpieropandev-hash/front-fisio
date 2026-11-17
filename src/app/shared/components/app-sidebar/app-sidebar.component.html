@@ -4,6 +4,15 @@
     <span class="sidebar__nome">Physio Manager</span>
   </a>
 
+  @if (recolhivel()) {
+    <button type="button" class="sidebar__item sidebar__recolher" (click)="alternarRecolhimento()"
+      [attr.aria-label]="recolhida() ? 'Expandir menu' : 'Recolher menu'" [attr.aria-expanded]="!recolhida()"
+      [attr.title]="recolhida() ? 'Expandir menu' : null">
+      <i class="pi" [class]="recolhida() ? 'pi-angle-double-right' : 'pi-angle-double-left'" aria-hidden="true"></i>
+      <span class="sidebar__rotulo">Recolher menu</span>
+    </button>
+  }
+
   <nav class="sidebar__nav" aria-label="Principal">
     @for (item of principais; track item.rota) {
       <a class="sidebar__item" [routerLink]="item.rota" routerLinkActive="sidebar__item--ativo" ariaCurrentWhenActive="page" [attr.title]="compacto() ? item.rotulo : null">

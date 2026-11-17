@@ -319,15 +319,7 @@
 
           <div class="form-group">
             <label for="dataNascimento">Data de Nascimento</label>
-            <p-datepicker [showOnFocus]="false"
-              id="dataNascimento"
-              formControlName="dataNascimento"
-              dateFormat="dd/mm/yy"
-              [showIcon]="true"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showButtonBar]="true"
-            />
+            <app-date-field inputId="dataNascimento" formControlName="dataNascimento" class="full-width" />
           </div>
         </div>
 

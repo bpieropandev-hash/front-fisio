@@ -114,30 +114,12 @@
         <div class="filters-grid">
           <div class="filter-group">
             <label>Data Início</label>
-            <p-datepicker [showOnFocus]="false"
-              [(ngModel)]="filtros.dataInicio"
-              dateFormat="dd/mm/yy"
-              [showTime]="false"
-              styleClass="full-width"
-              placeholder="Selecione a data inicial"
-              [appendTo]="'body'"
-              [showIcon]="true"
-              [showButtonBar]="true"
-            />
+            <app-date-field [(ngModel)]="filtros.dataInicio" class="full-width" />
           </div>
 
           <div class="filter-group">
             <label>Data Fim</label>
-            <p-datepicker [showOnFocus]="false"
-              [(ngModel)]="filtros.dataFim"
-              dateFormat="dd/mm/yy"
-              [showTime]="false"
-              styleClass="full-width"
-              placeholder="Selecione a data final"
-              [appendTo]="'body'"
-              [showIcon]="true"
-              [showButtonBar]="true"
-            />
+            <app-date-field [(ngModel)]="filtros.dataFim" class="full-width" />
           </div>
 
           <div class="filter-group filter-actions">

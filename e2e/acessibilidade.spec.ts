@@ -30,7 +30,7 @@ test.describe('Acessibilidade básica', () => {
       await abrirApp(page, rota, info);
       await page.waitForTimeout(400);
       const pequenos = await page.evaluate(() => {
-        const alvo = 'button, a.p-button, .p-button, input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=color]), .p-select, .p-datepicker-input';
+        const alvo = 'button, a.p-button, .p-button, input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=color]), .p-select';
         return [...document.querySelectorAll(alvo)]
           .filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; })
           // dentro de .p-button só o elemento externo conta; FullCalendar e ícones decorativos ficam fora

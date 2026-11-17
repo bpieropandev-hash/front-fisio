@@ -44,7 +44,7 @@
         <button type="button" (click)="selecionadas.set([])">Limpar comparação</button>
       </section>
     }
-    <h3>Galeria · {{ fotos().length }} foto(s)</h3>
+    <h3>Galeria · {{ fotos().length }} {{ fotos().length === 1 ? 'foto' : 'fotos' }}</h3>
     @if (fotos().length) { <p class="ajuda" aria-live="polite">{{ selecionadas().length }} de 2 selecionadas para comparação.</p> }
     <div class="galeria">
       @for (foto of fotos(); track foto.id) {

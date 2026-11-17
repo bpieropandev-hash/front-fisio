@@ -33,18 +33,7 @@
         <div class="form-row">
           <div class="form-group">
             <label for="dataInicio">Data Início *</label>
-            <p-datepicker [showOnFocus]="false"
-              id="dataInicio"
-              [(ngModel)]="filtros.dataInicio"
-              name="dataInicio"
-              dateFormat="dd/mm/yy"
-              [showIcon]="true"
-              styleClass="full-width"
-              placeholder="Selecione a data inicial"
-              [appendTo]="'body'"
-              [showButtonBar]="true"
-              (ngModelChange)="periodoPillAtivo.set(null)"
-            />
+            <app-date-field inputId="dataInicio" [(ngModel)]="filtros.dataInicio" name="dataInicio" class="full-width" (ngModelChange)="periodoPillAtivo.set(null)" />
             @if (!filtros.dataInicio && formSubmetido) {
               <small class="error-text">Data início é obrigatória</small>
             }
@@ -52,18 +41,7 @@
 
           <div class="form-group">
             <label for="dataFim">Data Fim *</label>
-            <p-datepicker [showOnFocus]="false"
-              id="dataFim"
-              [(ngModel)]="filtros.dataFim"
-              name="dataFim"
-              dateFormat="dd/mm/yy"
-              [showIcon]="true"
-              styleClass="full-width"
-              placeholder="Selecione a data final"
-              [appendTo]="'body'"
-              [showButtonBar]="true"
-              (ngModelChange)="periodoPillAtivo.set(null)"
-            />
+            <app-date-field inputId="dataFim" [(ngModel)]="filtros.dataFim" name="dataFim" class="full-width" (ngModelChange)="periodoPillAtivo.set(null)" />
             @if (!filtros.dataFim && formSubmetido) {
               <small class="error-text">Data fim é obrigatória</small>
             }
