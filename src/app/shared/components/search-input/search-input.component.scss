@@ -14,7 +14,7 @@
 
 .search-wrapper:focus-within {
   box-shadow: 0 4px 16px rgba(76, 201, 240, 0.15);
-  border-color: #4cc9f0;
+  border-color: var(--accent-ink);
   transform: translateY(-1px);
 }
 
@@ -32,7 +32,7 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #4cc9f0;
+  border-color: var(--accent-ink);
   box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.1);
   background: var(--bg-primary);
 }
@@ -52,7 +52,7 @@
 
 .clear-button:hover {
   background: rgba(76, 201, 240, 0.1);
-  color: #4cc9f0;
+  color: var(--accent-ink);
   transform: scale(1.1) rotate(90deg);
 }
 

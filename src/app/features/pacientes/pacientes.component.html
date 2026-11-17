@@ -89,6 +89,7 @@
     <div class="filtros-linha">
       <div class="filtro-inativos">
         <p-toggleswitch
+          ariaLabel="Mostrar inativos"
           [ngModel]="mostrarInativos()"
           (ngModelChange)="aoMudarMostrarInativos($event)"
         />
@@ -234,14 +235,14 @@
                   styleClass="p-button-sm"
                   severity="secondary"
                 />
-                <p-button
+                <p-button ariaLabel="Editar"
                   icon="pi pi-pencil"
                   (onClick)="abrirModalEdicao(paciente)"
                   styleClass="p-button-text p-button-rounded"
                   pTooltip="Editar"
                 />
                 @if (paciente.ativo !== false) {
-                  <p-button
+                  <p-button ariaLabel="Inativar"
                     icon="pi pi-user-minus"
                     (onClick)="confirmarInativacao(paciente)"
                     styleClass="p-button-text p-button-rounded"
@@ -249,7 +250,7 @@
                     pTooltip="Inativar"
                   />
                 } @else {
-                  <p-button
+                  <p-button ariaLabel="Reativar"
                     icon="pi pi-user-plus"
                     (onClick)="reativarPaciente(paciente)"
                     styleClass="p-button-text p-button-rounded"

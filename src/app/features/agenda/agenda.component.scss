@@ -4,8 +4,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
       margin-bottom: 20px;
       gap: 1rem;
+    }
+
+    .agenda-header h2 {
+      flex: 0 0 auto;
     }
 
     .header-actions {
@@ -13,6 +18,7 @@
       flex-wrap: wrap;
       gap: 0.75rem;
       align-items: center;
+      margin-left: auto;
     }
 
     .header-actions a.p-button {
@@ -651,7 +657,7 @@
   min-width: 0;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
-  border-left: 3px solid var(--accent-color);
+  border: 1px solid var(--accent-color);
   border-radius: 14px;
   padding: 14px 16px;
   display: flex;
@@ -723,4 +729,4 @@
   max-width: 900px;
   @media (max-width: 600px) { grid-template-columns: minmax(0, 1fr); }
  }
- .lote-erro { color: var(--text-primary); border-left: 3px solid var(--accent-color); padding-left: .75rem; }
+ .lote-erro { color: var(--text-primary); border: 1px solid var(--accent-color); padding-left: .75rem; }

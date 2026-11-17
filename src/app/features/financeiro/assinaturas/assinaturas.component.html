@@ -378,13 +378,14 @@
                 icon="pi pi-pencil"
                 label="Editar"
                 severity="secondary"
+                [outlined]="true"
                 (onClick)="abrirModalEditar(assinatura)"
                 styleClass="p-button-sm"
               />
               <p-button
                 icon="pi pi-sync"
                 label="Trocar plano"
-                severity="info"
+                [outlined]="true"
                 (onClick)="abrirModalTrocarPlano(assinatura)"
                 styleClass="p-button-sm"
               />
@@ -392,6 +393,7 @@
                 icon="pi pi-times"
                 label="Cancelar"
                 severity="danger"
+                [outlined]="true"
                 (onClick)="confirmarCancelamento(assinatura)"
                 styleClass="p-button-sm"
               />
@@ -400,6 +402,7 @@
                 icon="pi pi-refresh"
                 label="Reativar"
                 severity="success"
+                [outlined]="true"
                 (onClick)="confirmarReativacao(assinatura)"
                 styleClass="p-button-sm"
               />
