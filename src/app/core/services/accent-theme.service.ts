@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { updatePrimaryPalette } from '@primeuix/themes';
 import { FonteTema, TamanhoFonte } from '../interfaces/usuario.interface';
 
-const DEFAULT_ACCENT = '#4cc9f0';
+const DEFAULT_ACCENT = '#0f766e';
 const DEFAULT_FONTE: FonteTema = 'moderno';
 const DEFAULT_TAMANHO: TamanhoFonte = 'medio';
 const ACCENT_STORAGE_KEY = 'accent-color';
@@ -26,6 +26,25 @@ const FONT_PAIRS: Record<FonteTema, { display: string; body: string }> = {
   editorial: { display: "'Spectral', serif", body: "'Nunito Sans', sans-serif" },
   direto: { display: "'Manrope', sans-serif", body: "'Literata', serif" }
 };
+
+/** Famílias do Google Fonts por par de tema; só o par ativo é baixado (antes: as 10 famílias no index.html). */
+const FONT_QUERY: Record<FonteTema, string> = {
+  acolhedor: 'Fraunces:wght@400;600;700&family=Karla:wght@400;500;600',
+  classico: 'Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;500;600',
+  moderno: 'Sora:wght@400;600;700&family=Work+Sans:wght@400;500;600',
+  editorial: 'Spectral:wght@400;600;700&family=Nunito+Sans:wght@400;500;600',
+  direto: 'Manrope:wght@400;600;700&family=Literata:wght@400;500;600'
+};
+
+function garantirFolhaDeFonte(fonte: FonteTema): void {
+  const id = 'fonte-tema-' + fonte;
+  if (document.getElementById(id) || fonte === 'moderno') return; // moderno já vem do index.html
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=' + FONT_QUERY[fonte] + '&display=swap';
+  document.head.appendChild(link);
+}
 
 function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -126,6 +145,7 @@ export class AccentThemeService {
   aplicarFonte(fonte: FonteTema | null): void {
     const fonteEfetiva = fonte && FONT_PAIRS[fonte] ? fonte : DEFAULT_FONTE;
     const par = FONT_PAIRS[fonteEfetiva];
+    garantirFolhaDeFonte(fonteEfetiva);
 
     const root = document.documentElement.style;
     root.setProperty('--font-display', par.display);

@@ -63,7 +63,8 @@
                 <input
                   type="color"
                   class="cor-picker"
-                  [value]="perfilForm.get('corPrimaria')?.value || '#4cc9f0'"
+                  aria-label="Cor de destaque do sistema"
+                  [value]="perfilForm.get('corPrimaria')?.value || '#0f766e'"
                   (input)="aoMudarCor($any($event.target).value)"
                 />
                 <span class="cor-picker-hint">Cor de botões e destaques em todo o sistema</span>
@@ -203,7 +204,8 @@
                 <input
                   type="color"
                   class="cor-picker"
-                  [value]="perfilForm.get('corPrimaria')?.value || '#4cc9f0'"
+                  aria-label="Cor de destaque do sistema"
+                  [value]="perfilForm.get('corPrimaria')?.value || '#0f766e'"
                   (input)="aoMudarCor($any($event.target).value)"
                 />
                 <span class="cor-picker-hint">Cor de botões e destaques em todo o sistema</span>

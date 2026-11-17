@@ -12,24 +12,25 @@
   --subscription-danger-soft: rgba(229, 72, 77, 0.1);
   --subscription-backdrop: rgba(9, 15, 20, 0.45);
   --primary-gradient: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-color-light) 100%);
-  --surface-soft: #f8fbff;
-  --surface-border: #e2e8f0; /* adicionado para consistência */
+  --surface-soft: #f3f6f6;
+  --surface-border: #d8e2e0;
   --surface-hover: color-mix(in srgb, var(--accent-color) 6%, transparent); /* adicionado para hover consistente */
 
   /* Cores do modo claro */
   --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
-  --border-color: #e2e8f0;
+  --bg-secondary: #f3f6f6;
+  --bg-tertiary: #e9efee;
+  --text-primary: #142120;
+  --text-secondary: #51625f;
+  --text-tertiary: #5f716e;
+  --border-color: #d8e2e0;
   --shadow: rgba(0, 0, 0, 0.1);
 
   /* Tema personalizado por usuário (spec 09) — defaults, sobrescritos em runtime por AccentThemeService */
-  --accent-color: #4cc9f0;
-  --accent-color-hover: #3ab8d9;
-  --accent-color-light: #90f7ec;
+  --accent-color: #0f766e;
+  --accent-color-hover: #0c5f58;
+  --accent-color-light: #5eead4;
+  --on-accent: #ffffff;
   --font-display: 'Sora', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-body: 'Work Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
@@ -48,17 +49,40 @@
   --status-err-fg: #b22128;
   --status-neutral-bg: var(--bg-tertiary);
   --status-neutral-fg: var(--text-secondary);
+
+  /* Design system (spec 12): espaçamento, raios, foco e shell. Cores do shell derivam do acento da usuária. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --focus-ring: 2px solid var(--accent-ink);
+  --shell-largura: 232px;
+  --shell-bg: color-mix(in srgb, var(--accent-color) 18%, #0a0f0f);
+  --shell-sel: color-mix(in srgb, var(--accent-color) 32%, #0a0f0f);
+  --shell-linha: rgba(255, 255, 255, 0.12);
+  --shell-ink: #d6e6e3;
+  --shell-ink-forte: #ffffff;
+  --shell-ink-suave: #9fb8b4;
+  --shell-foco: #ffffff;
 }
 
 /* Modo escuro */
 html.dark-mode {
-  --bg-primary: #1e293b;
-  --bg-secondary: #0f172a;
-  --bg-tertiary: #1e293b;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --border-color: #334155;
+  --bg-primary: #111c1b;
+  --bg-secondary: #0a1211;
+  --bg-tertiary: #162524;
+  --text-primary: #e6f1ef;
+  --text-secondary: #9db3af;
+  --text-tertiary: #86a09b;
+  --border-color: #223533;
+  --accent-ink: var(--accent-color-light);
   --shadow: rgba(0, 0, 0, 0.3);
 
   --status-ok-bg: rgba(31, 169, 113, .22);
@@ -103,7 +127,8 @@ html.dark-mode {
 
 body {
   font-family: var(--font-body);
-  background: var(--primary-gradient);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   min-height: 100vh;
 }
 
@@ -111,15 +136,9 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
 }
 
-/* Fundo específico para a tela de login */
+/* Tela de login: fundo plano do tema (tokens) */
 body.login-page {
-  background-color: #f7f3ee !important;
-  background: #f7f3ee !important;
-}
-
-html.dark-mode body.login-page {
-  background-color: #0f172a !important;
-  background: #0f172a !important;
+  background: var(--bg-secondary);
 }
 
 /* Estilos para modo escuro - PrimeNG Components */
@@ -421,7 +440,6 @@ html.dark-mode body.login-page {
 /* Garantir que os selects não fiquem escondidos */
 .p-select-overlay,
 .p-select-panel {
-  z-index: 10000 !important;
   pointer-events: auto !important;
 }
 
@@ -440,13 +458,12 @@ html.dark-mode body.login-page {
   background-color: var(--surface-hover) !important;
 }
 
-/* Melhorias para DatePicker */
-.p-datepicker {
-  z-index: 10000 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-  border-radius: 8px !important;
-  overflow: visible !important;
-  min-width: 300px !important;
+/* DatePicker: só aparência do painel. A classe .p-datepicker também está no host <p-datepicker>, então
+   z-index/min-width/overflow aqui vazavam para os campos (ficavam acima de modais). O empilhamento é
+   do PrimeNG (providePrimeNG → zIndex, em main.ts). */
+.p-datepicker-panel {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
 }
 
 /* DatePicker com hora - melhor layout */
@@ -543,10 +560,6 @@ html.dark-mode body.login-page {
   border-radius: 4px !important;
 }
 
-.p-overlaypanel {
-  z-index: 10000 !important;
-}
-
 /* Garantir que o overlay do select funcione corretamente */
 .p-select-overlay {
   position: fixed !important;
@@ -630,136 +643,39 @@ textarea.p-inputtextarea:disabled {
   opacity: 0.7 !important;
 }
 
-/* Estilo específico para textarea de evolução - design moderno e elegante */
-/* Máxima especificidade para sobrescrever estilos do PrimeNG */
-textarea.evolution-textarea.p-inputtextarea,
-textarea.p-inputtextarea.evolution-textarea,
-.p-inputtextarea.evolution-textarea,
-.evolution-textarea.p-inputtextarea,
-.evolution-textarea {
-  font-family: var(--font-body) !important;
-  font-size: 15px !important;
-  line-height: 1.8 !important;
-  letter-spacing: 0.015em !important;
-  padding: 20px 24px !important;
-  border: 2px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-  color: #1e293b !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  resize: vertical !important;
-  min-height: 160px !important;
-  height: auto !important;
-  width: 100% !important;
-  box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(0, 0, 0, 0.04) !important;
-  position: relative !important;
-  overflow: hidden !important;
+/* Textarea de evolução (spec 12): uma regra global em tokens, valendo para claro e escuro.
+   Antes: ~130 linhas com cores literais, !important e um ::before que não renderiza em textarea. */
+textarea.evolution-textarea,
+.evolution-textarea.p-inputtextarea {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  padding: var(--space-4) var(--space-5);
+  min-height: 160px;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  resize: vertical;
+  transition: border-color 0.15s ease;
 }
 
-/* Sobrescrever estilos inline do PrimeNG - usar atributo style */
-textarea.evolution-textarea.p-inputtextarea[style*="width"],
-textarea.evolution-textarea.p-inputtextarea[style*="height"] {
-  padding: 20px 24px !important;
-  border: 2px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(0, 0, 0, 0.04) !important;
-}
-
-.evolution-textarea::before,
-.evolution-textarea.p-inputtextarea::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 3px !important;
-  background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-color-light) 100%) !important;
-  opacity: 0 !important;
-  transition: opacity 0.3s ease !important;
-  z-index: 1 !important;
-}
-
-.evolution-textarea:hover,
-.evolution-textarea:hover,
 textarea.evolution-textarea:hover,
-.evolution-textarea.p-inputtextarea:hover,
-textarea.evolution-textarea.p-inputtextarea:hover {
-  border-color: #cbd5e1 !important;
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(0, 0, 0, 0.06) !important;
-  transform: translateY(-1px) !important;
-  background: #fafbfc !important;
+.evolution-textarea.p-inputtextarea:hover {
+  border-color: var(--text-secondary);
 }
 
-.evolution-textarea:hover::before,
-.evolution-textarea.p-inputtextarea:hover::before {
-  opacity: 0.6 !important;
+textarea.evolution-textarea:focus-visible,
+.evolution-textarea.p-inputtextarea:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--accent-ink);
 }
 
-.evolution-textarea:focus,
-.evolution-textarea:focus,
-textarea.evolution-textarea:focus,
-.evolution-textarea.p-inputtextarea:focus,
-textarea.evolution-textarea.p-inputtextarea:focus {
-  outline: none !important;
-  border-color: var(--accent-color) !important;
-  box-shadow: 
-    0 0 0 4px color-mix(in srgb, var(--accent-color) 12%, transparent),
-    0 8px 24px color-mix(in srgb, var(--accent-color) 15%, transparent),
-    0 2px 8px rgba(0, 0, 0, 0.08) !important;
-  background: #ffffff !important;
-  transform: translateY(-2px) !important;
-}
-
-.evolution-textarea:focus::before,
-.evolution-textarea.p-inputtextarea:focus::before {
-  opacity: 1 !important;
-}
-
-.evolution-textarea::placeholder,
+textarea.evolution-textarea::placeholder,
 .evolution-textarea.p-inputtextarea::placeholder {
-  color: #94a3b8 !important;
-  opacity: 0.7 !important;
-  font-weight: 400 !important;
-}
-
-/* Estilos para modo escuro */
-html.dark-mode .evolution-textarea,
-html.dark-mode .evolution-textarea.p-inputtextarea {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-  color: #f1f5f9 !important;
-  box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05) !important;
-}
-
-html.dark-mode .evolution-textarea:hover,
-html.dark-mode .evolution-textarea.p-inputtextarea:hover {
-  border-color: #475569 !important;
-  background: #334155 !important;
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.08) !important;
-}
-
-html.dark-mode .evolution-textarea:focus,
-html.dark-mode .evolution-textarea.p-inputtextarea:focus {
-  border-color: var(--accent-color) !important;
-  background: #1e293b !important;
-  box-shadow: 
-    0 0 0 4px color-mix(in srgb, var(--accent-color) 20%, transparent),
-    0 8px 24px color-mix(in srgb, var(--accent-color) 25%, transparent),
-    0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  color: var(--text-tertiary);
 }
 
 html.dark-mode .evolution-textarea::placeholder,
@@ -822,118 +738,81 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
   }
 }
 
-/* Padronização de tamanho dos botões */
+/* Botões (spec 12): um vocabulário só, todo em tokens — primário preenchido, secundário (outlined) e texto.
+   Sem cores literais e sem [ng-reflect-*] (esses atributos não existem no build de produção). */
 .p-button {
   height: 2.5rem !important;
   min-height: 2.5rem !important;
   padding: 0.625rem 1.25rem !important;
   font-size: 0.875rem !important;
   line-height: 1.25rem !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
 
-/* Melhorar visibilidade dos botões outlined (brancos com bordas) */
-.p-button.p-button-outlined,
-.p-button[ng-reflect-outlined="true"] {
-  background-color: #ffffff !important;
-  border: 2px solid var(--accent-color) !important;
-  color: var(--accent-color) !important;
+.p-button:focus-visible {
+  outline: var(--focus-ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Secundário: contorno neutro, texto na cor de tinta do acento; nunca fundo branco fixo */
+.p-button.p-button-outlined {
+  background-color: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--accent-ink) !important;
   font-weight: 500 !important;
-  transition: all 0.2s ease !important;
 }
 
-.p-button.p-button-outlined:hover,
-.p-button[ng-reflect-outlined="true"]:hover {
-  background-color: var(--accent-color) !important;
-  border-color: var(--accent-color) !important;
-  color: #ffffff !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-color) 30%, transparent) !important;
+.p-button.p-button-outlined:hover {
+  background-color: var(--accent-soft) !important;
+  border-color: var(--accent-ink) !important;
+  color: var(--accent-ink) !important;
 }
 
-.p-button.p-button-outlined:active,
-.p-button[ng-reflect-outlined="true"]:active {
-  background-color: var(--accent-color-hover) !important;
-  border-color: var(--accent-color-hover) !important;
-  transform: translateY(0) !important;
+.p-button.p-button-outlined.p-button-danger {
+  border-color: var(--status-err-fg) !important;
+  color: var(--status-err-fg) !important;
 }
 
-.p-button.p-button-outlined:focus,
-.p-button[ng-reflect-outlined="true"]:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent) !important;
+.p-button.p-button-outlined.p-button-danger:hover {
+  background-color: var(--status-err-bg) !important;
 }
 
-/* Botões outlined com severity danger (vermelho) */
-.p-button.p-button-outlined.p-button-danger,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="danger"] {
-  border-color: #ef4444 !important;
-  color: #ef4444 !important;
+.p-button.p-button-outlined.p-button-secondary {
+  color: var(--text-primary) !important;
 }
 
-.p-button.p-button-outlined.p-button-danger:hover,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="danger"]:hover {
-  background-color: #ef4444 !important;
-  border-color: #ef4444 !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+.p-button.p-button-outlined.p-button-secondary:hover {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--text-secondary) !important;
 }
 
-/* Botões outlined com severity secondary (cinza) */
-.p-button.p-button-outlined.p-button-secondary,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="secondary"] {
-  border-color: #64748b !important;
-  color: #64748b !important;
-}
-
-.p-button.p-button-outlined.p-button-secondary:hover,
-.p-button[ng-reflect-outlined="true"][ng-reflect-severity="secondary"]:hover {
-  background-color: #64748b !important;
-  border-color: #64748b !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3) !important;
-}
-
-/* Melhorar visibilidade dos botões text */
+/* Texto */
 .p-button.p-button-text {
-  color: var(--accent-color) !important;
+  color: var(--accent-ink) !important;
   background-color: transparent !important;
   border: none !important;
   font-weight: 500 !important;
-  transition: all 0.2s ease !important;
 }
 
 .p-button.p-button-text:hover {
-  background-color: color-mix(in srgb, var(--accent-color) 10%, transparent) !important;
-  color: var(--accent-color-hover) !important;
+  background-color: var(--accent-soft) !important;
 }
 
-.p-button.p-button-text:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent) !important;
+.p-button.p-button-text.p-button-danger {
+  color: var(--status-err-fg) !important;
 }
 
-/* Botões text com severity danger */
-.p-button.p-button-text.p-button-danger,
-.p-button.p-button-text[ng-reflect-severity="danger"] {
-  color: #ef4444 !important;
+.p-button.p-button-text.p-button-danger:hover {
+  background-color: var(--status-err-bg) !important;
 }
 
-.p-button.p-button-text.p-button-danger:hover,
-.p-button.p-button-text[ng-reflect-severity="danger"]:hover {
-  background-color: rgba(239, 68, 68, 0.1) !important;
-  color: #dc2626 !important;
+.p-button.p-button-text.p-button-secondary {
+  color: var(--text-secondary) !important;
 }
 
-/* Botões text com severity secondary */
-.p-button.p-button-text.p-button-secondary,
-.p-button.p-button-text[ng-reflect-severity="secondary"] {
-  color: #64748b !important;
-}
-
-.p-button.p-button-text.p-button-secondary:hover,
-.p-button.p-button-text[ng-reflect-severity="secondary"]:hover {
-  background-color: rgba(100, 116, 139, 0.1) !important;
-  color: #475569 !important;
+.p-button.p-button-text.p-button-secondary:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
 }
 
 .p-button.p-button-sm,
@@ -953,8 +832,9 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
 }
 
 /* Botões Responsivos — altura mínima de 44px (alvo de toque recomendado), nunca menor que no desktop */
-@media (max-width: 480px) {
-  .p-button {
+@media (max-width: 768px), (pointer: coarse) {
+  .p-button,
+  .p-button.p-button-sm {
     height: 2.75rem !important;
     min-height: 2.75rem !important;
     padding: 0.625rem 1rem !important;
@@ -973,7 +853,15 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
 }
 
 /* Inputs Responsivos */
-@media (max-width: 768px) {
+@media (max-width: 768px), (pointer: coarse) {
+  .p-inputtext,
+  .p-select,
+  .p-datepicker-input,
+  .p-datepicker-dropdown,
+  .p-inputnumber-input {
+    min-height: 2.75rem !important;
+  }
+
   .p-inputtext,
   .p-inputnumber-input,
   .p-select,
@@ -1041,4 +929,43 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
   }
 
   input[appDateInput] { font-size: 16px; min-height: 44px; }
+}
+
+/* FullCalendar: bordas e fundo vêm dos tokens (antes: branco puro no tema escuro) */
+.fc {
+  --fc-border-color: var(--border-color);
+  --fc-page-bg-color: var(--bg-primary);
+  --fc-neutral-bg-color: var(--bg-tertiary);
+  --fc-today-bg-color: var(--accent-soft);
+  --fc-list-event-hover-bg-color: var(--accent-soft);
+}
+
+/* Ações de linha de tabela: rótulo em uma linha só (a coluna cresce em vez de quebrar o texto) */
+.p-datatable td .p-button .p-button-label {
+  white-space: nowrap;
+}
+
+/* Alvos de toque de 44px (WCAG 2.5.5 / ergonomia) para controles que não são p-button: inputs nativos, pílulas de filtro e botão de editar foto */
+@media (max-width: 768px), (pointer: coarse) {
+  input:not([type]),
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='password'],
+  input[type='number'],
+  input[type='search'] {
+    min-height: 2.75rem;
+  }
+
+  main button:not(.fc-button),
+  .pac-mobile__pill,
+  .fin-mobile__filtro-pill,
+  .rel-mobile__pill {
+    min-height: 44px;
+  }
+
+  .perfil-mobile__avatar-editar {
+    width: 44px !important;
+    height: 44px !important;
+  }
 }
