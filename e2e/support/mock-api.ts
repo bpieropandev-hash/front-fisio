@@ -70,6 +70,13 @@ const evolucaoVazia = {
   dor: null, observacoes: '', resumo: '', autor: null, atualizadoEm: null
 };
 
+const configuracoes = {
+  versao: 1, emitenteNome: 'Clínica Teste', emitenteDocumento: '', mensalidadeValorPadrao: 380, mensalidadeDiaVencimento: 10,
+  capacidadeFisioterapia: 1, capacidadePilates: 15, agruparAgenda: true, fotoLimiteMiB: 5, exibirDor: true,
+  procedimentos: [{ codigo: 'ALONGAMENTO', nome: 'Alongamento', ativo: true }, { codigo: 'PILATES', nome: 'Pilates', ativo: true }],
+  equipamentos: [{ codigo: 'REFORMER', nome: 'Reformer', ativo: true }]
+};
+
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-headers': '*',
@@ -107,7 +114,7 @@ function resolver(metodo: string, caminho: string): unknown {
     };
   }
   if (recurso === 'usuarios') return usuario;
-  if (recurso === 'configuracoes') return {};
+  if (recurso === 'configuracoes') return configuracoes;
   return [];
 }
 

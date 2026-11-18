@@ -1,0 +1,113 @@
+:host {
+  display: block;
+}
+
+.mm__cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.mm__titulo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.mm__nav {
+  display: inline-flex;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.mm__seta {
+  width: 36px;
+  min-height: 36px;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+
+  & + & {
+    border-left: 1px solid var(--border-color);
+  }
+
+  &:hover {
+    background: var(--bg-tertiary);
+  }
+}
+
+.mm__grade {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+  font-size: 0.8125rem;
+}
+
+.mm__semana {
+  padding: 4px 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.mm__dia {
+  position: relative;
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bg-tertiary);
+  }
+}
+
+.mm__dia--hoje {
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.mm__dia--ativo {
+  background: var(--accent-color);
+  color: var(--on-accent);
+
+  &:hover {
+    background: var(--accent-color);
+  }
+}
+
+.mm__marca {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  transform: translateX(-50%);
+}
+
+.mm__marca--media {
+  width: 10px;
+  border-radius: 2px;
+}
+
+.mm__marca--grande {
+  width: 16px;
+  border-radius: 2px;
+}
+
+.mm__dia--ativo .mm__marca {
+  background: var(--on-accent);
+}

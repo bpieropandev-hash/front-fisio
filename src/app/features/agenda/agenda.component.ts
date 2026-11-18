@@ -2,15 +2,9 @@ import { PageStateComponent } from '../../shared/components/page-state/page-stat
 import { RemarcacaoRecorrenteComponent } from './remarcacao-recorrente.component';
 import { untracked } from '@angular/core';
 import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
-import { Component, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
-import { CalendarOptions, EventContentArg, EventInput } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
 import { Textarea } from 'primeng/textarea';
@@ -19,7 +13,6 @@ import { DateFieldComponent } from '../../shared/components/date-field/date-fiel
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MultiSelect } from 'primeng/multiselect';
 import { Checkbox } from 'primeng/checkbox';
-import { Card } from 'primeng/card';
 import { Toast } from 'primeng/toast';
 import { BreakpointService } from '../../core/services/breakpoint.service';
 import { AgendamentoService } from '../../core/services/agendamento.service';
@@ -28,18 +21,20 @@ import { ServicoService } from '../../core/services/servico.service';
 import { AtendimentoResponseDTO, AgendamentoRequestDTO, ConcluirAtendimentoLoteItemDTO } from '../../core/interfaces/agendamento.interface';
 import { PacienteResponseDTO } from '../../core/interfaces/paciente.interface';
 import { ServicoResponseDTO } from '../../core/interfaces/servico.interface';
-import { MessageService } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
+import { Menu } from 'primeng/menu';
+import { AgendaTimelineComponent } from './agenda-timeline/agenda-timeline.component';
+import { AgendaMiniMesComponent, chaveDia } from './agenda-mini-mes/agenda-mini-mes.component';
+import { DURACAO_PADRAO_MIN, EventoDoDiaUI, minutosDoDia } from './agenda-timeline.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { formatDateTimeForApi, formatDateTimeForApiBody, formatDateForApi } from '../../core/utils/date-format.util';
 import { ErrorHandlerUtil } from '../../core/utils/error-handler.util';
 import {
-  obterCoresPorStatus,
   obterTipoServico,
   obterLabelStatus,
   formatHora,
   obterSiglaTipoServico,
-  normalizarStatusClass,
   combinarDataHora,
   separarDataHora,
   montarHorariosComExtra
@@ -48,18 +43,17 @@ import { EvolucaoFichaComponent, EvolucaoFichaEstado } from '../../shared/compon
 import { ReciboDialogComponent } from '../../shared/components/recibo-dialog/recibo-dialog.component';
 import { OrigemRecibo } from '../../core/interfaces/recibo.interface';
 import { agruparAtendimentos, ehMensalidade, podeEmitirReciboAtendimento } from './agenda-group.util';
-import { RouterLink } from '@angular/router';
 import { obterPillStatus } from '../../core/utils/status-pill.util';
 
 const DIAS_SEMANA_CURTO = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
-export interface EventoDoDiaUI {
-  atendimento: AtendimentoResponseDTO;
-  participantes: AtendimentoResponseDTO[];
-  chave: string;
-  hora: string;
-  pacienteNome: string;
-  servicoNome: string;
+/** Atendimento (ou turma) pronto para a agenda. Formato próprio, independente de biblioteca de calendário. */
+export interface AgendaEvento {
+  id: string;
+  title: string;
+  start: string;
+  end?: string;
+  extendedProps?: Record<string, any>;
 }
 
 interface ItemLoteUI {
@@ -78,7 +72,9 @@ interface ItemLoteUI {
   imports: [PageStateComponent, RemarcacaoRecorrenteComponent,
     CommonModule,
     FormsModule,
-    FullCalendarModule,
+    AgendaTimelineComponent,
+    AgendaMiniMesComponent,
+    Menu,
     Dialog,
     Button,
     Textarea,
@@ -87,8 +83,7 @@ interface ItemLoteUI {
     ToggleSwitchModule,
     MultiSelect,
     Checkbox,
-    Card,
-    Toast, EvolucaoFichaComponent, ReciboDialogComponent, RouterLink
+    Toast, EvolucaoFichaComponent, ReciboDialogComponent
   ],
   providers: [MessageService],
   templateUrl: './agenda.component.html',
@@ -123,9 +118,8 @@ export class AgendaComponent implements OnInit {
   obterPillStatus = obterPillStatus;
 
   @ViewChild(EvolucaoFichaComponent) fichaComponent?: EvolucaoFichaComponent;
-  @ViewChild(FullCalendarComponent) calendarComponent?: FullCalendarComponent;
 
-  // --- Shell mobile (spec 10) — semana + lista do dia, substitui o FullCalendar em telas estreitas ---
+  // --- Dia exibido: linha do tempo (padrão A), tira de semana no celular e navegador mensal no desktop ---
   diaSelecionadoAgenda = signal<Date>(this.iniciarDoDia(new Date()));
 
   semanaAgendaAtual = computed(() => {
@@ -142,19 +136,107 @@ export class AgendaComponent implements OnInit {
   eventosDoDiaSelecionado = computed<EventoDoDiaUI[]>(() => {
     const dia = this.diaSelecionadoAgenda();
     return this.eventosFiltrados()
-      .filter(evento => this.mesmoDia(new Date(evento.start as string), dia))
+      .filter(evento => this.mesmoDia(new Date(evento.start), dia))
       .map(evento => {
         const participantes = evento.extendedProps?.['participantes'] as AtendimentoResponseDTO[];
         const atendimento = participantes[0];
+        const inicio = new Date(evento.start);
+        const inicioMin = minutosDoDia(inicio);
+        const fimMin = evento.end ? Math.max(minutosDoDia(new Date(evento.end)), inicioMin + 15) : inicioMin + DURACAO_PADRAO_MIN;
+        const status = new Set(participantes.map(p => p.status)).size === 1 ? atendimento.status : 'MISTO';
         return {
           atendimento, participantes, chave: String(evento.id),
-          hora: formatHora(new Date(evento.start as string)),
+          hora: formatHora(inicio),
           pacienteNome: (evento.extendedProps?.['pacienteNome'] as string) || '',
-          servicoNome: (evento.extendedProps?.['servicoNome'] as string) || ''
+          servicoNome: (evento.extendedProps?.['servicoNome'] as string) || '',
+          inicioMin, fimMin, status,
+          sigla: obterSiglaTipoServico((evento.extendedProps?.['servicoTipo'] as string) || '')
         };
       })
-      .sort((a, b) => a.hora.localeCompare(b.hora));
+      .sort((a, b) => a.inicioMin - b.inicioMin);
   });
+
+  /** Horários por dia (yyyy-MM-dd) para as marcas de ocupação do navegador mensal. */
+  contagensPorDia = computed<Record<string, number>>(() => {
+    const contagens: Record<string, number> = {};
+    for (const evento of this.eventosFiltrados()) {
+      const chave = chaveDia(new Date(evento.start));
+      contagens[chave] = (contagens[chave] ?? 0) + 1;
+    }
+    return contagens;
+  });
+
+  /** Atendimentos individuais do dia por status (chips de filtro); não depende do filtro de status. */
+  contagemStatusDoDia = computed<Record<string, number>>(() => {
+    const dia = this.diaSelecionadoAgenda();
+    const contagem: Record<string, number> = { AGENDADO: 0, CONCLUIDO: 0, CANCELADO: 0, FALTA: 0 };
+    for (const evento of this.eventos()) {
+      const atendimento = evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+      if (atendimento && this.mesmoDia(new Date(evento.start), dia)) contagem[atendimento.status] = (contagem[atendimento.status] ?? 0) + 1;
+    }
+    return contagem;
+  });
+
+  mesReferencia = signal<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  /** Relógio da linha do "agora"; atualizado a cada minuto. */
+  agora = signal(new Date());
+  readonly alturaHora = computed(() => (this.isTablet() ? 64 : 72));
+  readonly statusChips = [
+    { valor: 'AGENDADO', rotulo: 'Agendado' },
+    { valor: 'CONCLUIDO', rotulo: 'Concluído' },
+    { valor: 'CANCELADO', rotulo: 'Cancelado' },
+    { valor: 'FALTA', rotulo: 'Falta' }
+  ];
+  private readonly destroyRef = inject(DestroyRef);
+  readonly menuAcoes = signal<MenuItem[]>([]);
+
+  tituloDia = computed(() => {
+    const dia = this.diaSelecionadoAgenda();
+    const rotulo = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(dia);
+    return (this.ehHoje(dia) ? 'Hoje · ' : '') + rotulo;
+  });
+
+  /** "7 atendimentos · 3 concluídos · próximo às 15:30 (Fernanda)". */
+  resumoDia = computed(() => {
+    const eventos = this.eventosDoDiaSelecionado();
+    const atendimentos = eventos.flatMap(e => e.participantes);
+    if (atendimentos.length === 0) return 'Nenhum atendimento neste dia';
+    const concluidos = atendimentos.filter(a => a.status === 'CONCLUIDO').length;
+    const minAgora = minutosDoDia(this.agora());
+    const alvo = eventos.filter(e => e.participantes.some(p => p.status === 'AGENDADO'))
+      .find(e => !this.ehHoje(this.diaSelecionadoAgenda()) || e.inicioMin >= minAgora);
+    const proximo = alvo ? ` · próximo às ${alvo.hora} (${alvo.participantes.length > 1 ? alvo.servicoNome : alvo.pacienteNome.split(' ')[0]})` : '';
+    return `${atendimentos.length} atendimento${atendimentos.length === 1 ? '' : 's'} · ${concluidos} concluído${concluidos === 1 ? '' : 's'}${proximo}`;
+  });
+
+  statusAtivo(status: string): boolean {
+    return this.filtros.status.length === 0 || this.filtros.status.includes(status);
+  }
+
+  /** Liga/desliga um status. Sem filtro = todos ligados; nunca deixa todos desligados. */
+  alternarStatus(status: string): void {
+    const todos = this.statusChips.map(c => c.valor);
+    const atuais = this.filtros.status.length === 0 ? todos : this.filtros.status;
+    const proximos = atuais.includes(status) ? atuais.filter(s => s !== status) : [...atuais, status];
+    if (proximos.length === 0) return;
+    this.filtros.status = proximos.length === todos.length ? [] : proximos;
+    this.aplicarFiltros();
+  }
+
+  mudarMes(delta: number): void {
+    const m = this.mesReferencia();
+    this.mesReferencia.set(new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  }
+
+  irParaHoje(): void {
+    this.selecionarDiaAgenda(new Date());
+  }
+
+  navegarDia(delta: number): void {
+    const d = new Date(this.diaSelecionadoAgenda());
+    d.setDate(d.getDate() + delta);
+    this.selecionarDiaAgenda(d);
+  }
 
   private iniciarDoDia(data: Date): Date {
     const d = new Date(data);
@@ -184,7 +266,9 @@ export class AgendaComponent implements OnInit {
   }
 
   selecionarDiaAgenda(data: Date): void {
-    this.diaSelecionadoAgenda.set(this.iniciarDoDia(data));
+    const dia = this.iniciarDoDia(data);
+    this.diaSelecionadoAgenda.set(dia);
+    this.mesReferencia.set(new Date(dia.getFullYear(), dia.getMonth(), 1));
   }
 
   semanaAgendaAnterior(): void {
@@ -199,25 +283,22 @@ export class AgendaComponent implements OnInit {
     this.diaSelecionadoAgenda.set(d);
   }
 
-  abrirNovoAgendamentoDoDia(): void {
-    this.abrirModalNovoAgendamento();
-    // abrirModalNovoAgendamento() zera dataNovoAgendamento — reaplica com o dia selecionado na lista
+  abrirNovoAgendamentoDoDia(hora?: string): void {
+    if (!this.abrirModalNovoAgendamento()) return;
+    // abrirModalNovoAgendamento() zera data e hora — reaplica o dia selecionado (e o horário clicado, se houver)
     this.dataNovoAgendamento = new Date(this.diaSelecionadoAgenda());
+    if (hora) this.horaNovoAgendamento = hora;
+    this.atualizarDataHoraNovoAgendamento();
   }
-
-  /** View atual do calendário. FullCalendar só respeita `initialView` na montagem —
-   * mudanças depois disso precisam chamar calendarApi.changeView() (ver effect no constructor). */
-  calendarView = signal<string>(this.breakpointService.isMobile() ? 'timeGridDay' : 'dayGridMonth');
 
   modalVisivel = false;
   atendimentoSelecionado = signal<AtendimentoResponseDTO & { pacienteNome?: string; servicoNome?: string } | null>(null);
   salvando = signal(false);
   pacientes = signal<PacienteResponseDTO[]>([]);
   servicos = signal<ServicoResponseDTO[]>([]);
-  eventos = signal<EventInput[]>([]);
-  eventosFiltrados = signal<EventInput[]>([]);
+  eventos = signal<AgendaEvento[]>([]);
+  eventosFiltrados = signal<AgendaEvento[]>([]);
   filtrosVisiveis = signal(false);
-  private ignoreNextDateClick = false;
 
   filtros = {
     status: [] as string[],
@@ -541,62 +622,21 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-  calendarOptions = computed<CalendarOptions>(() => {
-    const mobile = this.isMobile();
-    return {
-      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-      initialView: this.calendarView(),
-      headerToolbar: mobile
-        ? { left: 'prev,next', center: 'title', right: 'today' }
-        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
-      locale: ptBrLocale,
-      events: this.eventosFiltrados(),
-      eventDisplay: 'block',
-      eventClick: (info) => this.onEventClick(info),
-      dateClick: (info) => this.onDateClick(info),
-      dayMaxEventRows: 3,
-      moreLinkText: (n) => `+${n} mais`,
-      eventContent: (arg) => this.renderEventContent(arg),
-      eventClassNames: (arg) => {
-        const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
-        const status = normalizarStatusClass(atendimento?.status);
-        return status ? [`status-${status}`] : [];
-      },
-      eventDidMount: (info) => this.onEventDidMount(info),
-      // Drag & drop não é confiável em touch — em mobile, reagendar é feito pelo
-      // modal de edição (clique no evento), que já existe e cobre o mesmo fluxo.
-      editable: !mobile,
-      // Duração não é editável: o backend não expõe atualização de dataHoraFim
-      eventDurationEditable: false,
-      eventDrop: (info) => this.onEventDrop(info),
-      nowIndicator: true,
-      slotMinTime: '06:00:00',
-      slotMaxTime: '22:00:00'
-    };
-  });
-
   constructor(
     private agendamentoService: AgendamentoService,
     private pacienteService: PacienteService,
     private servicoService: ServicoService,
     private messageService: MessageService
-  ) {
-    // `initialView` só é respeitado pelo wrapper do FullCalendar na montagem —
-    // mudanças de view depois disso (seletor mobile ou troca de breakpoint em
-    // runtime) precisam ser aplicadas via API imperativa.
-    effect(() => {
-      const view = this.calendarView();
-      this.calendarComponent?.getApi()?.changeView(view);
-    });
-
-    // Ao cruzar o breakpoint mobile/desktop, volta para a view padrão de cada modo.
-    // Não interfere em uma escolha manual de view feita sem cruzar o breakpoint.
-    effect(() => {
-      this.calendarView.set(this.isMobile() ? 'timeGridDay' : 'dayGridMonth');
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
+    this.menuAcoes.set([
+      { label: 'Nova assinatura mensal', icon: 'pi pi-id-card', routerLink: '/financeiro/assinaturas', queryParams: { nova: true } },
+      { label: 'Fechar atendimentos', icon: 'pi pi-check-square', command: () => this.abrirModalLote() },
+      { label: 'Filtrar por paciente ou serviço', icon: 'pi pi-filter', command: () => this.toggleFiltros() }
+    ]);
+    const relogio = setInterval(() => this.agora.set(new Date()), 60_000);
+    this.destroyRef.onDestroy(() => clearInterval(relogio));
     this.carregarDados();
   }
 
@@ -651,9 +691,7 @@ export class AgendaComponent implements OnInit {
       next: (atendimentos) => {
         if (consulta !== this.consultaAgenda) return;
         this.carregandoAgenda.set(false);
-        // Ao revelar a instância já montada, recalcular medidas após o DOM atualizar.
-        setTimeout(() => this.calendarComponent?.getApi()?.updateSize());
-        const eventos: EventInput[] = [];
+        const eventos: AgendaEvento[] = [];
         atendimentos.forEach(atendimento => {
           const isMensalista = ehMensalidade(atendimento);
 
@@ -668,21 +706,11 @@ export class AgendaComponent implements OnInit {
             ? `📋 ${pacienteNome} - ${servicoNome}`
             : `${pacienteNome} - ${servicoNome}`;
 
-          // Cores: manter por STATUS (fundo/borda/texto)
-          const coresStatus = obterCoresPorStatus(atendimento.status);
-
           eventos.push({
             id: atendimento.id.toString(),
             title: title,
             start: atendimento.dataHoraInicio,
             end: atendimento.dataHoraFim,
-            backgroundColor: coresStatus.backgroundColor,
-            borderColor: coresStatus.borderColor,
-            textColor: coresStatus.textColor,
-            classNames: (() => {
-              const status = normalizarStatusClass(atendimento.status);
-              return status ? [`status-${status}`] : [];
-            })(),
             extendedProps: {
               atendimento: atendimento,
               isMensalista: isMensalista,
@@ -703,87 +731,6 @@ export class AgendaComponent implements OnInit {
     });
   }
 
-  private renderEventContent(arg: EventContentArg) {
-    // Month: minimalista. Week/Day: render explícito (para não sumir quando eventContent existe)
-    if (arg.view.type !== 'dayGridMonth') {
-      const container = document.createElement('div');
-      container.className = 'fc-event-title';
-      container.textContent = arg.event.title;
-      return { domNodes: [container] };
-    }
-
-    const atendimento = arg.event.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
-    const pacienteNome = (arg.event.extendedProps?.['pacienteNome'] as string | undefined) || '';
-    const servicoNome = (arg.event.extendedProps?.['servicoNome'] as string | undefined) || arg.event.title;
-    const servicoTipo = (arg.event.extendedProps?.['servicoTipo'] as string | undefined) || '';
-    const statusLabel = obterLabelStatus(atendimento?.status);
-
-    const inicio = arg.event.start;
-    const hora = formatHora(inicio);
-    const sigla = obterSiglaTipoServico(servicoTipo);
-
-    // Tooltip (title nativo) com quebras de linha
-    const tooltip = [
-      `Paciente: ${pacienteNome || '—'}`,
-      `Tipo: ${servicoTipo || '—'}`,
-      `Serviço: ${servicoNome || '—'}`,
-      `Horário: ${hora || '—'}`,
-      `Status: ${statusLabel || '—'}`
-    ].join('\n');
-
-    const container = document.createElement('div');
-    container.className = 'fc-month-min';
-    container.title = tooltip;
-    container.setAttribute('aria-label', tooltip);
-
-    const badge = document.createElement('span');
-    badge.className = 'fc-month-min__badge';
-    badge.textContent = sigla;
-    container.appendChild(badge);
-
-    if (hora) {
-      const time = document.createElement('span');
-      time.className = 'fc-month-min__time';
-      time.textContent = hora;
-      container.appendChild(time);
-    }
-
-    const name = document.createElement('span');
-    name.className = 'fc-month-min__name';
-    name.textContent = pacienteNome || arg.event.title;
-    container.appendChild(name);
-
-    return { domNodes: [container] };
-  }
-
-  private onEventDidMount(info: any): void {
-    const atendimento = info?.event?.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
-    const status = atendimento?.status;
-    if (!status || !info?.el) return;
-
-    const cores = obterCoresPorStatus(status);
-    const el = info.el as HTMLElement;
-
-    // Elemento principal
-    el.style.backgroundColor = cores.backgroundColor;
-    el.style.borderColor = cores.borderColor;
-    el.style.color = cores.textColor;
-
-    // TimeGrid: a área pintada costuma ser .fc-event-main
-    const main = el.querySelector('.fc-event-main') as HTMLElement | null;
-    if (main) {
-      main.style.backgroundColor = cores.backgroundColor;
-      main.style.borderColor = cores.borderColor;
-      main.style.color = cores.textColor;
-    }
-
-    // DayGrid "dot event": pinta o dot
-    const dot = el.querySelector('.fc-daygrid-event-dot') as HTMLElement | null;
-    if (dot) {
-      dot.style.borderColor = cores.borderColor;
-    }
-  }
-
   aplicarFiltros(): void {
     const fontes = new Map(this.eventos().map(evento => [(evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO).id, evento]));
     let grupos = agruparAtendimentos([...fontes.values()].map(evento => evento.extendedProps?.['atendimento'] as AtendimentoResponseDTO), this.filtros);
@@ -791,10 +738,8 @@ export class AgendaComponent implements OnInit {
     this.eventosFiltrados.set(grupos.map(grupo => {
       const primeiro = fontes.get(grupo.participantes[0].id)!;
       if (grupo.participantes.length === 1) return {...primeiro, extendedProps: {...primeiro.extendedProps, participantes: grupo.participantes}};
-      const status = new Set(grupo.participantes.map(p => p.status));
-      const cores = obterCoresPorStatus(status.size === 1 ? grupo.participantes[0].status : 'MISTO');
-      return {...primeiro, ...cores, id: grupo.chave, title: `${primeiro.extendedProps?.['servicoNome']} · ${grupo.participantes.length} participantes`,
-        editable: false, startEditable: false, classNames: [], extendedProps: {...primeiro.extendedProps, atendimento: undefined, pacienteNome: `${grupo.participantes.length} participantes`, participantes: grupo.participantes}};
+      return {...primeiro, id: grupo.chave, title: `${primeiro.extendedProps?.['servicoNome']} · ${grupo.participantes.length} participantes`,
+        extendedProps: {...primeiro.extendedProps, atendimento: undefined, pacienteNome: `${grupo.participantes.length} participantes`, participantes: grupo.participantes}};
     }));
   }
 
@@ -813,81 +758,89 @@ export class AgendaComponent implements OnInit {
     this.carregarEventos();
   }
 
-  onEventClick(info: any): void {
-    // Impede que o clique no evento dispare também o dateClick (muito comum no dayGridMonth)
-    if (info?.jsEvent) {
-      info.jsEvent.preventDefault?.();
-      info.jsEvent.stopPropagation?.();
-      info.jsEvent.stopImmediatePropagation?.();
-    }
-    // Camada extra: alguns cliques disparam dateClick programaticamente (especialmente no mês)
-    this.ignoreNextDateClick = true;
-    setTimeout(() => (this.ignoreNextDateClick = false), 0);
-    const participantes = info.event.extendedProps['participantes'] as AtendimentoResponseDTO[] | undefined;
-    if (participantes && participantes.length > 1) { this.turmaSelecionada.set(participantes); this.modalTurmaVisivel = true; return; }
-    const atendimento = info.event.extendedProps['atendimento'] as AtendimentoResponseDTO;
-    this.abrirModalEdicao(atendimento);
+  readonly rotuloStatus = obterLabelStatus;
+
+  quantidadeNoDia(dia: Date): number {
+    return this.contagensPorDia()[chaveDia(dia)] ?? 0;
   }
 
-  onDateClick(info: any): void {
-    if (this.ignoreNextDateClick) return;
-    // Evita conflito: clicar em um evento não deve disparar dateClick (abrir "Novo Agendamento")
-    const target = info?.jsEvent?.target as HTMLElement | null | undefined;
-    if (target) {
-      const clicouEmEvento = !!target.closest('.fc-event');
-      const clicouEmMais = !!target.closest('.fc-more-link, .fc-daygrid-more-link');
-      if (clicouEmEvento || clicouEmMais) return;
-    }
-
-    if (!this.abrirModalNovoAgendamento()) return;
-    const dataSelecionada = new Date(info.date);
-    // Arredonda para o intervalo de 30 minutos MAIS PRÓXIMO
-    // (clicar às 10:00 em ponto sugere 10:00, não 10:30)
-    const totalMinutos = dataSelecionada.getHours() * 60 + dataSelecionada.getMinutes();
-    const arredondado = Math.round(totalMinutos / 30) * 30;
-    dataSelecionada.setHours(0, arredondado, 0, 0);
-    const horasAjustadas = dataSelecionada.getHours();
-    const minutosArredondados = arredondado % 60;
-
-    // Define a data (sem hora)
-    this.dataNovoAgendamento = new Date(dataSelecionada);
-    this.dataNovoAgendamento.setHours(0, 0, 0, 0);
-
-    // Define a hora no formato HH:MM
-    this.horaNovoAgendamento = `${String(horasAjustadas).padStart(2, '0')}:${String(minutosArredondados).padStart(2, '0')}`;
-
-    // Combina data e hora
-    this.novoAgendamento.dataHora = combinarDataHora(this.dataNovoAgendamento, this.horaNovoAgendamento);
-
+  /** Gaveta à direita no desktop; folha inferior no celular. */
+  estiloGaveta(): Record<string, string> {
+    return this.isTablet()
+      ? { width: '100vw', maxHeight: '92dvh', margin: '0', borderRadius: '16px 16px 0 0' }
+      : { width: 'min(480px, 100vw)', height: '100dvh', maxHeight: '100dvh', margin: '0', borderRadius: '0' };
   }
 
-  /** Arrastar evento no calendário = remarcar o atendimento. Persiste ou reverte. */
-  onEventDrop(info: any): void {
-    const atendimento = info?.event?.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
-    const novaData: Date | null = info?.event?.start ?? null;
+  estiloModalNovo(): Record<string, string> {
+    return this.isTablet()
+      ? { width: '100vw', maxHeight: '92dvh', margin: '0', borderRadius: '16px 16px 0 0' }
+      : { width: '92vw', maxWidth: '560px', maxHeight: '90vh' };
+  }
 
-    if (info?.event?.extendedProps?.['participantes']?.length > 1 || !atendimento || !novaData) {
-      info?.revert?.();
-      return;
-    }
+  /** O modal de criação pode ser fechado pelo X e pelo Esc; o de edição só pelos botões (guarda da ficha). */
+  aoMudarVisibilidadeNovo(visivel: boolean): void {
+    if (!visivel && this.modalVisivel && !this.atendimentoSelecionado()) this.descartarEFechar();
+  }
 
-    this.agendamentoService.atualizar(atendimento.id, {
-      dataHoraInicio: formatDateTimeForApiBody(novaData)
-    }).subscribe({
+  /** Clique num bloco da linha do tempo: turma abre a lista de participantes, atendimento único abre o detalhe. */
+  selecionarEvento(evento: EventoDoDiaUI): void {
+    if (evento.participantes.length > 1) { this.turmaSelecionada.set(evento.participantes); this.modalTurmaVisivel = true; return; }
+    this.abrirModalEdicao(evento.atendimento);
+  }
+
+  /** Clique num horário vazio: abre a criação no dia exibido, no horário (já arredondado a 30 min). */
+  criarNoHorario(hora: string): void {
+    this.abrirNovoAgendamentoDoDia(hora);
+  }
+
+  // --- Cancelar / registrar falta (ações rápidas do detalhe) ---
+  confirmacaoStatus = signal<'CANCELADO' | 'FALTA' | null>(null);
+
+  pedirStatusRapido(status: 'CANCELADO' | 'FALTA'): void {
+    if (!this.atendimentoSelecionado() || this.salvando()) return;
+    if (this.motivoBloqueioFicha() || this.temAlteracoesPendentes()) { this.avisarFichaPendente(); return; }
+    this.confirmacaoStatus.set(status);
+  }
+
+  confirmarStatusRapido(): void {
+    const status = this.confirmacaoStatus();
+    const atendimento = this.atendimentoSelecionado();
+    if (!status || !atendimento || this.salvando()) return;
+    this.salvando.set(true);
+    this.agendamentoService.atualizar(atendimento.id, { status }).subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Remarcado',
-          detail: `Atendimento movido para ${novaData.toLocaleDateString('pt-BR')} às ${formatHora(novaData)}`
-        });
+        this.messageService.add({ severity: 'success', summary: status === 'CANCELADO' ? 'Atendimento cancelado' : 'Falta registrada', detail: `${atendimento.pacienteNome ?? 'Paciente'} · ${obterLabelStatus(status)}` });
+        this.salvando.set(false);
+        this.confirmacaoStatus.set(null);
+        this.descartarEFechar();
         this.carregarEventos();
       },
       error: (error: HttpErrorResponse) => {
-        info?.revert?.();
         const msg = ErrorHandlerUtil.getErrorMessage(error);
         this.messageService.add({ severity: msg.severity, summary: msg.summary, detail: msg.detail });
+        this.salvando.set(false);
       }
     });
+  }
+
+  // --- Recorrência: resumo e dias da semana (ISO: segunda = 1 … domingo = 7) ---
+  alternarDiaSemana(dia: number): void {
+    this.diasSemanaSelecionados = this.diasSemanaSelecionados.includes(dia)
+      ? this.diasSemanaSelecionados.filter(d => d !== dia)
+      : [...this.diasSemanaSelecionados, dia];
+  }
+
+  /** Quantos atendimentos a recorrência vai gerar por paciente (sem dias marcados, repete no dia da semana da data inicial). */
+  quantidadeRecorrencia(): number {
+    const inicio = this.novoAgendamento.dataHora;
+    if (!this.repetirAgendamento || !inicio || !this.dataFimRecorrencia) return 0;
+    const fim = this.iniciarDoDia(this.dataFimRecorrencia);
+    const dias = this.diasSemanaSelecionados.length ? this.diasSemanaSelecionados : [inicio.getDay() === 0 ? 7 : inicio.getDay()];
+    let total = 0;
+    for (let d = this.iniciarDoDia(inicio); d <= fim && total < 366; d.setDate(d.getDate() + 1)) {
+      if (dias.includes(d.getDay() === 0 ? 7 : d.getDay())) total++;
+    }
+    return total;
   }
 
   abrirModalEdicao(atendimento: AtendimentoResponseDTO): void {

@@ -1,0 +1,30 @@
+<div class="mm__cab">
+  <h3 class="mm__titulo">{{ titulo() }}</h3>
+  <div class="mm__nav">
+    <button type="button" class="mm__seta" (click)="mesMudou.emit(-1)" aria-label="Mês anterior"><i class="pi pi-chevron-left" aria-hidden="true"></i></button>
+    <button type="button" class="mm__seta" (click)="mesMudou.emit(1)" aria-label="Próximo mês"><i class="pi pi-chevron-right" aria-hidden="true"></i></button>
+  </div>
+</div>
+<div class="mm__grade">
+  @for (inicial of iniciais; track $index) {
+    <span class="mm__semana" aria-hidden="true">{{ inicial }}</span>
+  }
+  @for (_ of vazios(); track $index) {
+    <span></span>
+  }
+  @for (dia of dias(); track dia.chave) {
+    <button
+      type="button"
+      class="mm__dia"
+      [class.mm__dia--hoje]="dia.hoje"
+      [class.mm__dia--ativo]="dia.selecionado"
+      [attr.aria-pressed]="dia.selecionado"
+      [attr.aria-current]="dia.hoje ? 'date' : null"
+      [attr.aria-label]="rotuloAria(dia)"
+      (click)="diaEscolhido.emit(dia.data)"
+    >
+      {{ dia.numero }}
+      @if (dia.quantidade > 0) { <i class="mm__marca" [class]="'mm__marca mm__marca--' + marca(dia.quantidade)" aria-hidden="true"></i> }
+    </button>
+  }
+</div>

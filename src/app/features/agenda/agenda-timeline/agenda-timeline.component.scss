@@ -1,0 +1,163 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.tl {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.tl__hora {
+  height: var(--h);
+  padding-right: 10px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-9px);
+
+  &:first-child {
+    visibility: hidden;
+  }
+}
+
+.tl__pista {
+  position: relative;
+  border-left: 1px solid var(--border-color);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--h) - 1px),
+    var(--border-color) calc(var(--h) - 1px),
+    var(--border-color) var(--h)
+  );
+  cursor: cell;
+}
+
+.tl__bloco {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  overflow: hidden;
+  text-align: left;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  cursor: pointer;
+
+  &:hover {
+    outline: 2px solid color-mix(in srgb, var(--accent-color) 50%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+    z-index: 2;
+  }
+}
+
+.tl__nome {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  font-weight: 600;
+
+  .pi {
+    font-size: 0.75rem;
+  }
+}
+
+.tl__nome-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tl__meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.tl__sigla {
+  padding: 1px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.tl__status {
+  margin-left: auto;
+}
+
+// Pendente destaca (acento); concluído recua para o fundo.
+.tl__bloco--agendado {
+  background: color-mix(in srgb, var(--accent-color) 13%, var(--bg-primary));
+  color: var(--accent-ink);
+}
+
+.tl__bloco--concluido {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.tl__bloco--cancelado {
+  background: var(--status-err-bg);
+  color: var(--status-err-fg);
+
+  .tl__nome-texto {
+    text-decoration: line-through;
+  }
+}
+
+.tl__bloco--falta {
+  background: var(--status-warn-bg);
+  color: var(--status-warn-fg);
+}
+
+.tl__bloco--misto {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.tl__agora {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  border-top: 2px solid var(--status-err-fg);
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: -6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--status-err-fg);
+  }
+}
+
+@media (max-width: 640px) {
+  .tl {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+}

@@ -40,7 +40,7 @@
   --accent-soft: color-mix(in srgb, var(--accent-color) 14%, transparent);
 
   /* Status pill (telas mobile spec 10: Dashboard/Agenda/Pacientes/Financeiro) —
-     pills suaves de status, independentes da paleta forte usada nos eventos do FullCalendar */
+     pills suaves de status, independentes da paleta forte de status */
   --status-ok-bg: rgba(31, 169, 113, .12);
   --status-ok-fg: #12744d;
   --status-warn-bg: rgba(217, 142, 31, .14);
@@ -434,6 +434,19 @@ html.dark-mode body.login-page {
 
   .p-dialog.dialog-fullscreen-mobile .p-dialog-content {
     max-height: calc(100vh - 120px) !important;
+  }
+
+  /* Folha inferior (agenda): encostada nas bordas, sem a margem genérica de 0.5rem. */
+  .p-dialog.dlg-folha {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    max-height: 92dvh !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+  }
+
+  .p-dialog.dlg-folha .p-dialog-content {
+    max-height: calc(92dvh - 120px) !important;
   }
 }
 
@@ -931,15 +944,6 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
   input[appDateInput] { font-size: 16px; min-height: 44px; }
 }
 
-/* FullCalendar: bordas e fundo vêm dos tokens (antes: branco puro no tema escuro) */
-.fc {
-  --fc-border-color: var(--border-color);
-  --fc-page-bg-color: var(--bg-primary);
-  --fc-neutral-bg-color: var(--bg-tertiary);
-  --fc-today-bg-color: var(--accent-soft);
-  --fc-list-event-hover-bg-color: var(--accent-soft);
-}
-
 /* Ações de linha de tabela: rótulo em uma linha só (a coluna cresce em vez de quebrar o texto) */
 .p-datatable td .p-button .p-button-label {
   white-space: nowrap;
@@ -957,7 +961,7 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
     min-height: 2.75rem;
   }
 
-  main button:not(.fc-button),
+  main button,
   .pac-mobile__pill,
   .fin-mobile__filtro-pill,
   .rel-mobile__pill {

@@ -1,31 +1,166 @@
-    <p-toast />
-    
-    <div class="agenda-header">
-      <h2>Agenda de Atendimentos</h2>
-      <div class="header-actions">
-        <a routerLink="/financeiro/assinaturas" [queryParams]="{nova:true}" class="p-button p-button-outlined">Nova assinatura mensal</a>
-        <p-button
-          [label]="filtrosVisiveis() ? 'Ocultar Filtros' : 'Filtros'"
-          [icon]="filtrosVisiveis() ? 'pi pi-times' : 'pi pi-filter'"
-          (onClick)="toggleFiltros()"
-          [outlined]="!filtrosVisiveis()"
+<p-toast />
+
+<div class="ag__topo">
+  <div class="ag__titulo">
+    <h2>{{ tituloDia() }}</h2>
+    <p>{{ resumoDia() }}</p>
+  </div>
+  <div class="ag__controles">
+    @if (isTablet() && !ehHoje(diaSelecionadoAgenda())) {
+      <p-button label="Hoje" [outlined]="true" (onClick)="irParaHoje()" />
+    }
+    @if (!isTablet()) {
+      <div class="ag__nav" role="group" aria-label="Navegar entre dias">
+        <button type="button" (click)="navegarDia(-1)" aria-label="Dia anterior"><i class="pi pi-chevron-left" aria-hidden="true"></i></button>
+        <button type="button" (click)="irParaHoje()">Hoje</button>
+        <button type="button" (click)="navegarDia(1)" aria-label="Próximo dia"><i class="pi pi-chevron-right" aria-hidden="true"></i></button>
+      </div>
+    }
+    <p-button
+      [label]="isTablet() ? '' : 'Mais ações'"
+      icon="pi pi-ellipsis-h"
+      [outlined]="true"
+      severity="secondary"
+      ariaLabel="Mais ações"
+      aria-haspopup="menu"
+      (onClick)="menuAcoesRef.toggle($event)"
+    />
+    <p-menu #menuAcoesRef [model]="menuAcoes()" [popup]="true" appendTo="body" />
+    @if (!isTablet()) {
+      <p-button label="Novo agendamento" icon="pi pi-plus" (onClick)="abrirNovoAgendamentoDoDia()" />
+    }
+  </div>
+</div>
+
+@if (filtrosVisiveis()) {
+  <section class="ag__cartao ag__filtros" aria-label="Filtros da agenda">
+    <div class="ag__filtros-campos">
+      <div class="form-group">
+        <label for="filtro-paciente">Paciente</label>
+        <p-select
+          inputId="filtro-paciente"
+          [(ngModel)]="filtros.pacienteId"
+          (onChange)="carregarEventos()"
+          [options]="pacientes()"
+          optionLabel="nome"
+          optionValue="id"
+          placeholder="Todos os pacientes"
+          styleClass="full-width"
+          [appendTo]="'body'"
+          [showClear]="true"
+          [filter]="true"
         />
-        <p-button
-          label="Fechar Atendimentos"
-          icon="pi pi-check-square"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="abrirModalLote()"
+      </div>
+      <div class="form-group">
+        <label for="filtro-servico">Serviço</label>
+        <p-select
+          inputId="filtro-servico"
+          [(ngModel)]="filtros.servicoId"
+          (onChange)="aplicarFiltros()"
+          [options]="servicos()"
+          optionLabel="nome"
+          optionValue="id"
+          placeholder="Todos os serviços"
+          styleClass="full-width"
+          [appendTo]="'body'"
+          [showClear]="true"
         />
-        @if (!isTablet()) {
-          <p-button
-            label="Novo Agendamento"
-            icon="pi pi-plus"
-            (onClick)="abrirModalNovoAgendamento()"
-          />
-        }
       </div>
     </div>
+    <div class="ag__filtros-acoes">
+      <p-button label="Limpar filtros" icon="pi pi-times" [text]="true" (onClick)="limparFiltros()" />
+      <p-button label="Fechar" [text]="true" severity="secondary" (onClick)="toggleFiltros()" />
+    </div>
+  </section>
+}
+
+@if (erroCatalogoAgenda()) {
+  <app-page-state [error]="erroCatalogoAgenda()" (retry)="carregarDados()" />
+}
+@if (carregandoAgenda() || erroAgenda()) {
+  <app-page-state [loading]="carregandoAgenda()" [error]="erroAgenda()" loadingLabel="Carregando agenda…" (retry)="carregarEventos()" />
+}
+
+@if (!carregandoAgenda() && !erroAgenda()) {
+  <div class="ag__grade" data-agenda-dia>
+    @if (!isTablet()) {
+      <aside class="ag__lado" aria-label="Navegação da agenda">
+        <section class="ag__cartao" aria-label="Mês">
+          <app-agenda-mini-mes
+            [mes]="mesReferencia()"
+            [selecionado]="diaSelecionadoAgenda()"
+            [contagens]="contagensPorDia()"
+            (diaEscolhido)="selecionarDiaAgenda($event)"
+            (mesMudou)="mudarMes($event)"
+          />
+        </section>
+        <section class="ag__cartao" aria-label="Filtrar por status">
+          <h3 class="ag__cartao-titulo">Status</h3>
+          <div class="ag__chips">
+            @for (chip of statusChips; track chip.valor) {
+              <button type="button" class="ag__chip" [attr.aria-pressed]="statusAtivo(chip.valor)" (click)="alternarStatus(chip.valor)">
+                <span class="ag__ponto" [class]="'ag__ponto ag__ponto--' + chip.valor.toLowerCase()"></span>
+                {{ chip.rotulo }}
+                <span class="ag__chip-n">{{ contagemStatusDoDia()[chip.valor] }}</span>
+              </button>
+            }
+          </div>
+        </section>
+      </aside>
+    }
+
+    <section class="ag__dia" aria-label="Atendimentos do dia">
+      @if (isTablet()) {
+        <div class="ag__faixa" aria-label="Semana">
+          <button type="button" class="ag__faixa-seta" (click)="semanaAgendaAnterior()" aria-label="Semana anterior"><i class="pi pi-chevron-left" aria-hidden="true"></i></button>
+          @for (dia of semanaAgendaAtual(); track dia.getTime()) {
+            <button
+              type="button"
+              class="ag__faixa-dia"
+              [class.ag__faixa-dia--ativo]="ehDiaSelecionadoAgenda(dia)"
+              [attr.aria-pressed]="ehDiaSelecionadoAgenda(dia)"
+              [attr.aria-label]="dia.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })"
+              (click)="selecionarDiaAgenda(dia)"
+            >
+              <span class="ag__faixa-rotulo">{{ rotuloDiaSemana(dia) }}</span>
+              <strong class="ag__faixa-numero">{{ dia.getDate() }}</strong>
+              <i class="ag__faixa-ponto" [class.ag__faixa-ponto--tem]="quantidadeNoDia(dia) > 0" aria-hidden="true"></i>
+            </button>
+          }
+          <button type="button" class="ag__faixa-seta" (click)="semanaAgendaProxima()" aria-label="Próxima semana"><i class="pi pi-chevron-right" aria-hidden="true"></i></button>
+        </div>
+        <div class="ag__chips ag__chips--rolagem">
+          @for (chip of statusChips; track chip.valor) {
+            <button type="button" class="ag__chip" [attr.aria-pressed]="statusAtivo(chip.valor)" (click)="alternarStatus(chip.valor)">
+              <span class="ag__ponto" [class]="'ag__ponto ag__ponto--' + chip.valor.toLowerCase()"></span>
+              {{ chip.rotulo }}
+              <span class="ag__chip-n">{{ contagemStatusDoDia()[chip.valor] }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      @if (eventosDoDiaSelecionado().length === 0) {
+        <p class="ag__vazio" role="status">Nenhum atendimento neste dia. {{ isTablet() ? 'Toque no botão + para agendar.' : 'Clique num horário para agendar.' }}</p>
+      }
+
+      <app-agenda-timeline
+        [dia]="diaSelecionadoAgenda()"
+        [eventos]="eventosDoDiaSelecionado()"
+        [agora]="agora()"
+        [alturaHora]="alturaHora()"
+        (selecionar)="selecionarEvento($event)"
+        (novoNoHorario)="criarNoHorario($event)"
+      />
+    </section>
+  </div>
+
+  @if (isTablet()) {
+    <button type="button" class="ag__fab" (click)="abrirNovoAgendamentoDoDia()" aria-label="Novo agendamento">
+      <i class="pi pi-plus" aria-hidden="true"></i>
+    </button>
+  }
+}
 
     <!-- Modal Fechar Atendimentos em Lote -->
     <p-dialog
@@ -158,419 +293,272 @@
       </div>
     </p-dialog>
 
-    <!-- Painel de Filtros (Oculto por padrão) -->
-    @if (filtrosVisiveis()) {
-      <p-card class="filters-card">
-        <div class="filters-header">
-          <h3>
-            <i class="pi pi-filter"></i>
-            Filtros
-          </h3>
-        </div>
-        
-        <div class="filters-grid">
-          <div class="filter-group">
-            <label>Status</label>
-            <p-multiSelect
-              [(ngModel)]="filtros.status"
-              [options]="statusOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Todos os status"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showClear]="true"
-            />
-          </div>
+<!-- Detalhe do atendimento: gaveta à direita (desktop) ou folha inferior (celular) -->
+<p-dialog
+  [visible]="modalVisivel && !!atendimentoSelecionado()"
+  [header]="atendimentoSelecionado()?.pacienteNome || 'Atendimento'"
+  [modal]="true"
+  [position]="isTablet() ? 'bottom' : 'right'"
+  [style]="estiloGaveta()"
+  [styleClass]="isTablet() ? 'dlg-folha' : ''"
+  [contentStyle]="{ maxHeight: isTablet() ? null : 'none' }"
+  [draggable]="false"
+  [resizable]="false"
+  [focusOnShow]="false"
+  [closable]="false"
+  [closeOnEscape]="false"
+  [dismissableMask]="false"
+>
+  @if (carregandoAtendimento()) {
+    <p role="status">Carregando atendimento atualizado…</p>
+    <p-button label="Cancelar" (onClick)="fecharModal()" />
+  } @else if (erroAtendimento()) {
+    <p role="alert">{{ erroAtendimento() }}</p>
+    <p-button label="Fechar" (onClick)="fecharModal()" />
+  } @else if (atendimentoSelecionado()) {
+    <div class="ag__detalhe-resumo">
+      <span class="status-pill" [class]="obterPillStatus(atendimentoSelecionado()!.status).cssClass">{{ rotuloStatus(atendimentoSelecionado()!.status) }}</span>
+      <span>{{ atendimentoSelecionado()?.servicoNome || 'Carregando...' }}</span>
+    </div>
 
-          <div class="filter-group">
-            <label>Paciente</label>
-            <p-select
-              [(ngModel)]="filtros.pacienteId"
-              [options]="pacientes()"
-              optionLabel="nome"
-              optionValue="id"
-              placeholder="Todos os pacientes"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showClear]="true"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label>Serviço</label>
-            <p-select
-              [(ngModel)]="filtros.servicoId"
-              [options]="servicos()"
-              optionLabel="nome"
-              optionValue="id"
-              placeholder="Todos os serviços"
-              styleClass="full-width"
-              [appendTo]="'body'"
-              [showClear]="true"
-            />
-          </div>
-
-          <div class="filter-group">
-            <label>Data Início</label>
-            <app-date-field [(ngModel)]="filtros.dataInicio" class="full-width" />
-          </div>
-
-          <div class="filter-group">
-            <label>Data Fim</label>
-            <app-date-field [(ngModel)]="filtros.dataFim" class="full-width" />
-          </div>
-
-          <div class="filter-group filter-actions">
-            <p-button
-              label="Limpar Filtros"
-              icon="pi pi-times"
-              (onClick)="limparFiltros()"
-              styleClass="p-button-text"
-            />
-            <p-button
-              label="Aplicar Filtros"
-              icon="pi pi-check"
-              (onClick)="carregarEventos()"
-            />
-          </div>
-        </div>
-      </p-card>
-    }
-
-    @if (erroCatalogoAgenda()) {
-      <app-page-state [error]="erroCatalogoAgenda()" (retry)="carregarDados()" />
-    }
-    @if (carregandoAgenda() || erroAgenda()) {
-      <app-page-state [loading]="carregandoAgenda()" [error]="erroAgenda()" loadingLabel="Carregando agenda…" (retry)="carregarEventos()" />
-    }
-    @if (isTablet() && !carregandoAgenda() && !erroAgenda()) {
-      <!-- Shell mobile (spec 10): semana + lista do dia, sem FullCalendar -->
-      <div class="agenda-mobile">
-        <div class="agenda-mobile__semana-nav">
-          <button type="button" class="agenda-mobile__semana-seta" (click)="semanaAgendaAnterior()" aria-label="Semana anterior">
-            <i class="pi pi-chevron-left"></i>
-          </button>
-          <div class="agenda-mobile__semana-strip">
-            @for (dia of semanaAgendaAtual(); track dia.getTime()) {
-              <button
-                type="button"
-                class="agenda-mobile__dia"
-                [class.agenda-mobile__dia--selecionado]="ehDiaSelecionadoAgenda(dia)"
-                (click)="selecionarDiaAgenda(dia)"
-              >
-                <span class="agenda-mobile__dia-label">{{ rotuloDiaSemana(dia) }}</span>
-                <span class="agenda-mobile__dia-numero">{{ dia.getDate() }}</span>
-              </button>
-            }
-          </div>
-          <button type="button" class="agenda-mobile__semana-seta" (click)="semanaAgendaProxima()" aria-label="Próxima semana">
-            <i class="pi pi-chevron-right"></i>
-          </button>
-        </div>
-
-        <div class="agenda-mobile__lista-wrap">
-          <div class="agenda-mobile__lista-header">
-            <span class="agenda-mobile__lista-titulo">
-              {{ ehHoje(diaSelecionadoAgenda()) ? 'Hoje' : rotuloDiaSelecionadoAgenda() }}
-              · {{ eventosDoDiaSelecionado().length }} horário{{ eventosDoDiaSelecionado().length === 1 ? '' : 's' }}
-            </span>
-          </div>
-
-          @if (eventosDoDiaSelecionado().length === 0) {
-            <div class="agenda-mobile__vazio">Nenhum atendimento neste dia.</div>
-          } @else {
-            <div class="agenda-mobile__lista">
-              @for (item of eventosDoDiaSelecionado(); track item.chave) {
-                @if (item.participantes.length > 1) {
-                  <div class="turma-mobile"><strong>{{ item.hora }} · {{ item.servicoNome }} · {{ item.participantes.length }} participantes</strong>
-                    @for (participante of item.participantes; track participante.id) {
-                      <button type="button" (click)="abrirModalEdicao(participante)">{{ nomePaciente(participante) }} · {{ obterPillStatus(participante.status).label }} · Abrir atendimento</button>
-                    }
-                  </div>
-                } @else {
-                <div
-                  class="agenda-mobile__item"
-                  [class]="'status-' + (item.atendimento.status | lowercase)"
-                  (click)="abrirModalEdicao(item.atendimento)"
-                >
-                  <div class="agenda-mobile__item-hora">{{ item.hora }}</div>
-                  <div class="agenda-mobile__item-card">
-                    <div class="agenda-mobile__item-topo">
-                      <span class="agenda-mobile__item-nome">{{ item.pacienteNome }}</span>
-                      <span class="status-pill" [class]="obterPillStatus(item.atendimento.status).cssClass">{{ obterPillStatus(item.atendimento.status).label }}</span>
-                    </div>
-                    <div class="agenda-mobile__item-servico">{{ item.servicoNome }}</div>
-                  </div>
-                </div>
-                }
-              }
-            </div>
-          }
-        </div>
-
-        <button type="button" class="agenda-mobile__fab" (click)="abrirNovoAgendamentoDoDia()" aria-label="Novo agendamento">
-          <i class="pi pi-plus"></i>
-        </button>
-      </div>
-    } @else if (!isTablet()) {
-      <div data-agenda-calendar [hidden]="carregandoAgenda() || !!erroAgenda()">
-      <!-- Legenda de Status -->
-      <div class="status-legend">
-        <div class="legend-item">
-          <span class="legend-color agendado"></span>
-          <span>Agendado</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-color concluido"></span>
-          <span>Concluído</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-color cancelado"></span>
-          <span>Cancelado</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-color falta"></span>
-          <span>Falta</span>
-        </div>
-      </div>
-
-      <full-calendar [options]="calendarOptions()" />
-      </div>
-    }
-
-    <!-- Modal de Edição/Baixa -->
-    <p-dialog
-      [(visible)]="modalVisivel"
-      [header]="atendimentoSelecionado() ? 'Editar Atendimento' : 'Novo Agendamento'"
-      [modal]="true"
-      [style]="{ width: '90vw', maxWidth: '900px', maxHeight: '90vh' }"
-      [draggable]="false"
-      [resizable]="false"
-      [focusOnShow]="false"
-      [closable]="false"
-      [closeOnEscape]="false"
-      [dismissableMask]="false"
-    >
-      @if (carregandoAtendimento()) {
-        <p role="status">Carregando atendimento atualizado…</p>
-        <p-button label="Cancelar" (onClick)="fecharModal()" />
-      } @else if (erroAtendimento()) {
-        <p role="alert">{{ erroAtendimento() }}</p>
-        <p-button label="Fechar" (onClick)="fecharModal()" />
-      } @else if (atendimentoSelecionado()) {
-        <div class="form-group">
-          <p>As alterações abaixo afetam somente este atendimento.</p>
-          <p-button label="Alterar próximos atendimentos" icon="pi pi-calendar" [outlined]="true"
-            [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="abrirRemarcacaoRecorrente()" />
-        </div>
-        <div class="form-group">
-          <label>Paciente</label>
-          <p>{{ atendimentoSelecionado()?.pacienteNome || 'Carregando...' }}</p>
-        </div>
-
-        <div class="form-group">
-          <label>Serviço</label>
-          <p>{{ atendimentoSelecionado()?.servicoNome || 'Carregando...' }}</p>
-        </div>
-
-        <div class="form-group">
-          <label>Data/Hora</label>
-          <div class="datetime-selector">
-            <app-date-field [(ngModel)]="dataEdit" class="full-width" (ngModelChange)="atualizarDataHoraEdit()" />
-            <p-select
-              [(ngModel)]="horaEdit"
-              [options]="horariosEdicao"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Selecione o horário"
-              styleClass="full-width time-input"
-              [appendTo]="'body'"
-              (ngModelChange)="atualizarDataHoraEdit()"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Status</label>
-          <p-select
-            [(ngModel)]="statusEdit"
-            [options]="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-            styleClass="full-width"
-            [appendTo]="'body'"
-          />
-        </div>
-
-        <app-evolucao-ficha [atendimentoId]="atendimentoSelecionado()!.id" (estadoAlterado)="estadoFichaMudou($event)" (salva)="evolucaoSalva($event)" />
-        @if (evolucaoEdit) {
-          <details><summary>Registro anterior (somente leitura)</summary><p class="evolution-textarea">{{ evolucaoEdit }}</p></details>
-        }
-        <div class="form-group">
-          <label for="complemento-evolucao">Complemento opcional</label>
-          <textarea id="complemento-evolucao" pTextarea [(ngModel)]="complementoEdit" rows="3" maxlength="5000" class="full-width" [disabled]="estadoFicha().salvando"></textarea>
-          <small>Para registrar este texto, leve-o para Observações e salve a evolução da ficha.</small>
-          @if (complementoEdit.trim()) {
-            <p-button label="Levar complemento para Observações" (onClick)="levarComplementoParaFicha()" [disabled]="!estadoFicha().carregado || estadoFicha().salvando || estadoFicha().conflito" />
-            <p-button label="Descartar complemento" severity="secondary" [text]="true" (onClick)="descartarComplemento()" />
-          }
-        </div>
-        @if (motivoBloqueioFicha()) { <p role="status">{{ motivoBloqueioFicha() }}</p> }
-
-        @if (ehAtendimentoAvulso(atendimentoSelecionado())) {
-          <div class="form-group">
-            <label>Recebedor</label>
-            <p-select
-              [(ngModel)]="recebedorEdit"
-              [options]="recebedorOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Opcional – pagamento avulso"
-              styleClass="full-width"
-              [appendTo]="'body'"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Tipo de Pagamento</label>
-            <p-select
-              [(ngModel)]="tipoPagamentoEdit"
-              [options]="tipoPagamentoOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Opcional – pagamento avulso"
-              styleClass="full-width"
-              [appendTo]="'body'"
-            />
-          </div>
-          <div class="form-group">
-            <label for="data-recebimento">Data do recebimento</label>
-            <app-date-field inputId="data-recebimento" [(ngModel)]="dataPagamentoEdit" />
-            <small>Preencha recebedor, forma e data para confirmar o pagamento. Sem recebimento, a conclusão fica pendente.</small>
-          </div>
-          @if (podeEmitirRecibo(atendimentoSelecionado())) {
-            <p-button label="Emitir / reimprimir recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo()" />
-          }
-        } @else if (ehMensalidade(atendimentoSelecionado())) {
-          <div class="mensalista-badge"><i class="pi pi-id-card"></i> Coberto por mensalidade · assinatura #{{ atendimentoSelecionado()?.assinaturaId }}. Sem cobrança avulsa.</div>
-        } @else {
-          <p>{{ atendimentoSelecionado()?.modalidadeCobranca === 'LEGADO' ? 'Registro legado: cobertura não identificada.' : 'Atendimento sem cobrança (cortesia).' }}</p>
-        }
-
-        <div class="dialog-footer">
-          <p-button
-            label="Cancelar"
-            icon="pi pi-times"
-            (onClick)="fecharModal()"
-            styleClass="p-button-text"
-          />
-          <p-button
-            label="Salvar somente este atendimento"
-            icon="pi pi-check"
-            (onClick)="salvarAtendimento()"
-            [loading]="salvando()"
-            [disabled]="!!motivoBloqueioFicha()"
-          />
-        </div>
-      } @else {
-        <!-- Formulário de Novo Agendamento -->
-        <div class="form-group">
-          <label>Pacientes *</label>
-          <p-multiSelect
-            [(ngModel)]="novoAgendamento.pacienteIds"
-            [options]="pacientesAtivos()"
-            optionLabel="nome"
-            optionValue="id"
-            placeholder="Selecione um ou mais pacientes"
-            styleClass="full-width"
-            [appendTo]="'body'"
-            [showClear]="true"
-            [filter]="true"
-            filterPlaceholder="Buscar pacientes..."
-          />
-          <small class="text-muted">Os pacientes compartilharão a turma quando serviço e horários forem iguais. Cada atendimento continua individual.</small>
-        </div>
-
-        <div class="form-group">
-          <label>Serviço *</label>
-          <p-select
-            [(ngModel)]="novoAgendamento.servicoId"
-            [options]="servicosAtivos()"
-            optionLabel="nome"
-            optionValue="id"
-            placeholder="Selecione o serviço"
-            styleClass="full-width"
-            [appendTo]="'body'"
-          />
-        </div>
-
-        @if (novoAgendamento.servicoId) {
-          @for (servico of servicosAtivos(); track servico.id) {
-            @if (servico.id === novoAgendamento.servicoId) { <p>Capacidade deste serviço: {{ servico.capacidade ?? (servico.tipo === 'PILATES' ? 15 : 1) }} participante(s). A disponibilidade será validada ao salvar.</p> }
-          }
-        }
-        <div class="form-group">
-          <label>Data/Hora *</label>
-          <div class="datetime-selector">
-            <app-date-field [(ngModel)]="dataNovoAgendamento" class="full-width" (ngModelChange)="atualizarDataHoraNovoAgendamento()" />
-            <p-select
-              [(ngModel)]="horaNovoAgendamento"
-              [options]="horariosDisponiveis"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Selecione o horário"
-              styleClass="full-width time-input"
-              [appendTo]="'body'"
-              (ngModelChange)="atualizarDataHoraNovoAgendamento()"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="flex align-items-center gap-2">
-            <p-toggleswitch [(ngModel)]="repetirAgendamento" />
-            <label>Repetir agendamento?</label>
-          </div>
-        </div>
-
-        @if (repetirAgendamento) {
-          <div class="form-group">
-            <label>Repetir até *</label>
-            <app-date-field [(ngModel)]="dataFimRecorrencia" class="full-width" />
-          </div>
-
-          <div class="form-group">
-            <label>Dias da Semana</label>
-            <p-multiSelect
-              [(ngModel)]="diasSemanaSelecionados"
-              [options]="diasSemanaOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Selecione os dias da semana"
-              styleClass="full-width"
-              [appendTo]="'body'"
-            />
-            <small class="text-muted">Selecione os dias da semana. Se nenhum for selecionado, repetirá no mesmo dia da semana da data inicial.</small>
-          </div>
-        }
-
-        <div class="dialog-footer">
-          <p-button
-            label="Cancelar"
-            icon="pi pi-times"
-            (onClick)="fecharModal()"
-            styleClass="p-button-text"
-          />
-          <p-button
-            label="Criar"
-            icon="pi pi-check"
-            (onClick)="criarAgendamento()"
-            [loading]="salvando()"
-          />
-        </div>
+    <div class="ag__acoes-rapidas">
+      <p-button label="Alterar próximos" icon="pi pi-calendar" [outlined]="true" size="small"
+        [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="abrirRemarcacaoRecorrente()" />
+      @if (atendimentoSelecionado()!.status === 'AGENDADO') {
+        <p-button label="Registrar falta" icon="pi pi-user-minus" [outlined]="true" severity="secondary" size="small"
+          [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="pedirStatusRapido('FALTA')" />
+        <p-button label="Cancelar atendimento" icon="pi pi-times" [outlined]="true" severity="danger" size="small"
+          [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="pedirStatusRapido('CANCELADO')" />
       }
-    </p-dialog>
+    </div>
+    <p class="text-muted">As alterações abaixo afetam somente este atendimento.</p>
+
+    <div class="form-group">
+      <label for="edit-data">Data e horário</label>
+      <div class="datetime-selector">
+        <app-date-field inputId="edit-data" [(ngModel)]="dataEdit" class="full-width" (ngModelChange)="atualizarDataHoraEdit()" />
+        <p-select
+          [(ngModel)]="horaEdit"
+          [options]="horariosEdicao"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecione o horário"
+          styleClass="full-width time-input"
+          [appendTo]="'body'"
+          (ngModelChange)="atualizarDataHoraEdit()"
+          ariaLabel="Horário"
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="edit-status">Status</label>
+      <p-select
+        inputId="edit-status"
+        [(ngModel)]="statusEdit"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="full-width"
+        [appendTo]="'body'"
+      />
+    </div>
+
+    <app-evolucao-ficha [atendimentoId]="atendimentoSelecionado()!.id" (estadoAlterado)="estadoFichaMudou($event)" (salva)="evolucaoSalva($event)" />
+    @if (evolucaoEdit) {
+      <details><summary>Registro anterior (somente leitura)</summary><p class="evolution-textarea">{{ evolucaoEdit }}</p></details>
+    }
+    <div class="form-group">
+      <label for="complemento-evolucao">Complemento opcional</label>
+      <textarea id="complemento-evolucao" pTextarea [(ngModel)]="complementoEdit" rows="3" maxlength="5000" class="full-width" [disabled]="estadoFicha().salvando"></textarea>
+      <small>Para registrar este texto, leve-o para Observações e salve a evolução da ficha.</small>
+      @if (complementoEdit.trim()) {
+        <p-button label="Levar complemento para Observações" (onClick)="levarComplementoParaFicha()" [disabled]="!estadoFicha().carregado || estadoFicha().salvando || estadoFicha().conflito" />
+        <p-button label="Descartar complemento" severity="secondary" [text]="true" (onClick)="descartarComplemento()" />
+      }
+    </div>
+    @if (motivoBloqueioFicha()) { <p role="status">{{ motivoBloqueioFicha() }}</p> }
+
+    @if (ehAtendimentoAvulso(atendimentoSelecionado())) {
+      <div class="form-group">
+        <label for="edit-recebedor">Recebedor</label>
+        <p-select
+          inputId="edit-recebedor"
+          [(ngModel)]="recebedorEdit"
+          [options]="recebedorOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Opcional – pagamento avulso"
+          styleClass="full-width"
+          [appendTo]="'body'"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-pagamento">Tipo de pagamento</label>
+        <p-select
+          inputId="edit-pagamento"
+          [(ngModel)]="tipoPagamentoEdit"
+          [options]="tipoPagamentoOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Opcional – pagamento avulso"
+          styleClass="full-width"
+          [appendTo]="'body'"
+        />
+      </div>
+      <div class="form-group">
+        <label for="data-recebimento">Data do recebimento</label>
+        <app-date-field inputId="data-recebimento" [(ngModel)]="dataPagamentoEdit" />
+        <small>Preencha recebedor, forma e data para confirmar o pagamento. Sem recebimento, a conclusão fica pendente.</small>
+      </div>
+      @if (podeEmitirRecibo(atendimentoSelecionado())) {
+        <p-button label="Emitir / reimprimir recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo()" />
+      }
+    } @else if (ehMensalidade(atendimentoSelecionado())) {
+      <div class="mensalista-badge"><i class="pi pi-id-card"></i> Coberto por mensalidade · assinatura #{{ atendimentoSelecionado()?.assinaturaId }}. Sem cobrança avulsa.</div>
+    } @else {
+      <p>{{ atendimentoSelecionado()?.modalidadeCobranca === 'LEGADO' ? 'Registro legado: cobertura não identificada.' : 'Atendimento sem cobrança (cortesia).' }}</p>
+    }
+
+    <div class="dialog-footer">
+      <p-button label="Cancelar" icon="pi pi-times" (onClick)="fecharModal()" styleClass="p-button-text" />
+      <p-button
+        label="Salvar somente este atendimento"
+        icon="pi pi-check"
+        (onClick)="salvarAtendimento()"
+        [loading]="salvando()"
+        [disabled]="!!motivoBloqueioFicha()"
+      />
+    </div>
+  }
+</p-dialog>
+
+<!-- Confirmação: cancelar atendimento / registrar falta -->
+<p-dialog
+  [visible]="!!confirmacaoStatus()"
+  (visibleChange)="$event || confirmacaoStatus.set(null)"
+  [header]="confirmacaoStatus() === 'FALTA' ? 'Registrar falta?' : 'Cancelar atendimento?'"
+  [modal]="true"
+  [style]="{ width: '92vw', maxWidth: '460px' }"
+  [draggable]="false"
+>
+  <p>
+    {{ confirmacaoStatus() === 'FALTA' ? 'O paciente será marcado como ausente neste atendimento.' : 'O horário ficará livre e o atendimento passa a constar como cancelado.' }}
+    Esta ação altera o histórico do paciente.
+  </p>
+  <div class="dialog-footer">
+    <p-button label="Voltar" [text]="true" (onClick)="confirmacaoStatus.set(null)" [disabled]="salvando()" />
+    <p-button
+      [label]="confirmacaoStatus() === 'FALTA' ? 'Registrar falta' : 'Cancelar atendimento'"
+      severity="danger"
+      (onClick)="confirmarStatusRapido()"
+      [loading]="salvando()"
+    />
+  </div>
+</p-dialog>
+
+<!-- Novo agendamento -->
+<p-dialog
+  [visible]="modalVisivel && !atendimentoSelecionado()"
+  (visibleChange)="aoMudarVisibilidadeNovo($event)"
+  header="Novo agendamento"
+  [modal]="true"
+  [position]="isTablet() ? 'bottom' : 'center'"
+  [style]="estiloModalNovo()"
+  [styleClass]="isTablet() ? 'dlg-folha' : ''"
+  [contentStyle]="{ maxHeight: isTablet() ? null : 'none' }"
+  [draggable]="false"
+  [resizable]="false"
+  [focusOnShow]="false"
+  [dismissableMask]="false"
+>
+  <div class="form-group">
+    <label for="novo-pacientes">Pacientes *</label>
+    <p-multiSelect
+      inputId="novo-pacientes"
+      [(ngModel)]="novoAgendamento.pacienteIds"
+      [options]="pacientesAtivos()"
+      optionLabel="nome"
+      optionValue="id"
+      placeholder="Selecione um ou mais pacientes"
+      styleClass="full-width"
+      [appendTo]="'body'"
+      [showClear]="true"
+      [filter]="true"
+      filterPlaceholder="Buscar pacientes..."
+    />
+    <small class="text-muted">Os pacientes compartilham a turma quando serviço e horário são iguais. Cada atendimento continua individual.</small>
+  </div>
+
+  <div class="form-group">
+    <label for="novo-servico">Serviço *</label>
+    <p-select
+      inputId="novo-servico"
+      [(ngModel)]="novoAgendamento.servicoId"
+      [options]="servicosAtivos()"
+      optionLabel="nome"
+      optionValue="id"
+      placeholder="Selecione o serviço"
+      styleClass="full-width"
+      [appendTo]="'body'"
+    />
+    @if (novoAgendamento.servicoId) {
+      @for (servico of servicosAtivos(); track servico.id) {
+        @if (servico.id === novoAgendamento.servicoId) {
+          <small class="text-muted">Capacidade: {{ servico.capacidade ?? (servico.tipo === 'PILATES' ? 15 : 1) }} participante(s). A disponibilidade é validada ao salvar.</small>
+        }
+      }
+    }
+  </div>
+
+  <div class="form-group">
+    <label for="novo-data">Data e horário *</label>
+    <div class="datetime-selector">
+      <app-date-field inputId="novo-data" [(ngModel)]="dataNovoAgendamento" class="full-width" (ngModelChange)="atualizarDataHoraNovoAgendamento()" />
+      <p-select
+        [(ngModel)]="horaNovoAgendamento"
+        [options]="horariosDisponiveis"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecione o horário"
+        styleClass="full-width time-input"
+        [appendTo]="'body'"
+        (ngModelChange)="atualizarDataHoraNovoAgendamento()"
+        ariaLabel="Horário"
+      />
+    </div>
+  </div>
+
+  <div class="form-group ag__repetir">
+    <p-toggleswitch inputId="novo-repetir" [(ngModel)]="repetirAgendamento" />
+    <label for="novo-repetir">Repetir toda semana</label>
+  </div>
+
+  @if (repetirAgendamento) {
+    <div class="form-group">
+      <span class="ag__rotulo" id="rotulo-dias">Nos dias</span>
+      <div class="ag__dias" role="group" aria-labelledby="rotulo-dias">
+        @for (opcao of diasSemanaOptions; track opcao.value) {
+          <button type="button" class="ag__dia-chip" [attr.aria-pressed]="diasSemanaSelecionados.includes(opcao.value)" (click)="alternarDiaSemana(opcao.value)">{{ opcao.label }}</button>
+        }
+      </div>
+      <small class="text-muted">Sem dias marcados, repete no mesmo dia da semana da data inicial.</small>
+    </div>
+    <div class="form-group">
+      <label for="novo-ate">Repetir até *</label>
+      <app-date-field inputId="novo-ate" [(ngModel)]="dataFimRecorrencia" class="full-width" />
+      @if (quantidadeRecorrencia() > 0) {
+        <small class="ag__resumo-rec" role="status">{{ quantidadeRecorrencia() }} atendimento{{ quantidadeRecorrencia() === 1 ? '' : 's' }} por paciente</small>
+      }
+    </div>
+  }
+
+  <div class="dialog-footer">
+    <p-button label="Cancelar" icon="pi pi-times" (onClick)="fecharModal()" styleClass="p-button-text" />
+    <p-button label="Agendar" icon="pi pi-check" (onClick)="criarAgendamento()" [loading]="salvando()" />
+  </div>
+</p-dialog>
 
     @if (atendimentoRemarcacao(); as origem) {
       <p-dialog [visible]="true" header="Remarcação de programação" [modal]="true"

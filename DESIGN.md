@@ -153,7 +153,7 @@ Raios 6px (controles), 10px (cards e painéis), 16px (máximo, sheets). Bordas d
 - Tabela densa no desktop; cards com ações em linha própria no celular; ações de linha com rótulo sem quebra.
 
 ### Diálogos e seletores
-- `p-dialog` modal; detalhe do atendimento em gaveta à direita (desktop) ou sheet (celular). DatePicker em pt-BR, painel anexado ao `body`, sem z-index próprio.
+- `p-dialog` modal; detalhe do atendimento em gaveta à direita (desktop) ou sheet (celular). Datas em `app-date-field` (digitadas com máscara, sem calendário em pop-up); Selects com painel anexado ao `body`, sem z-index próprio.
 
 ## Do's and Don'ts
 

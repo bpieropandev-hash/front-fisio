@@ -1,38 +1,399 @@
-    @use '../../../styles/breakpoints' as bp;
+@use '../../../styles/breakpoints' as bp;
 
-    .agenda-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-      gap: 1rem;
+// --- Padrão A: topo, grade, navegador mensal, chips de status, faixa de semana (celular) e FAB ---
+.ag__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.ag__titulo h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.ag__titulo p {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+}
+
+.ag__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ag__nav {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+
+  button {
+    display: grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+
+    & + button {
+      border-left: 1px solid var(--border-color);
     }
 
-    .agenda-header h2 {
-      flex: 0 0 auto;
+    &:hover {
+      background: var(--bg-tertiary);
     }
+  }
+}
 
-    .header-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      align-items: center;
-      margin-left: auto;
+.ag__grade {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.ag__lado {
+  position: sticky;
+  top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.ag__dia {
+  min-width: 0;
+}
+
+.ag__cartao {
+  padding: var(--space-4);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.ag__cartao-titulo {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.ag__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.ag__filtros-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 280px));
+  gap: var(--space-4);
+
+  .form-group {
+    margin: 0;
+  }
+}
+
+.ag__filtros-acoes {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.ag__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ag__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &[aria-pressed='false'] {
+    border-style: dashed;
+    background: transparent;
+    color: var(--text-secondary);
+  }
+}
+
+.ag__chip-n {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ag__ponto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.ag__ponto--agendado { background: var(--accent-color); }
+.ag__ponto--concluido { background: var(--text-secondary); }
+.ag__ponto--cancelado { background: var(--status-err-fg); }
+.ag__ponto--falta { background: var(--status-warn-fg); }
+
+.ag__vazio {
+  margin: 0 0 var(--space-3);
+  color: var(--text-secondary);
+}
+
+.ag__faixa {
+  display: grid;
+  grid-template-columns: 36px repeat(7, 1fr) 36px;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: var(--space-3);
+}
+
+.ag__faixa-seta {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ag__faixa-dia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 62px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ag__faixa-rotulo {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.ag__faixa-numero {
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.ag__faixa-ponto {
+  width: 5px;
+  height: 5px;
+  margin-top: 3px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  visibility: hidden;
+}
+
+.ag__faixa-ponto--tem {
+  visibility: visible;
+}
+
+.ag__faixa-dia--ativo {
+  background: var(--accent-color);
+  color: var(--on-accent);
+
+  .ag__faixa-rotulo {
+    color: inherit;
+    opacity: 0.85;
+  }
+
+  .ag__faixa-ponto {
+    background: var(--on-accent);
+  }
+}
+
+.ag__chips--rolagem {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 0 calc(var(--space-4) * -1) var(--space-3);
+  padding: 0 var(--space-4) var(--space-1);
+
+  .ag__chip {
+    flex: none;
+  }
+}
+
+.ag__fab {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(#{bp.$bottom-nav-height} + var(--space-4) + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: var(--on-accent);
+  font-size: 1.25rem;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-color) 32%, transparent);
+  cursor: pointer;
+}
+
+// Detalhe do atendimento e criação
+.ag__detalhe-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  color: var(--text-secondary);
+}
+
+.ag__acoes-rapidas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.ag__repetir {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+
+  label {
+    margin: 0;
+  }
+}
+
+.ag__rotulo {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.ag__dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ag__dia-chip {
+  min-width: 48px;
+  min-height: 44px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    border-color: var(--accent-color);
+    background: var(--accent-color);
+    color: var(--on-accent);
+  }
+}
+
+.ag__resumo-rec {
+  display: block;
+  margin-top: var(--space-2);
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+
+.ag__chip:focus-visible,
+.ag__dia-chip:focus-visible,
+.ag__faixa-dia:focus-visible,
+.ag__faixa-seta:focus-visible,
+.ag__nav button:focus-visible,
+.ag__fab:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .ag__grade {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ag__lado {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    .ag__cartao {
+      flex: 1 1 280px;
     }
+  }
+}
 
-    .header-actions a.p-button {
-      display: inline-flex;
-      align-items: center;
-      text-decoration: none;
-    }
+@media (max-width: 768px) {
+  // O FAB fixo não pode cobrir o fim da linha do tempo
+  .ag__topo {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
 
-    .header-actions ::ng-deep .p-button {
-      height: 2.5rem !important;
-      min-height: 2.5rem !important;
-      padding: 0.625rem 1.25rem !important;
-    }
+  .ag__controles {
+    flex: none;
+  }
 
+  .ag__dia {
+    padding-bottom: calc(56px + var(--space-4));
+  }
+
+  .ag__topo {
+    margin-bottom: var(--space-3);
+  }
+
+  .ag__chip {
+    min-height: 44px;
+  }
+
+  .ag__titulo h2 {
+    font-size: 1.25rem;
+  }
+
+  .ag__titulo p {
+    font-size: 0.8125rem;
+  }
+
+  .ag__filtros-campos {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+}
+
+// --- Diálogos preservados (edição, lote, turma) ---
     .form-group {
       margin-bottom: 20px;
     }
@@ -105,9 +466,9 @@
 
     .mensalista-badge {
       padding: 12px;
-      background-color: #e3f2fd;
+      background-color: var(--accent-soft);
       border-radius: 4px;
-      color: #1976d2;
+      color: var(--accent-ink);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -159,14 +520,6 @@
       }
     }
 
-    .mobile-view-switch {
-      margin-top: 1rem;
-    }
-
-    .mobile-view-switch ::ng-deep .p-togglebutton {
-      min-height: 44px;
-    }
-
     .lote-item {
       border: 1px solid var(--border-color);
       border-radius: 10px;
@@ -202,7 +555,7 @@
     }
 
     .text-muted {
-      color: #64748b;
+      color: var(--text-secondary);
       font-size: 0.875rem;
       margin-top: 0.5rem;
       display: block;
@@ -220,516 +573,34 @@
       gap: 0.5rem;
     }
 
-    ::ng-deep .fc-event-title {
-      white-space: normal;
-    }
 
-    ::ng-deep .mensalista-event {
-      background-color: #4caf50 !important;
-      border-color: #4caf50 !important;
-    }
-
-    /* Cores garantidas por STATUS (todas as views) */
-    ::ng-deep .fc .status-agendado,
-    ::ng-deep .fc .status-agendado .fc-event-main {
-      background-color: #a5d6a7 !important;
-      border-color: #16a34a !important;
-      color: #1b5e20 !important;
-    }
-
-    ::ng-deep .fc .status-concluido,
-    ::ng-deep .fc .status-concluido .fc-event-main {
-      background-color: #90caf9 !important;
-      border-color: #2563eb !important;
-      color: #0d47a1 !important;
-    }
-
-    ::ng-deep .fc .status-cancelado,
-    ::ng-deep .fc .status-cancelado .fc-event-main {
-      background-color: #ef9a9a !important;
-      border-color: #dc2626 !important;
-      color: #b71c1c !important;
-    }
-
-    ::ng-deep .fc .status-falta,
-    ::ng-deep .fc .status-falta .fc-event-main {
-      background-color: #fff59d !important;
-      border-color: #ca8a04 !important;
-      color: #f57f17 !important;
-    }
-
-    /* Month (dayGrid) - render minimalista dos eventos */
-    ::ng-deep .fc-daygrid-event .fc-month-min {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      padding: 1px 2px;
-      font-size: 11px;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      user-select: none;
-    }
-
-    ::ng-deep .fc-daygrid-event .fc-month-min__badge {
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 16px;
-      padding: 0 6px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 10px;
-      letter-spacing: 0.04em;
-      background: rgba(255, 255, 255, 0.75);
-      color: rgba(15, 23, 42, 0.9);
-    }
-
-    ::ng-deep .fc-daygrid-event .fc-month-min__time {
-      flex: 0 0 auto;
-      font-weight: 600;
-    }
-
-    ::ng-deep .fc-daygrid-event .fc-month-min__name {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-weight: 600;
-    }
-
-    /* Estilo discreto e elegante para o indicador de horário atual */
-    ::ng-deep .fc-timegrid-now-indicator-line {
-      border-color: #64748b !important;
-      border-width: 1px !important;
-      border-style: dashed !important;
-      opacity: 0.6 !important;
-      z-index: 5 !important;
-    }
-
-    ::ng-deep .fc-timegrid-now-indicator-arrow {
-      border-color: transparent !important;
-      background-color: transparent !important;
-    }
-
-    /* Melhorar visibilidade do indicador */
-    ::ng-deep .fc-timegrid-now-indicator-container {
-      pointer-events: none !important;
-    }
-
-    .filters-card {
-      margin-bottom: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      animation: slideDown 0.3s ease-out;
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .filters-header {
-      margin-bottom: 1.5rem;
-    }
-
-    .filters-header h3 {
-      margin: 0;
-      color: #1e293b;
-      font-size: 1.25rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .filters-header i {
-      color: #64748b;
-    }
-
-    .filters-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .filter-group label {
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: #1e293b;
-      font-size: 0.875rem;
-    }
-
-    .filter-actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-      align-items: flex-end;
-    }
-
-    .status-legend {
-      display: flex;
-      gap: 1.5rem;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      color: var(--text-secondary);
-      flex-wrap: wrap;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      color: #64748b;
-    }
-
-    .legend-color {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      border: 2px solid;
-    }
-
-    .legend-color.agendado {
-      background-color: #a5d6a7;
-      border-color: #66bb6a;
-    }
-
-    .legend-color.concluido {
-      background-color: #90caf9;
-      border-color: #42a5f5;
-    }
-
-    .legend-color.cancelado {
-      background-color: #ef9a9a;
-      border-color: #e57373;
-    }
-
-    .legend-color.falta {
-      background-color: #fff59d;
-      border-color: #ffd54f;
-    }
-
-    @media (max-width: 768px) {
-      .agenda-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-      }
-
-      .agenda-header h2 {
-        font-size: 1.5rem;
-        margin: 0;
-      }
-
-      .header-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .header-actions .p-button {
-        width: 100%;
-      }
-
-      .filter-actions {
-        flex-direction: column-reverse;
-      }
-
-      .filter-actions .p-button {
-        width: 100%;
-      }
-
-      .filters-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .status-legend {
-        gap: 0.75rem;
-        padding: 0.75rem;
-        font-size: 0.875rem;
-      }
-
-      .filters-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-
-      .filters-header h3 {
-        font-size: 1rem;
-      }
-
-      ::ng-deep .fc-toolbar {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      ::ng-deep .fc-toolbar-chunk {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem;
-      }
-
-      ::ng-deep .fc-button {
-        padding: 0.375rem 0.5rem !important;
-        font-size: 0.875rem !important;
-      }
-
-      ::ng-deep .fc-event-title {
-        font-size: 0.75rem !important;
-        padding: 2px 4px !important;
-      }
-
-      .dialog-footer {
-        flex-direction: row;
-        gap: 10px;
-      }
-
-      .dialog-footer .p-button {
-        flex: 1;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .agenda-header h2 {
-        font-size: 1.25rem;
-      }
-
-      .status-legend {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      ::ng-deep .fc-header-toolbar {
-        font-size: 0.75rem;
-      }
-
-      ::ng-deep .fc-daygrid-day-number,
-      ::ng-deep .fc-timegrid-slot-label {
-        font-size: 0.75rem !important;
-      }
-    }
-
-/* Shell mobile (spec 10) — semana + lista do dia, substitui o FullCalendar em telas estreitas */
-.agenda-mobile {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  position: relative;
-  /* O FAB fixo ocupa 58px a partir de (nav + 20px) do rodapé. Em tablet o <main> só tem 16px de
-     padding; reserva o resto para o último card não ficar sob o botão. */
-  padding-bottom: calc(#{bp.$bottom-nav-height} + 20px + 58px);
-
-  /* Em celular (<=640px) o <main> já reserva nav + 16px: falta só o espaço do FAB. */
-  @media (max-width: 640px) {
-    padding-bottom: calc(20px + 58px);
-  }
-}
-
-.agenda-mobile__semana-nav {
+.turma-participante {
   display: flex;
   align-items: center;
-  gap: 4px;
-}
-
-.agenda-mobile__semana-seta {
-  flex: none;
-  width: 32px;
-  height: 62px;
-  border: none;
-  background: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-}
-
-.agenda-mobile__semana-strip {
-  flex: 1;
-  display: flex;
-  gap: 4px;
-  min-width: 0;
-}
-
-.agenda-mobile__dia {
-  flex: 1;
-  min-height: 62px;
-  border-radius: 14px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-family: inherit;
-  color: var(--text-primary);
-}
-
-.agenda-mobile__dia-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.agenda-mobile__dia-numero {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.agenda-mobile__dia--selecionado {
-  background: var(--accent-color);
-
-  .agenda-mobile__dia-label {
-    color: #06222c;
-  }
-
-  .agenda-mobile__dia-numero {
-    color: #06222c;
-    font-weight: 700;
-  }
-}
-
-.agenda-mobile__lista-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.agenda-mobile__lista-header {
-  display: flex;
-  align-items: baseline;
   justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
 }
 
-.agenda-mobile__lista-titulo {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.agenda-mobile__vazio {
-  padding: 32px 16px;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 14px;
-  background: var(--bg-primary);
-  border: 1px dashed var(--border-color);
-  border-radius: 14px;
-}
-
-.agenda-mobile__lista {
+.turma-mobile {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.agenda-mobile__item {
-  display: flex;
-  gap: 12px;
-  cursor: pointer;
-}
-
-.agenda-mobile__item-hora {
-  width: 46px;
-  flex: none;
-  padding-top: 2px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.agenda-mobile__item-card {
-  flex: 1;
-  min-width: 0;
-  background: var(--bg-primary);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
   border: 1px solid var(--border-color);
-  border: 1px solid var(--accent-color);
-  border-radius: 14px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border-radius: var(--radius-md);
 }
 
-.agenda-mobile__item.status-cancelado .agenda-mobile__item-card {
-  border-left-color: var(--status-err-fg);
-}
-
-.agenda-mobile__item.status-falta .agenda-mobile__item-card {
-  border-left-color: var(--status-warn-fg);
-}
-
-.agenda-mobile__item.status-concluido .agenda-mobile__item-card {
-  border-left-color: var(--border-color);
-  background: var(--bg-tertiary);
-  opacity: 0.85;
-}
-
-.agenda-mobile__item-topo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.agenda-mobile__item-nome {
-  font-size: 16px;
-  font-weight: 600;
+.turma-mobile button {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
   color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agenda-mobile__item-servico {
-  font-size: 13.5px;
-  color: var(--text-secondary);
-}
-
-.agenda-mobile__fab {
-  position: fixed;
-  right: 20px;
-  bottom: calc(bp.$bottom-nav-height + 20px + env(safe-area-inset-bottom));
-  width: 58px;
-  height: 58px;
-  border-radius: 999px;
-  border: none;
-  background: var(--accent-color);
-  color: #06222c;
-  box-shadow: 0 8px 20px rgba(11, 127, 163, 0.32);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
+  text-align: left;
   cursor: pointer;
-  z-index: 30;
 }
-
-.turma-participante {display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:1rem 0;}
-.turma-mobile {display:flex; flex-direction:column; gap:.75rem; padding:1rem; border:1px solid #cbd5e1; border-radius:12px; margin-bottom:1rem;}
-.turma-mobile button {text-align:left; padding:.75rem; background:white; border:1px solid #cbd5e1; border-radius:8px; cursor:pointer;}
  .lote-periodo {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

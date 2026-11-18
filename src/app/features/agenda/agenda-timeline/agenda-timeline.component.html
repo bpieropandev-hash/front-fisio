@@ -1,0 +1,31 @@
+<div class="tl" [style.--h.px]="alturaHora()">
+  <div class="tl__horas" aria-hidden="true">
+    @for (hora of horas(); track hora) {
+      <div class="tl__hora">{{ hora < 10 ? '0' + hora : hora }}:00</div>
+    }
+  </div>
+  <div class="tl__pista" [style.height.px]="alturaTotal()" (click)="aoClicarNaPista($event)">
+    @for (bloco of blocos(); track bloco.evento.chave) {
+      <button
+        type="button"
+        [class]="'tl__bloco tl__bloco--' + bloco.evento.status.toLowerCase()"
+        [style]="estilo(bloco)"
+        [attr.aria-label]="rotuloAria(bloco.evento)"
+        (click)="$event.stopPropagation(); selecionar.emit(bloco.evento)"
+      >
+        <span class="tl__nome">
+          @if (bloco.evento.status === 'CONCLUIDO') { <i class="pi pi-check" aria-hidden="true"></i> }
+          <span class="tl__nome-texto">{{ titulo(bloco.evento) }}</span>
+        </span>
+        <span class="tl__meta">
+          {{ bloco.evento.hora }}–{{ formatar(bloco.evento.fimMin) }}
+          <span class="tl__sigla">{{ bloco.evento.sigla }}</span>
+          @if (!compacto(bloco)) { <span class="tl__status">{{ rotuloStatus(bloco.evento.status) }}</span> }
+        </span>
+      </button>
+    }
+    @if (topoAgora() !== null) {
+      <div class="tl__agora" [style.top.px]="topoAgora()" aria-hidden="true"></div>
+    }
+  </div>
+</div>
