@@ -568,13 +568,15 @@
 <p-dialog [(visible)]="modalTurmaVisivel" header="Participantes da turma" [modal]="true" [style]="{width:'90vw',maxWidth:'650px'}" [draggable]="false">
  <p>Abra um participante para evoluir, remarcar ou alterar seu status individualmente.</p>
  @for (participante of turmaSelecionada(); track participante.id) {
-   <div class="turma-participante"><span>{{ nomePaciente(participante) }} · {{ obterPillStatus(participante.status).label }}</span><p-button label="Abrir atendimento" (onClick)="abrirModalEdicao(participante)" /></div>
+   <div class="turma-participante"><span>{{ nomePaciente(participante) }} · {{ rotuloStatus(participante.status) }}</span><p-button label="Abrir atendimento" [outlined]="true" (onClick)="abrirModalEdicao(participante)" /></div>
  }
 </p-dialog>
 <app-recibo-dialog [(visible)]="reciboVisivel" [origem]="reciboOrigem" [dataPagamento]="atendimentoSelecionado()?.dataPagamento || ''" [pacienteNome]="atendimentoSelecionado()?.pacienteNome || ''" />
 
 <p-dialog [visible]="modalDescartarVisivel()" (visibleChange)="modalDescartarVisivel.set($event)" header="Descartar alterações da evolução?" [modal]="true" [style]="{width:'90vw',maxWidth:'520px'}" [closable]="false" [closeOnEscape]="false">
  <p>Há alterações na evolução ainda não salvas. Continue editando para preservá-las ou descarte explicitamente para fechar.</p>
- <p-button label="Continuar editando" (onClick)="modalDescartarVisivel.set(false)" />
- <p-button label="Descartar alterações e fechar" severity="danger" (onClick)="descartarEFechar()" />
+ <div class="dialog-footer">
+  <p-button label="Descartar alterações e fechar" severity="danger" [outlined]="true" (onClick)="descartarEFechar()" />
+  <p-button label="Continuar editando" (onClick)="modalDescartarVisivel.set(false)" />
+ </div>
 </p-dialog>

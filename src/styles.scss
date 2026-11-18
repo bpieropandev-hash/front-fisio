@@ -897,6 +897,12 @@ html.dark-mode .evolution-textarea.p-inputtextarea::placeholder {
     min-width: 0;
   }
 
+  .turma-participante > p-button {
+    display: flex;
+    width: 100%;
+  }
+
+  .turma-participante .p-button,
   .header-actions .p-button,
   .filter-actions .p-button,
   .dialog-footer .p-button,
