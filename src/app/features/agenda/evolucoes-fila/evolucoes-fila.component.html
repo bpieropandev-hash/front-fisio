@@ -1,0 +1,113 @@
+<p-dialog
+  header="Evoluções de hoje"
+  [visible]="visivel"
+  (visibleChange)="!$event && fecharFila()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!salvando()"
+  [closeOnEscape]="!salvando()"
+  [style]="{ width: 'min(1040px, 96vw)' }"
+  styleClass="dlg-fila"
+  [contentStyle]="{ padding: '0' }"
+>
+  <div class="fila" [attr.aria-busy]="salvando()">
+    <div class="fila__progresso" role="status">
+      <p><span>{{ feitas() }} de {{ total() }} atendimentos evoluídos</span><strong>{{ percentual() }}%</strong></p>
+      <div class="fila__barra" aria-hidden="true"><i [style.width.%]="percentual()"></i></div>
+    </div>
+
+    @if (!atual()) {
+      <div class="fila__vazio">
+        <i class="pi pi-check" aria-hidden="true"></i>
+        <h3>Tudo em dia</h3>
+        <p>Todas as evoluções de hoje foram registradas.</p>
+        <p-button label="Voltar à agenda" (onClick)="fechar.emit()" />
+      </div>
+    } @else {
+      <nav class="fila__chips" aria-label="Horários pendentes">
+        @for (g of pendentes(); track g.chave; let i = $index) {
+          <button type="button" class="fila__chip" [attr.aria-current]="i === indice()" (click)="irPara(i)">{{ g.hora }} {{ g.participantes.length > 1 ? 'Turma' : rotuloTurma(g) }}</button>
+        }
+      </nav>
+
+      <div class="fila__corpo">
+        <ul class="fila__lista" aria-label="Horários pendentes">
+          @for (g of pendentes(); track g.chave; let i = $index) {
+            <li>
+              <button type="button" class="fila__item" [attr.aria-current]="i === indice()" (click)="irPara(i)">
+                <span class="fila__hora">{{ g.hora }}</span>
+                <span class="fila__nome"><b>{{ rotuloTurma(g) }}</b><small>{{ subtituloTurma(g) }}</small></span>
+                <span class="fila__pend">Pendente</span>
+              </button>
+            </li>
+          }
+        </ul>
+
+        <div class="fila__editor">
+          @if (atual(); as g) {
+            <header>
+              <h3>{{ g.participantes.length > 1 ? g.servicoNome + ' · ' + g.participantes.length + ' participantes' : g.participantes[0].pacienteNome }}</h3>
+              <p>{{ g.hora }}–{{ g.fim }}@if (g.participantes.length === 1) { · {{ modalidade(g.participantes[0]) }} }</p>
+            </header>
+
+            @if (g.participantes.length > 1) {
+              <fieldset class="fila__modo" [disabled]="salvando()">
+                <legend class="sr-only">Como evoluir a turma</legend>
+                <label><input type="radio" name="modo" [checked]="modo() === 'mesmo'" (change)="mudarModo('mesmo')" />
+                  <span>Mesmo registro para toda a turma<small>Vale para os {{ g.participantes.length }} participantes que ainda não têm evolução</small></span></label>
+                <label><input type="radio" name="modo" [checked]="modo() === 'cada'" (change)="mudarModo('cada')" />
+                  <span>Um registro por paciente<small>Alterne entre os participantes abaixo</small></span></label>
+              </fieldset>
+              @if (modo() === 'cada') {
+                <div class="fila__abas" role="group" aria-label="Participantes">
+                  @for (p of g.participantes; track p.id; let i = $index) {
+                    <button type="button" [attr.aria-pressed]="i === aba()" (click)="escolherAba(i)">{{ p.pacienteNome.split(' ')[0] }}</button>
+                  }
+                </div>
+              }
+            }
+
+            @if (alvo(); as a) {
+              <app-evolucao-ficha [atendimentoId]="a.id" (estadoAlterado)="fichaEstado($event)" (salva)="fichaSalva()" />
+            }
+
+            @if (alvoAvulsoUnico()) {
+              <section class="fila__recebimento" aria-label="Recebimento">
+                <h3>Recebimento</h3>
+                <div class="fila__campos">
+                  <div class="form-group">
+                    <label for="fila-recebedor">Recebedor</label>
+                    <p-select inputId="fila-recebedor" [(ngModel)]="recebedor" [options]="recebedorOptions" optionLabel="label" optionValue="value" placeholder="Opcional" styleClass="full-width" [appendTo]="'body'" />
+                  </div>
+                  <div class="form-group">
+                    <label for="fila-forma">Forma</label>
+                    <p-select inputId="fila-forma" [(ngModel)]="tipoPagamento" [options]="tipoPagamentoOptions" optionLabel="label" optionValue="value" placeholder="Opcional" styleClass="full-width" [appendTo]="'body'" />
+                  </div>
+                  <div class="form-group">
+                    <label for="fila-data">Data do recebimento</label>
+                    <app-date-field inputId="fila-data" [(ngModel)]="dataPagamento" />
+                  </div>
+                </div>
+                <p class="fila__aviso">Sem recebimento agora, o atendimento conclui com pagamento pendente.</p>
+              </section>
+            } @else if (g.participantes.length > 1 && modo() === 'mesmo') {
+              <p class="fila__aviso">O recebimento dos avulsos da turma é registrado depois, no atendimento individual. Mensalistas já estão cobertos pela mensalidade.</p>
+            } @else if (alvo() && ehMensalidade(alvo()!)) {
+              <p class="fila__aviso">Coberto por mensalidade: sem cobrança avulsa.</p>
+            }
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <ng-template #footer>
+    @if (atual()) {
+        <div class="fila__rodape">
+          <p-button styleClass="ag-btn-lg" label="Pular" severity="secondary" [outlined]="true" [disabled]="salvando() || pendentes().length < 2" (onClick)="pular()" />
+          <p-button styleClass="ag-btn-lg" label="Concluir e próxima" icon="pi pi-check" [loading]="salvando()" [disabled]="salvando()" (onClick)="concluir()" />
+        </div>
+      }
+  </ng-template>
+</p-dialog>

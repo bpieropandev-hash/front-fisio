@@ -1,5 +1,7 @@
 <p-toast />
 
+<app-evolucoes-fila [visivel]="filaVisivel()" [grupos]="filaGrupos()" (fechar)="filaVisivel.set(false)" (atualizou)="carregarEventos()" />
+
 <div class="ag__topo">
   <div class="ag__titulo">
     <h2>{{ tituloDia() }}</h2>
@@ -31,6 +33,13 @@
     }
   </div>
 </div>
+
+@if (ehHoje(diaSelecionadoAgenda()) && totalPendentesHoje() > 0) {
+  <section class="ag__aviso-evolucao" role="status" aria-label="Evoluções pendentes">
+    <p><strong>{{ pendentesDeHoje().length }} {{ pendentesDeHoje().length === 1 ? 'horário' : 'horários' }}</strong> sem evolução ({{ totalPendentesHoje() }} {{ totalPendentesHoje() === 1 ? 'atendimento' : 'atendimentos' }}). Evolua um a um, sem voltar à agenda.</p>
+    <p-button label="Evoluir agora" icon="pi pi-pencil" styleClass="ag-btn-lg" (onClick)="abrirFilaEvolucoes()" />
+  </section>
+}
 
 @if (filtrosVisiveis()) {
   <section class="ag__cartao ag__filtros" aria-label="Filtros da agenda">

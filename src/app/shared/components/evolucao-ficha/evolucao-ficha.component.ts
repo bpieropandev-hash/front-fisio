@@ -111,6 +111,8 @@ export class EvolucaoFichaComponent implements OnChanges, OnDestroy {
       carregado: this.carregado(), versao: this.versao, resumo: this.resumo()
     });
   }
+  /** Campos atuais da ficha (usado para replicar o registro numa turma). */
+  valores() { return this.form.getRawValue(); }
   alternarProcedimento(codigo: ProcedimentoClinico): void { this.alternar(this.form.controls.procedimentos, codigo); }
   alternarEquipamento(codigo: EquipamentoClinico): void { this.alternar(this.form.controls.equipamentos, codigo); }
   private alternar<T extends string>(control: FormControl<T[]>, codigo: T): void {

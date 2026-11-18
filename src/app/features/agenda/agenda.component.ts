@@ -40,6 +40,7 @@ import {
   montarHorariosComExtra
 } from './agenda-event.util';
 import { EvolucaoFichaComponent, EvolucaoFichaEstado } from '../../shared/components/evolucao-ficha/evolucao-ficha.component';
+import { EvolucoesFilaComponent, GrupoFila } from './evolucoes-fila/evolucoes-fila.component';
 import { ReciboDialogComponent } from '../../shared/components/recibo-dialog/recibo-dialog.component';
 import { OrigemRecibo } from '../../core/interfaces/recibo.interface';
 import { agruparAtendimentos, ehMensalidade, podeEmitirReciboAtendimento } from './agenda-group.util';
@@ -69,7 +70,7 @@ interface ItemLoteUI {
 
 @Component({
   selector: 'app-agenda',
-  imports: [PageStateComponent, RemarcacaoRecorrenteComponent,
+  imports: [PageStateComponent, RemarcacaoRecorrenteComponent, EvolucoesFilaComponent,
     CommonModule,
     FormsModule,
     AgendaTimelineComponent,
@@ -154,6 +155,42 @@ export class AgendaComponent implements OnInit {
       })
       .sort((a, b) => a.inicioMin - b.inicioMin);
   });
+
+  // --- Fila de evoluções do dia: atendimentos AGENDADOS cujo horário de início já passou ---
+  filaVisivel = signal(false);
+  filaGrupos = signal<GrupoFila[]>([]);
+
+  /** Horários de hoje com atendimento já iniciado e sem conclusão (independe dos filtros da tela). */
+  pendentesDeHoje = computed<GrupoFila[]>(() => {
+    const agora = this.agora();
+    const itens = this.eventos()
+      .filter(e => {
+        const a = e.extendedProps?.['atendimento'] as AtendimentoResponseDTO | undefined;
+        const inicio = new Date(e.start);
+        return a?.status === 'AGENDADO' && this.mesmoDia(inicio, agora) && inicio <= agora;
+      })
+      .map(e => ({ ...(e.extendedProps?.['atendimento'] as AtendimentoResponseDTO), pacienteNome: e.extendedProps?.['pacienteNome'] as string }));
+    const servicos = new Map(this.eventos().map(e => [(e.extendedProps?.['atendimento'] as AtendimentoResponseDTO).id, e.extendedProps?.['servicoNome'] as string]));
+    return agruparAtendimentos(itens).map(g => {
+      const primeiro = g.participantes[0];
+      return {
+        chave: g.chave,
+        hora: formatHora(new Date(primeiro.dataHoraInicio)),
+        fim: primeiro.dataHoraFim ? formatHora(new Date(primeiro.dataHoraFim)) : formatHora(new Date(new Date(primeiro.dataHoraInicio).getTime() + DURACAO_PADRAO_MIN * 60000)),
+        servicoNome: servicos.get(primeiro.id) ?? 'Atendimento',
+        participantes: g.participantes as GrupoFila['participantes']
+      };
+    }).sort((a, b) => a.hora.localeCompare(b.hora));
+  });
+  totalPendentesHoje = computed(() => this.pendentesDeHoje().reduce((n, g) => n + g.participantes.length, 0));
+
+  abrirFilaEvolucoes(): void {
+    // Só protege quando há um detalhe aberto: sem ele a ficha ainda não foi carregada e não há o que perder.
+    if (this.atendimentoSelecionado() && (this.motivoBloqueioFicha() || this.temAlteracoesPendentes())) { this.avisarFichaPendente(); return; }
+    this.descartarEFechar();
+    this.filaGrupos.set(this.pendentesDeHoje());
+    this.filaVisivel.set(true);
+  }
 
   /** Horários por dia (yyyy-MM-dd) para as marcas de ocupação do navegador mensal. */
   contagensPorDia = computed<Record<string, number>>(() => {
