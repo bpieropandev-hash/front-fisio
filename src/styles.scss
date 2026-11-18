@@ -456,12 +456,6 @@ html.dark-mode body.login-page {
   pointer-events: auto !important;
 }
 
-.p-select-list {
-  max-height: 300px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
 .p-select-list-item {
   pointer-events: auto !important;
   cursor: pointer !important;
@@ -576,17 +570,6 @@ html.dark-mode body.login-page {
 /* Garantir que o overlay do select funcione corretamente */
 .p-select-overlay {
   position: fixed !important;
-}
-
-/* Permitir scroll no dropdown do select */
-.p-select-panel {
-  overflow: visible !important;
-}
-
-.p-select-list-wrapper {
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  max-height: 300px !important;
 }
 
 /* Estilos elegantes e modernos para textareas */

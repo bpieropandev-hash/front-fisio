@@ -671,7 +671,8 @@ a:focus-visible {
     .form-group > p-select,
     .form-group > p-multiselect,
     .form-group > p-inputnumber {
-      display: block;
+      // flex (não block): o rótulo interno do select precisa ocupar o espaço do campo, senão quebra letra por letra
+      display: flex;
       width: 100%;
       min-width: 0;
     }
@@ -695,6 +696,7 @@ a:focus-visible {
     }
     .p-select-label,
     .p-multiselect-label {
+      min-width: 0;
       white-space: normal;
       overflow-wrap: anywhere;
     }
