@@ -224,16 +224,20 @@ describe('integração agenda e recebimento', () => {
    expect(component.eventosDoDiaSelecionado()).toHaveLength(1);
    http.verify();
   });
-  it('alterna status sem nunca deixar todos desligados', () => {
+  it('seleciona status: um mostra só ele, outros somam, repetir remove e vazio volta a todos', () => {
    expect(component.statusAtivo('FALTA')).toBe(true);
-   component.alternarStatus('FALTA');
-   expect(component.filtros.status).toEqual(['AGENDADO','CONCLUIDO','CANCELADO']);
-   expect(component.statusAtivo('FALTA')).toBe(false);
-   component.alternarStatus('FALTA');
-   expect(component.filtros.status).toEqual([]);
-   component.filtros.status=['AGENDADO'];
    component.alternarStatus('AGENDADO');
    expect(component.filtros.status).toEqual(['AGENDADO']);
+   expect(component.statusAtivo('AGENDADO')).toBe(true);
+   expect(component.statusAtivo('CANCELADO')).toBe(false);
+   component.alternarStatus('CANCELADO');
+   expect(component.filtros.status).toEqual(['AGENDADO','CANCELADO']);
+   component.alternarStatus('AGENDADO');
+   component.alternarStatus('CANCELADO');
+   expect(component.filtros.status).toEqual([]);
+   expect(component.statusAtivo('FALTA')).toBe(true);
+   ['AGENDADO','CONCLUIDO','CANCELADO','FALTA'].forEach(s => component.alternarStatus(s));
+   expect(component.filtros.status).toEqual([]);
   });
   it('resumo do dia conta atendimentos, concluídos e o próximo horário', () => {
    component.agora.set(new Date(2026,9,26,8,0));

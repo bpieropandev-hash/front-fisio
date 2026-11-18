@@ -68,8 +68,8 @@
       </div>
     </div>
     <div class="ag__filtros-acoes">
-      <p-button label="Limpar filtros" icon="pi pi-times" [text]="true" (onClick)="limparFiltros()" />
-      <p-button label="Fechar" [text]="true" severity="secondary" (onClick)="toggleFiltros()" />
+      <p-button label="Limpar filtros" icon="pi pi-times" [outlined]="true" (onClick)="limparFiltros()" />
+      <p-button label="Fechar" [outlined]="true" severity="secondary" (onClick)="toggleFiltros()" />
     </div>
   </section>
 }
@@ -280,7 +280,7 @@
           label="Cancelar"
           icon="pi pi-times"
           (onClick)="fecharModalLote()"
-          styleClass="p-button-text"
+          [outlined]="true"
           [disabled]="salvandoLote()"
         />
         <p-button
@@ -324,12 +324,12 @@
     </div>
 
     <div class="ag__acoes-rapidas">
-      <p-button label="Alterar próximos" icon="pi pi-calendar" [outlined]="true" size="small"
+      <p-button label="Alterar próximos" icon="pi pi-calendar" [outlined]="true" [styleClass]="isTablet() ? 'ag-btn-lg' : ''"
         [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="abrirRemarcacaoRecorrente()" />
       @if (atendimentoSelecionado()!.status === 'AGENDADO') {
-        <p-button label="Registrar falta" icon="pi pi-user-minus" [outlined]="true" severity="secondary" size="small"
+        <p-button label="Registrar falta" icon="pi pi-user-minus" [outlined]="true" severity="secondary" [styleClass]="isTablet() ? 'ag-btn-lg' : ''"
           [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="pedirStatusRapido('FALTA')" />
-        <p-button label="Cancelar atendimento" icon="pi pi-times" [outlined]="true" severity="danger" size="small"
+        <p-button label="Cancelar atendimento" icon="pi pi-times" [outlined]="true" severity="danger" [styleClass]="isTablet() ? 'ag-btn-lg' : ''"
           [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="pedirStatusRapido('CANCELADO')" />
       }
     </div>
@@ -406,7 +406,7 @@
         </div>
         <small class="text-muted">Preencha os três campos para confirmar o pagamento; sem eles, a conclusão fica pendente.</small>
         @if (podeEmitirRecibo(atendimentoSelecionado())) {
-          <p-button label="Emitir / reimprimir recibo" icon="pi pi-file-pdf" [outlined]="true" size="small" (onClick)="abrirRecibo()" />
+          <p-button label="Emitir / reimprimir recibo" icon="pi pi-file-pdf" [outlined]="true" [styleClass]="isTablet() ? 'ag-btn-lg' : ''" (onClick)="abrirRecibo()" />
         }
       </section>
     } @else if (ehMensalidade(atendimentoSelecionado())) {
@@ -417,7 +417,7 @@
 
   <ng-template #footer>
     @if (atendimentoSelecionado() && !carregandoAtendimento() && !erroAtendimento()) {
-      <p-button label="Cancelar" [text]="true" (onClick)="fecharModal()" />
+      <p-button label="Cancelar" [outlined]="true" (onClick)="fecharModal()" />
       <p-button
         label="Salvar"
         icon="pi pi-check"
@@ -444,7 +444,7 @@
     Esta ação altera o histórico do paciente.
   </p>
   <div class="dialog-footer">
-    <p-button label="Voltar" [text]="true" (onClick)="confirmacaoStatus.set(null)" [disabled]="salvando()" />
+    <p-button label="Voltar" [outlined]="true" (onClick)="confirmacaoStatus.set(null)" [disabled]="salvando()" />
     <p-button
       [label]="confirmacaoStatus() === 'FALTA' ? 'Registrar falta' : 'Cancelar atendimento'"
       severity="danger"
@@ -551,7 +551,7 @@
   }
 
   <div class="dialog-footer">
-    <p-button label="Cancelar" icon="pi pi-times" (onClick)="fecharModal()" styleClass="p-button-text" />
+    <p-button label="Cancelar" icon="pi pi-times" (onClick)="fecharModal()" [outlined]="true" />
     <p-button label="Agendar" icon="pi pi-check" (onClick)="criarAgendamento()" [loading]="salvando()" />
   </div>
 </p-dialog>

@@ -212,13 +212,15 @@ export class AgendaComponent implements OnInit {
     return this.filtros.status.length === 0 || this.filtros.status.includes(status);
   }
 
-  /** Liga/desliga um status. Sem filtro = todos ligados; nunca deixa todos desligados. */
+  /**
+   * Seleção de status. Sem seleção, todos aparecem (e todos os chips ficam ativos). Clicar em um
+   * mostra só ele; clicar em outros soma; clicar num já selecionado remove. Sem nenhum selecionado
+   * (ou com os quatro) volta a mostrar todos.
+   */
   alternarStatus(status: string): void {
-    const todos = this.statusChips.map(c => c.valor);
-    const atuais = this.filtros.status.length === 0 ? todos : this.filtros.status;
+    const atuais = this.filtros.status;
     const proximos = atuais.includes(status) ? atuais.filter(s => s !== status) : [...atuais, status];
-    if (proximos.length === 0) return;
-    this.filtros.status = proximos.length === todos.length ? [] : proximos;
+    this.filtros.status = proximos.length === this.statusChips.length ? [] : proximos;
     this.aplicarFiltros();
   }
 

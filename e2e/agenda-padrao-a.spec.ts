@@ -108,18 +108,26 @@ test.describe('Agenda · linha do tempo', () => {
     await expect(titulo).toContainText('Hoje');
   });
 
-  test('chip de status esconde e mostra os atendimentos', async ({ page }, info) => {
+  test('chips de status: um mostra só ele, outros somam, vazio volta a todos', async ({ page }, info) => {
     await abrirApp(page, '/agenda', info);
-    const chip = ehLayoutMobile(info)
-      ? page.locator('.ag__chips--rolagem .ag__chip', { hasText: 'Agendado' })
-      : page.locator('.ag__lado .ag__chip', { hasText: 'Agendado' });
-    // Hoje há um atendimento concluído (11:00) e um agendado (14:00).
-    await expect(page.locator('.tl__bloco')).toHaveCount(2);
-    await chip.click();
-    await expect(page.locator('.tl__bloco')).toHaveCount(1);
-    await expect(page.locator('.tl__bloco', { hasText: '14:00' })).toHaveCount(0);
-    await chip.click();
-    await expect(page.locator('.tl__bloco')).toHaveCount(2);
+    const chip = (nome: string) => (ehLayoutMobile(info)
+      ? page.locator('.ag__chips--rolagem .ag__chip', { hasText: nome })
+      : page.locator('.ag__lado .ag__chip', { hasText: nome }));
+    const blocos = page.locator('.tl__bloco');
+    // Hoje há um atendimento concluído (11:00) e um agendado (14:00); por padrão aparecem os dois.
+    await expect(blocos).toHaveCount(2);
+    await chip('Agendado').click();
+    await expect(blocos).toHaveCount(1);
+    await expect(blocos.first()).toContainText('14:00');
+    await expect(chip('Concluído')).toHaveAttribute('aria-pressed', 'false');
+    await chip('Concluído').click();
+    await expect(blocos).toHaveCount(2);
+    await chip('Agendado').click();
+    await expect(blocos).toHaveCount(1);
+    await expect(blocos.first()).toContainText('11:00');
+    await chip('Concluído').click();
+    await expect(blocos).toHaveCount(2);
+    await expect(chip('Agendado')).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('cancelar atendimento exige confirmação e "Voltar" não altera nada', async ({ page }, info) => {

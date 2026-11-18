@@ -395,6 +395,12 @@
 }
 
 @media (max-width: 768px) {
+  // Ações do detalhe: uma por linha, grandes o bastante para o toque
+  .ag__acoes-rapidas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   // O FAB fixo não pode cobrir o fim da linha do tempo
   .ag__topo {
     flex-wrap: nowrap;
