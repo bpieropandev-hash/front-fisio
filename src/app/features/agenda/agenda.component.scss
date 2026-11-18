@@ -266,12 +266,50 @@
 }
 
 // Detalhe do atendimento e criação
+.ag__gaveta {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.ag__subtitulo {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.ag__campos {
+  display: grid;
+  gap: var(--space-4);
+
+  .form-group {
+    margin: 0;
+  }
+}
+
+.ag__secao {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.ag__recebimento {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-color);
+}
+
+.ag__aviso {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
 .ag__detalhe-resumo {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  margin-top: calc(var(--space-3) * -1);
   color: var(--text-secondary);
 }
 
@@ -279,7 +317,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-2);
+  margin-top: calc(var(--space-3) * -1);
 }
 
 .ag__repetir {

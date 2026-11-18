@@ -110,40 +110,9 @@ describe('integração agenda e recebimento', () => {
   req.flush({...atendimento,status:'CONCLUIDO'});http.expectOne(r=>r.method==='GET').flush([]);http.verify();
  });
 
- it('salvar a ficha preserva o complemento ainda não transferido', () => {
-  abrir({...atendimento,evolucao:'Registro anterior'});
-  Object.assign(component,{complementoEdit:'Complemento digitado'});
-  component.evolucaoSalva('Resumo novo');
-  expect((component as unknown as {complementoEdit:string}).complementoEdit).toBe('Complemento digitado');
-  expect(component.evolucaoEdit).toBe('Registro anterior');http.verify();
- });
-
- it('leva só o complemento para Observações uma única vez e exige salvar a ficha', () => {
-  abrir(atendimento);
-  const ficha=TestBed.runInInjectionContext(()=>new EvolucaoFichaComponent());
-  ficha.atendimentoId=1;
-  ficha.estadoAlterado.subscribe(estado=>component.estadoFichaMudou(estado));
-  ficha.ngOnChanges();
-  http.expectOne(r=>r.url.endsWith('/evolucao-estruturada')).flush({versao:1,procedimentos:[],equipamentos:[],pressaoSistolica:null,pressaoDiastolica:null,dor:null,observacoes:'Existente',resumo:'Resumo salvo',autor:'Profissional',atualizadoEm:null});
-  component.fichaComponent=ficha;component.complementoEdit='Novo complemento';
-  component.levarComplementoParaFicha();component.levarComplementoParaFicha();
-  expect(ficha.form.controls.observacoes.value).toBe('Existente\nNovo complemento');
-  expect(component.complementoEdit).toBe('');expect(component.estadoFicha().dirty).toBe(true);
-  component.salvarAtendimento();http.expectNone(r=>r.method==='PUT');ficha.ngOnDestroy();http.verify();
- });
  it('fecha somente após descarte explícito sem alterar o resumo persistido', () => {
-  abrir({...atendimento,evolucao:'Salvo'});component.complementoEdit='Rascunho';component.fecharModal();
+  abrir({...atendimento,evolucao:'Salvo'});component.estadoFichaMudou({dirty:true,carregando:false,salvando:false,conflito:false,carregado:true,versao:1,resumo:'Salvo'});component.fecharModal();
   expect(component.modalVisivel).toBe(true);component.descartarEFechar();expect(component.modalVisivel).toBe(false);http.expectNone(r=>r.method==='PUT');http.verify();
- });
-
- it('preserva complemento quando sua transferência excederia o limite de observações', () => {
-  abrir(atendimento);
-  const ficha=TestBed.runInInjectionContext(()=>new EvolucaoFichaComponent());
-  ficha.form.controls.observacoes.setValue('a'.repeat(4990));
-  component.fichaComponent=ficha;component.complementoEdit='Complemento maior que dez caracteres';
-  component.levarComplementoParaFicha();
-  expect(component.complementoEdit).toBe('Complemento maior que dez caracteres');
-  expect(ficha.form.controls.observacoes.value).toHaveLength(4990);ficha.ngOnDestroy();http.verify();
  });
 
  it('preserva dia e horário do slot ao abrir criação pela linha do tempo', () => {

@@ -316,6 +316,8 @@
     <p role="alert">{{ erroAtendimento() }}</p>
     <p-button label="Fechar" (onClick)="fecharModal()" />
   } @else if (atendimentoSelecionado()) {
+    <div class="ag__gaveta">
+    <p class="ag__subtitulo">{{ subtituloAtendimento() }}</p>
     <div class="ag__detalhe-resumo">
       <span class="status-pill" [class]="obterPillStatus(atendimentoSelecionado()!.status).cssClass">{{ rotuloStatus(atendimentoSelecionado()!.status) }}</span>
       <span>{{ atendimentoSelecionado()?.servicoNome || 'Carregando...' }}</span>
@@ -331,107 +333,101 @@
           [disabled]="salvando() || !!motivoBloqueioFicha()" (onClick)="pedirStatusRapido('CANCELADO')" />
       }
     </div>
-    <p class="text-muted">As alterações abaixo afetam somente este atendimento.</p>
 
-    <div class="form-group">
-      <label for="edit-data">Data e horário</label>
-      <div class="datetime-selector">
-        <app-date-field inputId="edit-data" [(ngModel)]="dataEdit" class="full-width" (ngModelChange)="atualizarDataHoraEdit()" />
+    <div class="ag__campos">
+      <div class="form-group">
+        <label for="edit-data">Data e horário</label>
+        <div class="datetime-selector">
+          <app-date-field inputId="edit-data" [(ngModel)]="dataEdit" class="full-width" (ngModelChange)="atualizarDataHoraEdit()" />
+          <p-select
+            [(ngModel)]="horaEdit"
+            [options]="horariosEdicao"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Horário"
+            styleClass="full-width time-input"
+            [appendTo]="'body'"
+            (ngModelChange)="atualizarDataHoraEdit()"
+            ariaLabel="Horário"
+          />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="edit-status">Status</label>
         <p-select
-          [(ngModel)]="horaEdit"
-          [options]="horariosEdicao"
+          inputId="edit-status"
+          [(ngModel)]="statusEdit"
+          [options]="statusOptions"
           optionLabel="label"
           optionValue="value"
-          placeholder="Selecione o horário"
-          styleClass="full-width time-input"
+          styleClass="full-width"
           [appendTo]="'body'"
-          (ngModelChange)="atualizarDataHoraEdit()"
-          ariaLabel="Horário"
         />
       </div>
-    </div>
-
-    <div class="form-group">
-      <label for="edit-status">Status</label>
-      <p-select
-        inputId="edit-status"
-        [(ngModel)]="statusEdit"
-        [options]="statusOptions"
-        optionLabel="label"
-        optionValue="value"
-        styleClass="full-width"
-        [appendTo]="'body'"
-      />
     </div>
 
     <app-evolucao-ficha [atendimentoId]="atendimentoSelecionado()!.id" (estadoAlterado)="estadoFichaMudou($event)" (salva)="evolucaoSalva($event)" />
-    @if (evolucaoEdit) {
-      <details><summary>Registro anterior (somente leitura)</summary><p class="evolution-textarea">{{ evolucaoEdit }}</p></details>
-    }
-    <div class="form-group">
-      <label for="complemento-evolucao">Complemento opcional</label>
-      <textarea id="complemento-evolucao" pTextarea [(ngModel)]="complementoEdit" rows="3" maxlength="5000" class="full-width" [disabled]="estadoFicha().salvando"></textarea>
-      <small>Para registrar este texto, leve-o para Observações e salve a evolução da ficha.</small>
-      @if (complementoEdit.trim()) {
-        <p-button label="Levar complemento para Observações" (onClick)="levarComplementoParaFicha()" [disabled]="!estadoFicha().carregado || estadoFicha().salvando || estadoFicha().conflito" />
-        <p-button label="Descartar complemento" severity="secondary" [text]="true" (onClick)="descartarComplemento()" />
-      }
-    </div>
-    @if (motivoBloqueioFicha()) { <p role="status">{{ motivoBloqueioFicha() }}</p> }
+    @if (motivoBloqueioFicha()) { <p class="ag__aviso" role="status">{{ motivoBloqueioFicha() }}</p> }
 
     @if (ehAtendimentoAvulso(atendimentoSelecionado())) {
-      <div class="form-group">
-        <label for="edit-recebedor">Recebedor</label>
-        <p-select
-          inputId="edit-recebedor"
-          [(ngModel)]="recebedorEdit"
-          [options]="recebedorOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Opcional – pagamento avulso"
-          styleClass="full-width"
-          [appendTo]="'body'"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="edit-pagamento">Tipo de pagamento</label>
-        <p-select
-          inputId="edit-pagamento"
-          [(ngModel)]="tipoPagamentoEdit"
-          [options]="tipoPagamentoOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Opcional – pagamento avulso"
-          styleClass="full-width"
-          [appendTo]="'body'"
-        />
-      </div>
-      <div class="form-group">
-        <label for="data-recebimento">Data do recebimento</label>
-        <app-date-field inputId="data-recebimento" [(ngModel)]="dataPagamentoEdit" />
-        <small>Preencha recebedor, forma e data para confirmar o pagamento. Sem recebimento, a conclusão fica pendente.</small>
-      </div>
-      @if (podeEmitirRecibo(atendimentoSelecionado())) {
-        <p-button label="Emitir / reimprimir recibo" icon="pi pi-file-pdf" (onClick)="abrirRecibo()" />
-      }
+      <section class="ag__recebimento" aria-label="Recebimento">
+        <h3 class="ag__secao">Recebimento</h3>
+        <div class="ag__campos">
+          <div class="form-group">
+            <label for="edit-recebedor">Recebedor</label>
+            <p-select
+              inputId="edit-recebedor"
+              [(ngModel)]="recebedorEdit"
+              [options]="recebedorOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Opcional"
+              styleClass="full-width"
+              [appendTo]="'body'"
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit-pagamento">Forma</label>
+            <p-select
+              inputId="edit-pagamento"
+              [(ngModel)]="tipoPagamentoEdit"
+              [options]="tipoPagamentoOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Opcional"
+              styleClass="full-width"
+              [appendTo]="'body'"
+            />
+          </div>
+          <div class="form-group">
+            <label for="data-recebimento">Data do recebimento</label>
+            <app-date-field inputId="data-recebimento" [(ngModel)]="dataPagamentoEdit" />
+          </div>
+        </div>
+        <small class="text-muted">Preencha os três campos para confirmar o pagamento; sem eles, a conclusão fica pendente.</small>
+        @if (podeEmitirRecibo(atendimentoSelecionado())) {
+          <p-button label="Emitir / reimprimir recibo" icon="pi pi-file-pdf" [outlined]="true" size="small" (onClick)="abrirRecibo()" />
+        }
+      </section>
     } @else if (ehMensalidade(atendimentoSelecionado())) {
-      <div class="mensalista-badge"><i class="pi pi-id-card"></i> Coberto por mensalidade · assinatura #{{ atendimentoSelecionado()?.assinaturaId }}. Sem cobrança avulsa.</div>
-    } @else {
-      <p>{{ atendimentoSelecionado()?.modalidadeCobranca === 'LEGADO' ? 'Registro legado: cobertura não identificada.' : 'Atendimento sem cobrança (cortesia).' }}</p>
+      <div class="mensalista-badge"><i class="pi pi-id-card"></i> Coberto por mensalidade · assinatura #{{ atendimentoSelecionado()?.assinaturaId }}</div>
     }
+    </div>
+  }
 
-    <div class="dialog-footer">
-      <p-button label="Cancelar" icon="pi pi-times" (onClick)="fecharModal()" styleClass="p-button-text" />
+  <ng-template #footer>
+    @if (atendimentoSelecionado() && !carregandoAtendimento() && !erroAtendimento()) {
+      <p-button label="Cancelar" [text]="true" (onClick)="fecharModal()" />
       <p-button
-        label="Salvar somente este atendimento"
+        label="Salvar"
         icon="pi pi-check"
+        ariaLabel="Salvar alterações deste atendimento"
         (onClick)="salvarAtendimento()"
         [loading]="salvando()"
         [disabled]="!!motivoBloqueioFicha()"
       />
-    </div>
-  }
+    }
+  </ng-template>
 </p-dialog>
 
 <!-- Confirmação: cancelar atendimento / registrar falta -->
@@ -578,7 +574,7 @@
 <app-recibo-dialog [(visible)]="reciboVisivel" [origem]="reciboOrigem" [dataPagamento]="atendimentoSelecionado()?.dataPagamento || ''" [pacienteNome]="atendimentoSelecionado()?.pacienteNome || ''" />
 
 <p-dialog [visible]="modalDescartarVisivel()" (visibleChange)="modalDescartarVisivel.set($event)" header="Descartar alterações da evolução?" [modal]="true" [style]="{width:'90vw',maxWidth:'520px'}" [closable]="false" [closeOnEscape]="false">
- <p>Há alterações ou complemento ainda não salvos. Continue editando para preservar o preenchimento ou descarte explicitamente para fechar.</p>
+ <p>Há alterações na evolução ainda não salvas. Continue editando para preservá-las ou descarte explicitamente para fechar.</p>
  <p-button label="Continuar editando" (onClick)="modalDescartarVisivel.set(false)" />
  <p-button label="Descartar alterações e fechar" severity="danger" (onClick)="descartarEFechar()" />
 </p-dialog>

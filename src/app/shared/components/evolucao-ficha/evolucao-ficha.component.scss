@@ -5,54 +5,290 @@
   color: var(--text-primary);
   font-family: var(--font-body);
 }
-.ficha { padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; }
-h3, h4 { margin: 0 0 .75rem; font-family: var(--font-display); }
-fieldset { border: 0; margin: 1rem 0; padding: 0; min-width: 0; }
-legend { font-weight: 600; margin-bottom: .5rem; }
-.opcoes { display: flex; flex-wrap: wrap; gap: .5rem; }
-.opcao {
-  display: flex; align-items: center; gap: .5rem;
-  min-height: 44px; padding: .65rem .75rem;
-  border: 1px solid var(--border-color); border-radius: 8px;
-  background: var(--bg-secondary); cursor: pointer;
+
+.ficha {
+  display: grid;
+  gap: var(--space-4);
 }
-.opcao:has(input:checked) { border-color: var(--accent-color); background: var(--accent-soft); }
-input[type=checkbox] { width: 1.1rem; height: 1.1rem; flex-shrink: 0; accent-color: var(--pg-primary-color); }
-.medidas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
-.medidas label, .campo { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .75rem; }
-input[type=number], textarea {
+
+.ficha__titulo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.ficha__form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.ficha__estado {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+h4 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rotulo {
+  display: block;
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.opcional {
+  font-weight: 400;
+}
+
+.campo {
+  display: grid;
+  gap: var(--space-1);
+}
+
+// Dor: controle deslizante com o valor em destaque
+.dor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.dor input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  accent-color: var(--accent-color);
+  cursor: pointer;
+}
+
+.dor__vazia {
+  opacity: 0.55;
+}
+
+.dor__valor {
+  min-width: 28px;
+  font: 700 1.25rem var(--font-display);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+// Procedimentos e equipamentos: chips marcáveis (o checkbox nativo continua no DOM, só escondido)
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
   border: 1px solid var(--border-color);
-  background: var(--bg-secondary); color: var(--text-primary); font: inherit;
-  border-radius: 8px; padding: .75rem; width: 100%; min-height: 44px; box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
-.dor { max-width: 8rem; }
-textarea { resize: vertical; }
-.acoes { display: flex; flex-wrap: wrap; gap: .75rem; padding-top: .25rem; }
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chip:hover {
+  border-color: var(--text-secondary);
+}
+
+.chip:has(input:checked) {
+  border-color: var(--accent-color);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.chip:has(input:focus-visible) {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.chip:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.medidas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.medidas label {
+  display: grid;
+  gap: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+input[type='number'],
+textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+input:disabled,
+textarea:disabled {
+  opacity: 0.65;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+
+  .acao {
+    border-color: transparent;
+    background: none;
+    color: var(--accent-ink);
+  }
+}
+
 button {
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border-color); border-radius: 8px;
-  background: var(--bg-secondary); color: var(--text-primary);
-  padding: .75rem 1rem; min-height: 44px; max-width: 100%;
-  cursor: pointer; font: inherit; font-weight: 600; line-height: 1.4; text-align: center;
-  transition: background-color .15s, border-color .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
 }
-button:not(:disabled):hover { background: var(--bg-tertiary); border-color: var(--text-secondary); }
-button.primario { background: var(--pg-primary-active-color); border-color: var(--pg-primary-active-color); color: var(--pg-primary-contrast-color); }
-button.primario:not(:disabled):hover { background: var(--pg-primary-active-color); border-color: var(--pg-primary-color); }
-button:focus-visible, input:focus-visible, textarea:focus-visible {
-  outline: 2px solid var(--accent-color); outline-offset: 3px;
+
+button:not(:disabled):hover {
+  background: var(--bg-tertiary);
 }
-button:disabled { opacity: .65; cursor: not-allowed; }
-input:disabled, textarea:disabled { opacity: .65; }
-.erro { color: var(--status-err-fg); }
-.ajuda, small { color: var(--text-secondary); }
-.resumo, .historico { margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem; }
-p { white-space: pre-wrap; overflow-wrap: anywhere; }
-article { padding: .75rem 0; border-bottom: 1px solid var(--border-color); }
-article small { display: block; margin-top: .25rem; }
+
+button.primario {
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+  color: var(--on-accent);
+}
+
+button.primario:not(:disabled):hover {
+  background: var(--accent-color-hover);
+}
+
+button.link {
+  justify-self: start;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.erro {
+  margin: 0;
+  color: var(--status-err-fg);
+}
+
+small {
+  color: var(--text-secondary);
+}
+
+.resumo,
+.historico {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-color);
+}
+
+p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+article {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+article small {
+  display: block;
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 600px) {
-  .ficha { padding: .875rem; }
-  .acoes > button { flex: 1 1 100%; }
-  input[type=number], textarea { font-size: 1rem; }
+  .acoes > button.primario {
+    flex: 1 1 100%;
+  }
+
+  .acoes > .acao {
+    flex: 1 1 100%;
+  }
+
+  input[type='number'],
+  textarea {
+    font-size: 1rem;
+  }
 }
-@media (prefers-reduced-motion: reduce) { button { transition: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .chip {
+    transition: none;
+  }
+}

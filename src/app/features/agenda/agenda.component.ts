@@ -2,7 +2,7 @@ import { PageStateComponent } from '../../shared/components/page-state/page-stat
 import { RemarcacaoRecorrenteComponent } from './remarcacao-recorrente.component';
 import { untracked } from '@angular/core';
 import { ConfiguracaoClinicaService } from '../../core/services/configuracao-clinica.service';
-import { Component, DestroyRef, OnInit, signal, computed, effect, inject, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
@@ -117,7 +117,6 @@ export class AgendaComponent implements OnInit {
   servicosAtivos = computed(() => this.servicos().filter(s => s.ativo !== false));
   obterPillStatus = obterPillStatus;
 
-  @ViewChild(EvolucaoFichaComponent) fichaComponent?: EvolucaoFichaComponent;
 
   // --- Dia exibido: linha do tempo (padrão A), tira de semana no celular e navegador mensal no desktop ---
   diaSelecionadoAgenda = signal<Date>(this.iniciarDoDia(new Date()));
@@ -328,7 +327,6 @@ export class AgendaComponent implements OnInit {
   readonly erroAtendimento = signal('');
   readonly estadoFicha = signal<EvolucaoFichaEstado>({dirty:false,carregando:true,salvando:false,conflito:false,carregado:false,versao:0,resumo:''});
   readonly modalDescartarVisivel = signal(false);
-  complementoEdit = '';
   resumoFichaSalvo = '';
   private aberturaAtendimento = 0;
   private temFichaEstruturada = false;
@@ -351,25 +349,8 @@ export class AgendaComponent implements OnInit {
     if (estado.conflito) return 'Resolva o conflito e salve a ficha antes de salvar ou concluir o atendimento.';
     if (!estado.carregado) return 'Carregue a ficha com sucesso antes de salvar ou concluir o atendimento.';
     if (estado.dirty) return 'Salve a evolução da ficha antes de salvar ou concluir o atendimento.';
-    if (this.complementoEdit.trim()) return 'Leve o complemento para Observações e salve a ficha antes de concluir, ou descarte o complemento explicitamente.';
     return '';
   }
-
-  levarComplementoParaFicha(): void {
-    const complemento = this.complementoEdit.trim();
-    if (!complemento || !this.fichaComponent || this.estadoFicha().salvando || this.estadoFicha().conflito || !this.estadoFicha().carregado) return;
-    const observacoes = this.fichaComponent.form.controls.observacoes;
-    const texto = [observacoes.value.trim(), complemento].filter(Boolean).join('\n');
-    if (texto.length > 5000) {
-      this.messageService.add({severity:'warn',summary:'Complemento preservado',detail:'As observações ficariam com mais de 5.000 caracteres. Reduza o texto antes de transferir.'});
-      return;
-    }
-    observacoes.setValue(texto);
-    observacoes.markAsDirty();
-    this.complementoEdit = '';
-  }
-
-  descartarComplemento(): void { this.complementoEdit = ''; }
 
   private atualizarResumoNaAgenda(resumo: string): void {
     const id = this.atendimentoSelecionado()?.id;
@@ -760,6 +741,16 @@ export class AgendaComponent implements OnInit {
 
   readonly rotuloStatus = obterLabelStatus;
 
+  /** "quarta-feira, 18 de novembro · 14:00 – 15:00" */
+  subtituloAtendimento(): string {
+    const a = this.atendimentoSelecionado();
+    if (!a) return '';
+    const inicio = new Date(a.dataHoraInicio);
+    const dia = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(inicio);
+    const diaMaiusculo = dia.charAt(0).toUpperCase() + dia.slice(1);
+    return `${diaMaiusculo} · ${formatHora(inicio)}${a.dataHoraFim ? ' – ' + formatHora(new Date(a.dataHoraFim)) : ''}`;
+  }
+
   quantidadeNoDia(dia: Date): number {
     return this.contagensPorDia()[chaveDia(dia)] ?? 0;
   }
@@ -846,7 +837,6 @@ export class AgendaComponent implements OnInit {
   abrirModalEdicao(atendimento: AtendimentoResponseDTO): void {
     if (this.modalVisivel && this.temAlteracoesPendentes()) { this.avisarFichaPendente(); return; }
     const abertura = ++this.aberturaAtendimento;
-    this.complementoEdit = '';
     this.resumoFichaSalvo = '';
     this.temFichaEstruturada = false;
     this.estadoFicha.set({dirty:false,carregando:true,salvando:false,conflito:false,carregado:false,versao:0,resumo:''});
@@ -947,7 +937,7 @@ export class AgendaComponent implements OnInit {
 
   private temAlteracoesPendentes(): boolean {
     const estado = this.estadoFicha();
-    return !!this.atendimentoSelecionado() && (estado.dirty || estado.conflito || estado.salvando || !!this.complementoEdit.trim());
+    return !!this.atendimentoSelecionado() && (estado.dirty || estado.conflito || estado.salvando);
   }
 
   private avisarFichaPendente(): void {
@@ -970,7 +960,6 @@ export class AgendaComponent implements OnInit {
     this.modalVisivel = false;
     this.atendimentoSelecionado.set(null);
     this.dataHoraOriginal = null;
-    this.complementoEdit = '';
     this.carregandoAtendimento.set(false);
   }
 
